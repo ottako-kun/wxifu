@@ -17,11 +17,6 @@ const Header: React.FC = () => {
           </div>
         </div>
         <nav className="hidden md:flex items-center space-x-6">
-           <div className="flex items-center space-x-2 px-3 py-1 bg-gray-900 rounded border border-gray-800">
-             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-             <span className="text-xs font-bold text-gray-300 tracking-wider">ONLINE</span>
-           </div>
-           <span className="text-xs font-bold text-pink-500 border border-pink-500 bg-pink-500/10 px-2 py-1 rounded uppercase tracking-widest hover:bg-pink-500 hover:text-white transition-colors cursor-pointer">VIP ACCESS</span>
         </nav>
       </div>
     </header>
