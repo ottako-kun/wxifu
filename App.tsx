@@ -43,13 +43,13 @@ const App: React.FC = () => {
               onClick={() => setActiveTab('photos')}
               className={`w-1/2 py-2 px-4 rounded-full text-sm font-semibold transition-colors duration-300 ${activeTab === 'photos' ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20' : 'text-gray-400 hover:text-white'}`}
             >
-              Photos
+              Featured Waifu
             </button>
             <button
               onClick={() => setActiveTab('videos')}
               className={`w-1/2 py-2 px-4 rounded-full text-sm font-semibold transition-colors duration-300 ${activeTab === 'videos' ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20' : 'text-gray-400 hover:text-white'}`}
             >
-              Videos
+              Video Collection
             </button>
           </div>
           
