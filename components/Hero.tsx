@@ -27,11 +27,11 @@ const Hero: React.FC = () => {
         <div className="h-1 w-24 mx-auto bg-gradient-to-r from-pink-500 to-cyan-500 mb-8"></div>
 
         <p className="text-lg md:text-2xl font-medium text-gray-200 tracking-wide mb-8 max-w-2xl mx-auto">
-          The ultimate archive for <span className="text-cyan-400">Anime Art</span>, <span className="text-pink-500">Illustrations</span> & <span className="text-purple-400">AMVs</span>.
+          Step Into the <span className="text-cyan-400">Spotlight,</span>, <span className="text-pink-500">Stunning Waifu.</span> & <span className="text-purple-400">AMVs</span>.
         </p>
         
         <p className="max-w-xl mx-auto text-sm md:text-base text-gray-400 leading-relaxed font-light">
-         Dive into a curated selection of high-quality visual content. Browse the grid below to preview exclusive artworks and video edits with our featured stunning waifus.
+         Browse a gallery of captivating visuals and sensual edits. Feel the pull of the spotlight… it’s ready for you to become our next featured waifu.
         </p>
       </div>
     </section>
