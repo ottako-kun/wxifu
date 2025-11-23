@@ -1,11 +1,24 @@
-<div align="center">
+# 🌸 Ottako-kun Gallery
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Welcome to **Ottako-kun** — A premium interface for showcasing anime artwork and videos.
 
-  <h1>Built with AI Studio</h2>
+✨ **About**
+A sleek, dark-themed gallery designed for artists and otakus to display their illustrations, sketches, and AMVs (Anime Music Videos).
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+💻 **Tech Stack**
+Built with ❤️ using:
+* **React + TypeScript**
+* **Tailwind CSS**
+* **Vercel**
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+📸 **Features**
+* **Masonry Grid**: Perfect for vertical and horizontal artwork.
+* **Google Drive Integration**: Simply drop your file IDs into `gallery-data.ts`.
+* **Video Preview**: Integrated support for video thumbnails and playback.
+* **Dark Mode**: Optimized for high-contrast art viewing.
 
-</div>
+🚀 **Setup**
+1.  Add your Google Drive File IDs to `gallery-data.ts`.
+2.  Deploy!
+
+Enjoy the aesthetics! 🎌
