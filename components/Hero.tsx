@@ -27,7 +27,7 @@ const Hero: React.FC = () => {
         <div className="h-1 w-24 mx-auto bg-gradient-to-r from-pink-500 to-cyan-500 mb-8"></div>
 
         <p className="text-lg md:text-2xl font-medium text-gray-200 tracking-wide mb-8 max-w-2xl mx-auto">
-          Step Into the <span className="text-cyan-400">Spotlight,</span>, <span className="text-pink-500">Stunning Waifu.</span> & <span className="text-purple-400">AMVs</span>.
+          Step Into the <span className="text-cyan-400">Spotlight</span>, <span className="text-pink-500">Stunning Waifu.</span> & <span className="text-purple-400">AMVs</span>.
         </p>
         
         <p className="max-w-xl mx-auto text-sm md:text-base text-gray-400 leading-relaxed font-light">
