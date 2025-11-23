@@ -107,9 +107,9 @@ const GOOGLE_DRIVE_PHOTOS: { id: string; description: string }[] = [
 
 const GOOGLE_DRIVE_VIDEOS: { videoId: string; thumbnailId: string, description: string }[] = [
   {
-    videoId: '1FtUMM6NDQatclxoABpS2mCkvDCWif6CR',
-    thumbnailId: '1kV5XMG9SFnXCAuX-Rqm8p2cu0xC1kDOl',
-    description: 'Animation Showreel 2025'
+    videoId: '1teEeldUk5k03VhhKVGAUag2vm2d7pvsa',
+    thumbnailId: '1G4sTXINHsOBwYDtcZle79qLo0OUsWDnj',
+    description: 'Underground Idol'
   },
   {
     videoId: '17gOAdMDLNbyDNV_O4dnjtIcZUlUEhEB3',
@@ -122,13 +122,13 @@ const GOOGLE_DRIVE_VIDEOS: { videoId: string; thumbnailId: string, description: 
 // Use this list for videos from other sources (Direct MP4 links, YouTube Embeds, etc.)
 // NOTE: For YouTube, ensure you use the "embed" URL format (e.g., https://www.youtube.com/embed/VIDEO_ID)
 const EXTERNAL_VIDEOS: { id: string; thumbnailUrl: string; videoUrl: string; description: string }[] = [
-  // {
-  //   id: 'ext-1', 
-  //   thumbnailUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477', 
-  //   videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4', // Direct MP4 example
-  //   description: 'External Anime Clip Example'
-  // },
-];
+//   {
+//     id: 'ext-1', 
+//     thumbnailUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477', 
+//     videoUrl: '', // Direct MP4 example
+//    description: 'External Anime Clip Example'
+//  },
+//];
 
 
 // --- APP LOGIC (No need to edit below this line) ---
