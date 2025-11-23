@@ -15,11 +15,11 @@ const getDriveId = (input: string): string => {
   // Match /d/ID pattern (standard drive links)
   const matchSlash = input.match(/\/d\/([a-zA-Z0-9_-]+)/);
   if (matchSlash && matchSlash[1]) return matchSlash[1];
-  
+
   // Match id=ID pattern (some export links)
   const matchId = input.match(/id=([a-zA-Z0-9_-]+)/);
   if (matchId && matchId[1]) return matchId[1];
-  
+
   // If no pattern matches, assume it's already the ID
   return input;
 };
@@ -119,18 +119,17 @@ const GOOGLE_DRIVE_PHOTOS: { id: string; description: string }[] = [
   },
 ];
 
-
 const GOOGLE_DRIVE_VIDEOS: { videoId: string; thumbnailId: string, description: string }[] = [
   {
     videoId: '1teEeldUk5k03VhhKVGAUag2vm2d7pvsa',
     thumbnailId: '1G4sTXINHsOBwYDtcZle79qLo0OUsWDnj',
-    description: 'Underground Idol'
+    description: '1' // Updated to sequence number
   },
-  {
+  { // Corrected syntax: added missing '{'
     videoId: '194iRont8lJn2s7uwb-aC74mb0OZm8l9d',
     thumbnailId: '1_rzf1mCHifK_fR0cZYwPUpv31JKAsxZa',
-    description: 'Hypno'
-
+    description: '2' // Updated to sequence number
+  }
 ];
 
 // --- NEW: EXTERNAL VIDEO SOURCES ---
@@ -138,8 +137,8 @@ const GOOGLE_DRIVE_VIDEOS: { videoId: string; thumbnailId: string, description: 
 // NOTE: For YouTube, ensure you use the "embed" URL format (e.g., https://www.youtube.com/embed/VIDEO_ID)
 const EXTERNAL_VIDEOS: { id: string; thumbnailUrl: string; videoUrl: string; description: string }[] = [
 //   {
-//     id: 'ext-1', 
-//     thumbnailUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477', 
+//     id: 'ext-1',
+//     thumbnailUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477',
 //     videoUrl: '', // Direct MP4 example
 //    description: 'External Anime Clip Example'
 //  },
