@@ -4,10 +4,25 @@ import { MediaItem, MediaType } from './types';
 // 1. Make sure your photos/videos in Google Drive are public ("Anyone with the link").
 // 2. Get the shareable link. It will look like:
 //    https://drive.google.com/file/d/THIS_IS_THE_ID/view?usp=sharing
-// 3. Copy the ID part and add it to the appropriate list below.
+// 3. You can copy the FULL LINK or just the ID and add it to the appropriate list below.
 // 4. Add a description for each item.
 // 5. For videos, you MUST provide a thumbnail image ID. Just take a screenshot of the video,
-//    upload it to Drive, get its ID, and add it below. /
+//    upload it to Drive, get its ID, and add it below.
+
+// Helper to extract Google Drive ID from various URL formats
+const getDriveId = (input: string): string => {
+  if (!input) return '';
+  // Match /d/ID pattern (standard drive links)
+  const matchSlash = input.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (matchSlash && matchSlash[1]) return matchSlash[1];
+  
+  // Match id=ID pattern (some export links)
+  const matchId = input.match(/id=([a-zA-Z0-9_-]+)/);
+  if (matchId && matchId[1]) return matchId[1];
+  
+  // If no pattern matches, assume it's already the ID
+  return input;
+};
 
 const GOOGLE_DRIVE_PHOTOS: { id: string; description: string }[] = [
   {
@@ -128,27 +143,34 @@ const EXTERNAL_VIDEOS: { id: string; thumbnailUrl: string; videoUrl: string; des
 //     videoUrl: '', // Direct MP4 example
 //    description: 'External Anime Clip Example'
 //  },
-//];
+];
 
 
 // --- APP LOGIC (No need to edit below this line) ---
 
-export const photoMedia: MediaItem[] = GOOGLE_DRIVE_PHOTOS.map(photo => ({
-  id: photo.id,
-  type: MediaType.Photo,
-  src: `https://lh3.googleusercontent.com/d/${photo.id}`,
-  description: photo.description,
-}));
+export const photoMedia: MediaItem[] = GOOGLE_DRIVE_PHOTOS.map(photo => {
+  const cleanId = getDriveId(photo.id);
+  return {
+    id: cleanId,
+    type: MediaType.Photo,
+    src: `https://lh3.googleusercontent.com/d/${cleanId}`,
+    description: photo.description,
+  };
+});
 
 export const videoMedia: MediaItem[] = [
   // 1. Google Drive Videos
-  ...GOOGLE_DRIVE_VIDEOS.map(video => ({
-    id: video.videoId,
-    type: MediaType.Video,
-    src: `https://lh3.googleusercontent.com/d/${video.thumbnailId}`,
-    videoSrc: `https://drive.google.com/file/d/${video.videoId}/preview`,
-    description: video.description,
-  })),
+  ...GOOGLE_DRIVE_VIDEOS.map(video => {
+    const cleanVideoId = getDriveId(video.videoId);
+    const cleanThumbId = getDriveId(video.thumbnailId);
+    return {
+      id: cleanVideoId,
+      type: MediaType.Video,
+      src: `https://lh3.googleusercontent.com/d/${cleanThumbId}`,
+      videoSrc: `https://drive.google.com/file/d/${cleanVideoId}/preview`,
+      description: video.description,
+    };
+  }),
   // 2. External Videos
   ...EXTERNAL_VIDEOS.map(video => ({
     id: video.id,
