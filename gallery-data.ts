@@ -127,10 +127,10 @@ const GOOGLE_DRIVE_VIDEOS: { videoId: string; thumbnailId: string, description: 
     description: 'Underground Idol'
   },
   {
-    videoId: '17gOAdMDLNbyDNV_O4dnjtIcZUlUEhEB3',
-    thumbnailId: '1ICYSgKhI6VGphsxX7-aArxYnelVC22BN',
-    description: 'Speedpaint Process - 10x Speed'
-  },
+    videoId: '194iRont8lJn2s7uwb-aC74mb0OZm8l9d',
+    thumbnailId: '1_rzf1mCHifK_fR0cZYwPUpv31JKAsxZa',
+    description: 'Hypno'
+
 ];
 
 // --- NEW: EXTERNAL VIDEO SOURCES ---
