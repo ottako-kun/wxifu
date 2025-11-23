@@ -117,6 +117,10 @@ const GOOGLE_DRIVE_PHOTOS: { id: string; description: string }[] = [
     id: '1jCWs73KSou7zKakpNlC0cjvCZ7mVv-r8',
     description: '23'
   },
+    {
+    id: '1cbfgNMkbwEuhM_3QXgax833yIrF6v36e',
+    description: '24'
+  },
 ];
 
 const GOOGLE_DRIVE_VIDEOS: { videoId: string; thumbnailId: string, description: string }[] = [

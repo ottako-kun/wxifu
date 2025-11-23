@@ -13,7 +13,7 @@ const Header: React.FC = () => {
             <h1 className="text-2xl font-black text-white tracking-wider uppercase select-none leading-none" style={{ fontFamily: '"Orbitron", sans-serif', textShadow: '0 0 10px rgba(236, 72, 153, 0.5)' }}>
               OTTAKO<span className="text-cyan-400">.</span>KUN
             </h1>
-            <span className="text-[0.6rem] text-gray-400 tracking-[0.2em] uppercase">Premium Art Gallery</span>
+            <span className="text-[0.6rem] text-gray-400 tracking-[0.2em] uppercase">Waifu Art Gallery</span>
           </div>
         </div>
         <nav className="hidden md:flex items-center space-x-6">
