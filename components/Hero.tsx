@@ -31,7 +31,7 @@ const Hero: React.FC = () => {
         </p>
 
         <p className="max-w-xl mx-auto text-sm md:text-base text-gray-400 leading-relaxed font-light">
-         Browse a gallery of captivating visuals and sensual edits. Feel the pull of the spotlight… it’s ready for you to become our next featured waifu.
+         Browse a gallery of captivating visuals and sensual edits. Feel the pull of the spotlight… it’s ready for you to become our next featured waifu. You can submit your entries in our socials and community below. Via X (Twitter), Reddit or Telegram.
         </p>
       </div>
     </section>
