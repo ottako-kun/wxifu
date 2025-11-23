@@ -118,6 +118,18 @@ const GOOGLE_DRIVE_VIDEOS: { videoId: string; thumbnailId: string, description: 
   },
 ];
 
+// --- NEW: EXTERNAL VIDEO SOURCES ---
+// Use this list for videos from other sources (Direct MP4 links, YouTube Embeds, etc.)
+// NOTE: For YouTube, ensure you use the "embed" URL format (e.g., https://www.youtube.com/embed/VIDEO_ID)
+const EXTERNAL_VIDEOS: { id: string; thumbnailUrl: string; videoUrl: string; description: string }[] = [
+  // {
+  //   id: 'ext-1', 
+  //   thumbnailUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477', 
+  //   videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4', // Direct MP4 example
+  //   description: 'External Anime Clip Example'
+  // },
+];
+
 
 // --- APP LOGIC (No need to edit below this line) ---
 
@@ -128,10 +140,21 @@ export const photoMedia: MediaItem[] = GOOGLE_DRIVE_PHOTOS.map(photo => ({
   description: photo.description,
 }));
 
-export const videoMedia: MediaItem[] = GOOGLE_DRIVE_VIDEOS.map(video => ({
-  id: video.videoId,
-  type: MediaType.Video,
-  src: `https://lh3.googleusercontent.com/d/${video.thumbnailId}`,
-  videoSrc: `https://drive.google.com/file/d/${video.videoId}/preview`,
-  description: video.description,
-}));
+export const videoMedia: MediaItem[] = [
+  // 1. Google Drive Videos
+  ...GOOGLE_DRIVE_VIDEOS.map(video => ({
+    id: video.videoId,
+    type: MediaType.Video,
+    src: `https://lh3.googleusercontent.com/d/${video.thumbnailId}`,
+    videoSrc: `https://drive.google.com/file/d/${video.videoId}/preview`,
+    description: video.description,
+  })),
+  // 2. External Videos
+  ...EXTERNAL_VIDEOS.map(video => ({
+    id: video.id,
+    type: MediaType.Video,
+    src: video.thumbnailUrl,
+    videoSrc: video.videoUrl,
+    description: video.description,
+  }))
+];

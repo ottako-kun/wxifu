@@ -44,6 +44,12 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     setShareAnchorEl(null);
   };
 
+  // Check if the video URL is a direct file (MP4, WEBM, etc.) or an embed (YouTube, Drive, etc.)
+  const isDirectVideo = (url?: string) => {
+    if (!url) return false;
+    return /\.(mp4|webm|ogg|mov)($|\?)/i.test(url);
+  };
+
   // Reset zoom state when navigating between media items
   useEffect(() => {
     setIsZoomed(false);
@@ -141,13 +147,23 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                 />
               </div>
             ) : (
-              <div className="w-full h-full relative">
-                <iframe 
-                  src={item.videoSrc}
-                  allow="autoplay"
-                  allowFullScreen
-                  className="absolute inset-0 w-full h-full border-0"
-                />
+              <div className="w-full h-full relative flex items-center justify-center bg-black">
+                {isDirectVideo(item.videoSrc) ? (
+                  <video 
+                    src={item.videoSrc}
+                    controls
+                    autoPlay
+                    playsInline
+                    className="max-w-full max-h-full outline-none"
+                  />
+                ) : (
+                  <iframe 
+                    src={item.videoSrc}
+                    allow="autoplay; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full border-0"
+                  />
+                )}
               </div>
             )}
           </div>
