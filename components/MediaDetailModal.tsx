@@ -176,11 +176,11 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       aria-labelledby="media-title"
     >
       <div 
-        className={`bg-gray-900/90 border border-gray-800 rounded-none md:rounded-3xl shadow-2xl w-full max-w-[95vw] h-full md:h-[90vh] flex flex-col md:flex-row overflow-hidden transition-all duration-300 ease-in-out ${isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        className={`bg-gray-900/90 border border-gray-800 rounded-none md:rounded-3xl shadow-2xl w-full max-w-[95vw] h-[100dvh] md:h-[90vh] flex flex-col md:flex-row overflow-hidden transition-all duration-300 ease-in-out ${isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Media Container */}
-        <div className="relative w-full md:w-[70%] lg:w-[75%] h-[50%] md:h-full flex items-center justify-center bg-black/40 overflow-hidden">
+        {/* Media Container - Takes 60% height on mobile, 75% width on desktop */}
+        <div className="relative w-full md:w-[70%] lg:w-[75%] h-[60%] md:h-full flex items-center justify-center bg-black/40 overflow-hidden">
             <MediaViewer 
                 item={item}
                 isUnlocked={isUnlocked}
@@ -198,7 +198,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
            </div>
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar - Takes 40% height on mobile, 30% width on desktop */}
         <MediaSidebar 
             item={item}
             session={session}
@@ -232,10 +232,10 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
         <ChevronRightIcon className="w-8 h-8 group-hover:translate-x-1 transition-transform"/>
       </button>
       
-      {/* Close Button */}
+      {/* Close Button - Moved slightly for mobile touch safety */}
       <button 
         onClick={handleClose} 
-        className="absolute top-4 right-4 z-[60] text-white/70 hover:text-white bg-black/50 hover:bg-red-500/80 rounded-full p-2.5 transition-all backdrop-blur-md shadow-lg"
+        className="absolute top-3 right-3 md:top-4 md:right-4 z-[60] text-white/70 hover:text-white bg-black/50 hover:bg-red-500/80 rounded-full p-2.5 transition-all backdrop-blur-md shadow-lg"
         aria-label="Close"
       >
           <CloseIcon className="w-6 h-6"/>

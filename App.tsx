@@ -123,6 +123,8 @@ const AppContent: React.FC = () => {
 
   // Check Daily Reward on Session Load
   useEffect(() => {
+      // DAILY REWARD DISABLED FOR NOW
+      /*
       if (session && isAgeVerified) {
           // Small delay to let app load
           const timer = setTimeout(() => {
@@ -132,6 +134,7 @@ const AppContent: React.FC = () => {
           }, 1500);
           return () => clearTimeout(timer);
       }
+      */
   }, [session, isAgeVerified, checkIfRewardAvailable]);
 
   const onUploadSubmitWrapper = async (data: any) => {
