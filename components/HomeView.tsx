@@ -11,6 +11,7 @@ import { signInWithGoogle } from '../lib/supabaseClient';
 import GalleryControls from './GalleryControls';
 import PullToRefresh from './PullToRefresh';
 import GalleryTabs from './GalleryTabs';
+import { useScrollDirection } from '../hooks/useScrollDirection';
 
 interface HomeViewProps {
   photoMedia: MediaItem[];
@@ -38,6 +39,8 @@ const HomeView: React.FC<HomeViewProps> = ({
   searchInputRef
 }) => {
   
+  const scrollDirection = useScrollDirection();
+
   // Determine which dataset to use
   let itemsToDisplay: MediaItem[] = [];
   let galleryName = '';
@@ -107,10 +110,16 @@ const HomeView: React.FC<HomeViewProps> = ({
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <Hero />
-      <main className="container mx-auto px-4 py-8 min-h-screen">
+      <main className="container mx-auto px-4 py-4 min-h-screen">
         
-        {/* Sticky Header for Controls */}
-        <div className="sticky top-[64px] z-40 py-4 -mx-4 px-4 bg-gradient-to-b from-[#050505] via-[#050505]/95 to-transparent backdrop-blur-sm transition-all duration-300">
+        {/* Sticky Header for Controls 
+            - When scrolling down (header hidden), stick to top: 0
+            - When scrolling up (header shown), stick to top: 64px (approx header height)
+        */}
+        <div 
+            className={`sticky z-40 py-2 -mx-4 px-4 bg-gradient-to-b from-[#050505] via-[#050505]/95 to-transparent backdrop-blur-sm transition-[top] duration-300 ease-in-out`}
+            style={{ top: scrollDirection === 'down' ? '0px' : '56px' }}
+        >
              <GalleryTabs activeTab={activeTab} setActiveTab={setActiveTab} />
              
              {/* Show controls only if signed in (for following) or normal tabs */}
@@ -157,7 +166,7 @@ const HomeView: React.FC<HomeViewProps> = ({
                 {/* Grid Content */}
                 {itemsToDisplay.length > 0 || isCurrentLoading ? (
                   sortedItems.length > 0 || isCurrentLoading ? (
-                    <div className="animate-fade-in space-y-12">
+                    <div className="animate-fade-in space-y-12 mt-4">
                     <MediaGrid
                         items={visibleItems}
                         onUserClick={onUserClick}

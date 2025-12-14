@@ -12,6 +12,7 @@ import { useWallet } from '../context/WalletContext';
 import { useUI } from '../context/UIContext';
 import { useToast } from '../context/ToastContext';
 import Avatar from './Avatar';
+import { useScrollDirection } from '../hooks/useScrollDirection';
 
 interface HeaderProps {
   session: Session | null;
@@ -23,6 +24,7 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
   const { balance, activeFrame } = useWallet();
   const { openShop } = useUI();
   const toast = useToast();
+  const scrollDirection = useScrollDirection();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -53,19 +55,24 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
       if (onNavigate) onNavigate(view);
   }
 
+  // Hide header when scrolling down, show when scrolling up
+  const headerClass = `fixed top-0 left-0 right-0 bg-black/80 backdrop-blur-md z-[60] border-b border-pink-500/20 shadow-lg shadow-pink-900/5 transition-transform duration-300 ${
+    scrollDirection === 'down' ? '-translate-y-full' : 'translate-y-0'
+  }`;
+
   return (
-    <header className="fixed top-0 left-0 right-0 bg-black/80 backdrop-blur-md z-[60] border-b border-pink-500/20 shadow-lg shadow-pink-900/5">
+    <header className={headerClass}>
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo and Title */}
         <div className="flex items-center gap-6">
             <a href="/" onClick={handleLogoClick} className="flex items-center gap-x-3 group cursor-pointer">
-            <div className="relative w-10 h-10 flex items-center justify-center bg-gray-900 rounded border border-pink-500 overflow-hidden group-hover:shadow-[0_0_15px_rgba(236,72,153,0.5)] transition-shadow">
+            <div className="relative w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-gray-900 rounded border border-pink-500 overflow-hidden group-hover:shadow-[0_0_15px_rgba(236,72,153,0.5)] transition-shadow">
                 <div className="absolute inset-0 bg-pink-500 opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                <span className="text-pink-500 font-black text-xl leading-none select-none relative z-10">{APP_CONFIG.name.charAt(0)}</span>
+                <span className="text-pink-500 font-black text-lg md:text-xl leading-none select-none relative z-10">{APP_CONFIG.name.charAt(0)}</span>
             </div>
             <div className="flex flex-col">
                 <h1
-                className="text-2xl font-black text-white tracking-wider uppercase select-none leading-none"
+                className="text-xl md:text-2xl font-black text-white tracking-wider uppercase select-none leading-none"
                 style={{
                     fontFamily: '"Orbitron", sans-serif',
                     textShadow: '0 0 10px rgba(236, 72, 153, 0.5)',
@@ -73,7 +80,7 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
                 >
                 {APP_CONFIG.name}<span className="text-cyan-400">{APP_CONFIG.nameSuffix}</span>
                 </h1>
-                <span className="text-[0.6rem] text-gray-400 tracking-[0.2em] uppercase hidden sm:block">
+                <span className="text-[0.5rem] md:text-[0.6rem] text-gray-400 tracking-[0.2em] uppercase hidden sm:block">
                 {APP_CONFIG.subtitle}
                 </span>
             </div>
@@ -190,7 +197,7 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
               className="flex items-center gap-2 px-4 py-2 bg-white text-gray-900 hover:bg-gray-100 rounded-lg font-medium text-sm transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] transform hover:-translate-y-0.5"
             >
               <GoogleIcon className="w-4 h-4" />
-              <span>Sign In</span>
+              <span className="hidden sm:inline">Sign In</span>
             </button>
           )}
         </div>
