@@ -9,6 +9,8 @@ import VideoIcon from './icons/VideoIcon';
 import LockIcon from './icons/LockIcon';
 import { Session } from '@supabase/supabase-js';
 import { deleteMediaItem } from '../lib/supabaseClient';
+import { useConfirm } from '../context/ConfirmationContext';
+import { useToast } from '../context/ToastContext';
 
 interface MediaCardProps {
   item: MediaItem;
@@ -24,6 +26,9 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const { confirm } = useConfirm();
+  const toast = useToast();
 
   const isOwner = session?.user.id === item.user_id;
   // NOTE: Real implementation would check a 'purchased_posts' table. 
@@ -47,15 +52,24 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
 
   const handleQuickDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this post? This cannot be undone.')) return;
+    
+    const isConfirmed = await confirm({
+      title: 'Delete Post',
+      message: 'Are you sure you want to delete this post? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+
+    if (!isConfirmed) return;
     
     setIsDeleting(true);
     const { error } = await deleteMediaItem(item.id);
     setIsDeleting(false);
 
     if (error) {
-        alert('Failed to delete item: ' + error.message);
+        toast.error('Failed to delete item: ' + error.message);
     } else {
+        toast.success('Post deleted successfully');
         if (onDataChange) onDataChange();
     }
   };

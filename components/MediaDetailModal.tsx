@@ -12,6 +12,8 @@ import SharePopover from './SharePopover';
 import { APP_CONFIG } from '../gallery-data';
 import { Session } from '@supabase/supabase-js';
 import CommentSection from './CommentSection';
+import { useConfirm } from '../context/ConfirmationContext';
+import { useToast } from '../context/ToastContext';
 
 interface MediaDetailModalProps {
   items: MediaItem[];
@@ -44,6 +46,10 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   const item = items[currentIndex];
   const isPhoto = item.type === MediaType.Photo;
   const isOwner = session?.user.id === item.user_id;
+  
+  // Hooks
+  const { confirm } = useConfirm();
+  const toast = useToast();
   
   // Premium Logic (Placeholder for future purchase logic)
   const isUnlocked = isOwner || !item.is_premium;
@@ -92,7 +98,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   };
 
   const handleUnlockClick = () => {
-      alert("Payment System Integration Coming Soon!\n\nThis will allow users to purchase 'Otaku Coins' to unlock premium content.");
+      toast.info("Payment System Integration Coming Soon! This will allow users to purchase 'Otaku Coins' to unlock premium content.");
   };
 
   // Check if the video URL is a direct file (MP4, WEBM, etc.) or an embed (YouTube, Drive, etc.)
@@ -139,14 +145,23 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
 
   // Owner Actions
   const handleDelete = async () => {
-      if (!confirm('Are you sure you want to delete this post? This cannot be undone.')) return;
+      const isConfirmed = await confirm({
+          title: 'Delete Post',
+          message: 'Are you sure you want to delete this post? This action cannot be undone.',
+          confirmText: 'Delete',
+          variant: 'danger'
+      });
+
+      if (!isConfirmed) return;
+
       setIsSaving(true);
       const { error } = await deleteMediaItem(item.id);
       setIsSaving(false);
       
       if (error) {
-          alert('Failed to delete item: ' + error.message);
+          toast.error('Failed to delete item: ' + error.message);
       } else {
+          toast.success('Post deleted');
           if (onDataChange) onDataChange();
           handleClose();
       }
@@ -163,13 +178,14 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       setIsSaving(false);
 
       if (error) {
-          alert('Failed to update: ' + error.message);
+          toast.error('Failed to update: ' + error.message);
       } else {
           setIsEditing(false);
           // Manually update local item for immediate feedback if we don't reload whole grid
           item.description = editDesc;
           item.category = editCategory;
           item.tags = tagsArray;
+          toast.success('Post updated');
           if (onDataChange) onDataChange();
       }
   };

@@ -20,6 +20,9 @@ import ToastContainer from './components/ToastContainer';
 import { useNotifications } from './hooks/useNotifications';
 import { useToast } from './context/ToastContext';
 
+// Confirmation System
+import { ConfirmationProvider } from './context/ConfirmationContext';
+
 type ViewState = 'home' | 'profile' | 'inbox';
 
 // Inner component to use hooks that require Context
@@ -289,7 +292,9 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ToastProvider>
-      <AppContent />
+      <ConfirmationProvider>
+        <AppContent />
+      </ConfirmationProvider>
     </ToastProvider>
   );
 };

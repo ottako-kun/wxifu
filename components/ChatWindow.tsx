@@ -7,6 +7,7 @@ import TrashIcon from './icons/TrashIcon';
 import PencilIcon from './icons/PencilIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmationContext';
 
 interface ChatWindowProps {
   currentUser: { id: string };
@@ -25,6 +26,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
+  const { confirm } = useConfirm();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -123,7 +125,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
   };
 
   const handleDelete = async (msgId: string) => {
-      if (!confirm('Delete this message?')) return;
+      const isConfirmed = await confirm({
+          title: 'Delete Message',
+          message: 'Are you sure?',
+          confirmText: 'Delete',
+          variant: 'danger'
+      });
+      if (!isConfirmed) return;
+      
       const { error } = await deleteMessage(msgId);
       if (error) {
           toast.error('Failed to delete message');

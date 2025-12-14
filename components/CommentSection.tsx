@@ -8,6 +8,7 @@ import SendIcon from './icons/SendIcon';
 import CloseIcon from './icons/CloseIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmationContext';
 
 interface CommentSectionProps {
   mediaId: string;
@@ -25,6 +26,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ mediaId, session }) => 
   const [editContent, setEditContent] = useState('');
 
   const toast = useToast();
+  const { confirm } = useConfirm();
 
   // Fetch comments on mount or media change
   useEffect(() => {
@@ -90,7 +92,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({ mediaId, session }) => 
   };
 
   const handleDelete = async (commentId: string) => {
-      if(!confirm("Are you sure you want to delete this comment?")) return;
+      const isConfirmed = await confirm({
+          title: 'Delete Comment',
+          message: 'Are you sure you want to delete this comment?',
+          confirmText: 'Delete',
+          variant: 'danger'
+      });
+
+      if (!isConfirmed) return;
       
       // Optimistic Update
       const oldComments = [...comments];
