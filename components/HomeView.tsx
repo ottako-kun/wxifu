@@ -11,6 +11,7 @@ import { signInWithGoogle } from '../lib/supabaseClient';
 import GalleryControls from './GalleryControls';
 import { fetchMangaList } from '../lib/mangadex';
 import PullToRefresh from './PullToRefresh';
+import GalleryTabs from './GalleryTabs';
 
 interface HomeViewProps {
   photoMedia: MediaItem[];
@@ -131,35 +132,9 @@ const HomeView: React.FC<HomeViewProps> = ({
     <PullToRefresh onRefresh={handleRefresh}>
       <Hero />
       <main className="container mx-auto px-4 py-8">
-        {/* Tabs */}
-        <div className="flex justify-center items-center mb-12">
-          <div className="flex bg-gray-900/80 backdrop-blur-md p-1.5 rounded-full border border-gray-800 shadow-xl overflow-x-auto no-scrollbar max-w-full">
-            <button
-              onClick={() => setActiveTab('photos')}
-              className={`px-6 py-2.5 rounded-full text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${activeTab === 'photos' ? 'bg-gradient-to-r from-pink-600 to-pink-500 text-white shadow-lg shadow-pink-500/25' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-            >
-              Featured Waifu
-            </button>
-            <button
-              onClick={() => setActiveTab('videos')}
-              className={`px-6 py-2.5 rounded-full text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${activeTab === 'videos' ? 'bg-gradient-to-r from-pink-600 to-pink-500 text-white shadow-lg shadow-pink-500/25' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-            >
-              Video Collection
-            </button>
-            <button
-              onClick={() => setActiveTab('manga')}
-              className={`px-6 py-2.5 rounded-full text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${activeTab === 'manga' ? 'bg-gradient-to-r from-pink-600 to-pink-500 text-white shadow-lg shadow-pink-500/25' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-            >
-              Manga & Doujin
-            </button>
-             <button
-              onClick={() => setActiveTab('following')}
-              className={`px-6 py-2.5 rounded-full text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${activeTab === 'following' ? 'bg-gradient-to-r from-pink-600 to-pink-500 text-white shadow-lg shadow-pink-500/25' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-            >
-              Following
-            </button>
-          </div>
-        </div>
+        
+        {/* Extracted Tabs Component */}
+        <GalleryTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Following Tab - Not Signed In State */}
         {activeTab === 'following' && !session ? (
@@ -200,7 +175,6 @@ const HomeView: React.FC<HomeViewProps> = ({
                 />
 
                 {/* Grid Content */}
-                {/* Passed isLoading to MediaGrid for Skeleton rendering */}
                 {itemsToDisplay.length > 0 || isCurrentLoading ? (
                   sortedItems.length > 0 || isCurrentLoading ? (
                     <div className="animate-fade-in space-y-12">

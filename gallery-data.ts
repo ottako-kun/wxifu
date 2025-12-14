@@ -3,32 +3,21 @@ import { MediaItem, MediaType } from './types';
 import { getDriveId, getGoogleDriveImageUrl, getGoogleDriveVideoPreviewUrl } from './lib/googleDrive';
 
 // --- SITE CONFIGURATION ---
-// Manage your site-wide constants, text, and settings here.
-
 export const APP_CONFIG = {
-  // Branding
   name: 'OTAKU',
-  nameSuffix: '-X', // Used for styling (cyan color usually)
+  nameSuffix: '-X',
   subtitle: 'The Premier Adult Social Stage',
-  
-  // Settings
   itemsPerPage: 24,
-  
-  // Hero Section Content
   hero: {
     badge: 'Liberated Creative Sanctuary',
-    description: 'The definitive social playground for adult models, digital artists, and the otaku elite. Share your assets freely in a space designed for uncensored expression. Connect with a community that worships the art of the body.',
+    description: 'The definitive social playground for adult models, digital artists, and the otaku elite. Share your assets freely in a space designed for uncensored expression.',
     tags: ['Uncensored Art', 'Cosplay Models', 'Exclusive Assets']
   },
-  
-  // Footer Content
   footer: {
     brand: 'OTAKU-X',
     tagline: 'Liberating Otaku Culture',
     disclaimer: 'Strictly for adults (18+). All models appearing on this site are 18 years or older.'
   },
-
-  // Social Media Links
   social: {
     twitter: 'https://x.com/ottakokun',
     reddit: 'https://www.reddit.com/r/OTTAKOKUN/',
@@ -36,26 +25,22 @@ export const APP_CONFIG = {
   }
 };
 
-// --- CONFIGURATION: PASTE YOUR LINKS HERE ---
-
-// INSTRUCTIONS FOR GOOGLE DRIVE:
-// 1. Upload your image or video to Google Drive.
-// 2. Right-click the file -> Share -> Share.
-// 3. Under "General Access", change "Restricted" to "Anyone with the link".
-// 4. Copy the link and paste it into the 'link' field below.
+// --- YOUR GALLERY DATA ---
+// Instructions:
+// 1. Paste Google Drive links (make sure they are set to "Anyone with the link") or direct image URLs.
+// 2. Set the type to 'PHOTO' or 'VIDEO'.
+// 3. Add tags and descriptions.
 
 const CUSTOM_MEDIA_COLLECTION = [
-  // --- EXAMPLE: GOOGLE DRIVE PHOTO ---
+  // Example: Google Drive Photo
   // {
   //   type: 'PHOTO',
-  //   link: 'https://drive.google.com/file/d/1234567890abcdefg/view?usp=sharing',
-  //   description: 'My Awesome Artwork',
+  //   link: 'https://drive.google.com/file/d/YOUR_FILE_ID/view?usp=sharing', 
+  //   description: 'My Google Drive Artwork',
   //   category: 'Illustration',
-  //   tags: ['oc', 'digital'],
-  //   author: 'MyName'
+  //   tags: ['drive', 'oc']
   // },
 
-  // --- PHOTOS & ANIMATED GIFS ---
   {
     type: 'PHOTO',
     link: 'https://media.giphy.com/media/LpdlqTkgO2Lwwixwv7/giphy.gif',
@@ -82,28 +67,12 @@ const CUSTOM_MEDIA_COLLECTION = [
   },
   {
     type: 'PHOTO',
-    link: 'https://media.giphy.com/media/j2pWZpr5RlpwpGVtG1/giphy.gif',
-    description: 'Pixel Cityscape',
-    category: 'Animation',
-    tags: ['pixelart', 'city'],
-  },
-  {
-    type: 'PHOTO',
     link: 'https://images.unsplash.com/photo-1615751072497-5f5169febe17?q=80&w=1200&auto=format&fit=crop',
     description: 'Cyber Geisha',
     category: 'Cosplay',
     tags: ['cosplay', 'cyber'],
     author: 'CosplayQueen'
   },
-  {
-    type: 'PHOTO',
-    link: 'https://media.giphy.com/media/12NUbkX6p4xOO4/giphy.gif',
-    description: 'Space Cowboy',
-    category: 'Classic',
-    tags: ['anime', 'space']
-  },
-  
-  // --- VIDEOS ---
   {
     type: 'VIDEO',
     link: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
@@ -115,24 +84,19 @@ const CUSTOM_MEDIA_COLLECTION = [
   }
 ];
 
-// --- HELPERS ---
+// --- INTERNAL HELPERS (Do not edit below unless you are a dev) ---
 
-// Default Thumbnail ID (Used if no thumbnail is provided for videos)
 export const DEFAULT_VIDEO_THUMBNAIL_ID = '1sILwvb70QBKknRuhk0fJLwnO7kmdEywQ';
 export const DEFAULT_THUMB_URL = `https://lh3.googleusercontent.com/d/${DEFAULT_VIDEO_THUMBNAIL_ID}`;
 
-/**
- * Helper to process a raw DB item or static item into a MediaItem
- * This handles the Google Drive link conversion logic centrally.
- */
 export const processMediaItem = (item: any, index: number): MediaItem => {
   const isVideo = item.type === MediaType.Video || item.type === 'VIDEO';
   const type = isVideo ? MediaType.Video : MediaType.Photo;
   
-  // Use existing ID or generate one. Static IDs use a prefix to ensure uniqueness.
+  // Create a stable ID based on index if not provided
   const id = item.id || (isVideo ? `static-vid-${index}` : `static-photo-${index}`);
   
-  // Detect if the input is a full link or just an ID
+  // Input Source Handling
   const sourceString = item.link || item.src || item.url || '';
   const driveId = getDriveId(sourceString);
   
@@ -140,16 +104,14 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
   let finalVideoSrc = item.videoSrc;
 
   if (type === MediaType.Photo) {
-     // If it is a Drive link, convert to LH3 proxy for display
+     // Auto-convert Drive Links to High-Res Image Proxy
      if (driveId) {
         finalSrc = getGoogleDriveImageUrl(driveId);
      }
   } else {
-     // Video Logic
-     // Thumbnail: Use provided, or default
+     // Video Handling
      finalSrc = item.thumbnail || DEFAULT_THUMB_URL;
      
-     // Video Source: If Drive link, convert to preview, else use direct
      if (driveId) {
         finalVideoSrc = getGoogleDriveVideoPreviewUrl(driveId);
      } else {
@@ -157,18 +119,14 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
      }
   }
 
-  // Determine Author
-  // Priority: 1. Joined Profile Data (if available), 2. Denormalized Column, 3. 'Unknown' or Default
-  // 'item.profiles' comes from the join in Supabase
+  // Author Logic
   const profileName = item.profiles?.name;
   const profileAvatar = item.profiles?.avatar;
-
   const authorName = profileName || item.author || (item.user_id ? 'Unknown' : 'Ottako Admin');
 
-  // Generate a consistent user_id for static items with an author so they are clickable
+  // Pseudo User ID for static items to allow clicking profile
   let userId = item.user_id;
   if (!userId) {
-      // Create a slug-like ID from the author name to act as a pseudo-user-id
       userId = `static-user-${authorName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
   }
 
@@ -188,9 +146,7 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
   };
 };
 
-// --- DATA PROCESSING ---
-
-// Generate the fallback data from the configuration array above
+// Pre-process static items for the hooks to use
 const processedCustomItems = CUSTOM_MEDIA_COLLECTION.map((item, index) => 
   processMediaItem(item, index)
 );
