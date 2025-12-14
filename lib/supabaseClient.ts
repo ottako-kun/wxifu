@@ -179,6 +179,25 @@ export const updateComment = async (commentId: string, content: string) => {
 
 // --- SOCIAL & MESSAGING FEATURES ---
 
+export const getProfileStats = async (userId: string) => {
+    // Get Followers count
+    const { count: followersCount, error: err1 } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', userId);
+
+    // Get Following count
+    const { count: followingCount, error: err2 } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', userId);
+
+    return {
+        followers: followersCount || 0,
+        following: followingCount || 0
+    };
+};
+
 export const getFollowStatus = async (currentUserId: string, targetUserId: string) => {
     // Check if I follow them
     const { data: iFollow } = await supabase

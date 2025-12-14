@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { MediaItem } from '../types';
 import MediaGrid from './MediaGrid';
-import { updateUserProfile, getFollowStatus, followUser, unfollowUser } from '../lib/supabaseClient';
+import { updateUserProfile, getFollowStatus, followUser, unfollowUser, getProfileStats, supabase } from '../lib/supabaseClient';
 import { getDriveId } from '../gallery-data';
 import CloseIcon from './icons/CloseIcon';
 import UploadIcon from './icons/UploadIcon';
@@ -39,6 +39,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   const [isFollowing, setIsFollowing] = useState(false);
   const [isMutual, setIsMutual] = useState(false);
   const [loadingSocial, setLoadingSocial] = useState(false);
+  
+  // Stats State
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
 
   // Sync state if profileData changes (e.g. switching viewed profile)
   useEffect(() => {
@@ -51,7 +55,53 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
       setIsMutual(false);
   }, [profileData]);
 
-  // Check Follow Status
+  // Fetch Stats (Followers/Following) and Subscribe to Changes
+  useEffect(() => {
+     const fetchStats = async () => {
+         const stats = await getProfileStats(profileData.id);
+         setFollowersCount(stats.followers);
+         setFollowingCount(stats.following);
+     };
+
+     fetchStats();
+
+     // Realtime Subscription to update counts when someone follows/unfollows
+     const channel = supabase
+        .channel(`public:follows:${profileData.id}`)
+        .on(
+            'postgres_changes', 
+            { 
+                event: '*', 
+                schema: 'public', 
+                table: 'follows',
+                filter: `following_id=eq.${profileData.id}` 
+            }, 
+            () => {
+                // If someone follows/unfollows THIS user, refresh followers count
+                fetchStats();
+            }
+        )
+        .on(
+            'postgres_changes', 
+            { 
+                event: '*', 
+                schema: 'public', 
+                table: 'follows',
+                filter: `follower_id=eq.${profileData.id}` 
+            }, 
+            () => {
+                // If THIS user follows/unfollows someone, refresh following count
+                fetchStats();
+            }
+        )
+        .subscribe();
+
+     return () => {
+         supabase.removeChannel(channel);
+     };
+  }, [profileData.id]);
+
+  // Check Follow Status (Am I following them?)
   useEffect(() => {
     if (session && !isOwner) {
         const checkStatus = async () => {
@@ -73,12 +123,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
               await unfollowUser(session.user.id, profileData.id);
               setIsFollowing(false);
               setIsMutual(false); // Can't be mutual if I don't follow
+              setFollowersCount(prev => Math.max(0, prev - 1)); // Optimistic update
           } else {
               await followUser(session.user.id, profileData.id);
               setIsFollowing(true);
               // Check mutual status again immediately to update UI if they were already following me
               const { isMutual } = await getFollowStatus(session.user.id, profileData.id);
               setIsMutual(isMutual);
+              setFollowersCount(prev => prev + 1); // Optimistic update
           }
       } catch (err) {
           console.error("Follow action failed", err);
@@ -206,13 +258,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
                 <span className="font-bold text-white text-xl">{postCount}</span> 
                 <span className="text-gray-500 text-xs uppercase tracking-wider">posts</span>
             </div>
-            {/* Placeholders for future social features */}
-            <div className="flex flex-col items-center md:items-start opacity-50">
-                <span className="font-bold text-white text-xl">0</span> 
+            
+            <div className="flex flex-col items-center md:items-start">
+                <span className="font-bold text-white text-xl animate-fade-in">{followersCount}</span> 
                 <span className="text-gray-500 text-xs uppercase tracking-wider">followers</span>
             </div>
-            <div className="flex flex-col items-center md:items-start opacity-50">
-                <span className="font-bold text-white text-xl">0</span> 
+            
+            <div className="flex flex-col items-center md:items-start">
+                <span className="font-bold text-white text-xl animate-fade-in">{followingCount}</span> 
                 <span className="text-gray-500 text-xs uppercase tracking-wider">following</span>
             </div>
           </div>
