@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { MediaItem } from '../types';
@@ -132,6 +133,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
               setIsMutual(isMutual);
               setFollowersCount(prev => prev + 1); // Optimistic update
           }
+          // Refresh global data (like Following tab in Home)
+          if (onDataChange) onDataChange();
       } catch (err) {
           console.error("Follow action failed", err);
       } finally {

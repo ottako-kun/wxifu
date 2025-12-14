@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { MediaItem } from '../types';
 import { Session } from '@supabase/supabase-js';
-import { updateMediaItem, deleteMediaItem } from '../lib/supabaseClient';
+import { updateMediaItem, deleteMediaItem, getFollowStatus, followUser, unfollowUser } from '../lib/supabaseClient';
 import { APP_CONFIG } from '../gallery-data';
 import PencilIcon from './icons/PencilIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -44,6 +44,10 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
   const [editTags, setEditTags] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  // Follow State
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+
   const toast = useToast();
   const { confirm } = useConfirm();
 
@@ -53,6 +57,40 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
     setEditTags(item.tags ? item.tags.join(', ') : '');
     setIsEditing(false);
   }, [item]);
+
+  // Check Follow Status
+  useEffect(() => {
+    if (session && !isOwner && item.user_id && !item.user_id.startsWith('static')) {
+        const checkStatus = async () => {
+            const { isFollowing } = await getFollowStatus(session.user.id, item.user_id!);
+            setIsFollowing(isFollowing);
+        };
+        checkStatus();
+    }
+  }, [session, isOwner, item.user_id]);
+
+  const handleFollowToggle = async () => {
+      if (!session || !item.user_id) return;
+      
+      setIsFollowLoading(true);
+      try {
+          if (isFollowing) {
+              await unfollowUser(session.user.id, item.user_id);
+              setIsFollowing(false);
+              toast.success(`Unfollowed ${item.author}`);
+          } else {
+              await followUser(session.user.id, item.user_id);
+              setIsFollowing(true);
+              toast.success(`Following ${item.author}`);
+          }
+          if (onDataChange) onDataChange();
+      } catch (err) {
+          console.error(err);
+          toast.error("Failed to update follow status");
+      } finally {
+          setIsFollowLoading(false);
+      }
+  };
 
   const handleUpdate = async () => {
     setIsSaving(true);
@@ -108,7 +146,7 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
         <div className="p-6 md:p-8 pb-4">
             <div className="flex items-center gap-x-4 mb-6 border-b border-gray-800 pb-6 justify-between">
             <div className="flex items-center gap-x-4">
-                <div className="cursor-pointer group" onClick={onAuthorClick}>
+                <div className="cursor-pointer group relative" onClick={onAuthorClick}>
                     {item.author_avatar ? (
                         <img src={item.author_avatar} alt={item.author} className="w-12 h-12 rounded-full border border-pink-500 shadow-lg object-cover" />
                     ) : (
@@ -124,7 +162,22 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
                     >
                         {item.author || APP_CONFIG.name}
                     </h2>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em]">{item.author ? 'Artist / Uploader' : 'Gallery Viewer'}</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em]">{item.author ? 'Artist' : 'Viewer'}</p>
+                        {!isOwner && session && item.user_id && !item.user_id.startsWith('static') && (
+                            <button 
+                                onClick={handleFollowToggle}
+                                disabled={isFollowLoading}
+                                className={`ml-2 text-[10px] font-bold px-2 py-0.5 rounded border transition-colors uppercase ${
+                                    isFollowing 
+                                    ? 'border-gray-600 text-gray-400 hover:text-white' 
+                                    : 'border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-white'
+                                }`}
+                            >
+                                {isFollowing ? 'Following' : '+ Follow'}
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
             
