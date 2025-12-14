@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MediaItem, MediaType } from '../types';
 import CloseIcon from './icons/CloseIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import ChevronRightIcon from './icons/ChevronRightIcon';
 import ShareIcon from './icons/ShareIcon';
 import SharePopover from './SharePopover';
-
 
 interface MediaDetailModalProps {
   items: MediaItem[];
@@ -20,6 +19,11 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   const [zoomStyle, setZoomStyle] = useState<React.CSSProperties>({});
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   
+  // Touch handling state
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50;
+
   const item = items[currentIndex];
   const isPhoto = item.type === MediaType.Photo;
 
@@ -37,6 +41,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   }, [onClose]);
   
   const handleShareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation(); // Prevent modal close
     setShareAnchorEl(e.currentTarget);
   };
 
@@ -60,6 +65,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   }, [currentIndex]);
 
   const handleZoomClick = (e: React.MouseEvent<HTMLImageElement>) => {
+    e.stopPropagation();
     if (isZoomed) {
       setIsZoomed(false);
       setZoomStyle({
@@ -83,6 +89,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     }
   };
 
+  // Keyboard Navigation
   useEffect(() => {
     setIsVisible(true);
 
@@ -102,7 +109,31 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     };
   }, [goToNext, goToPrevious, handleClose]);
 
-  // Preload next and previous images for a smoother experience
+  // Touch Navigation Handlers
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && currentIndex < items.length - 1) {
+        goToNext();
+    } else if (isRightSwipe && currentIndex > 0) {
+        goToPrevious();
+    }
+  };
+
+  // Preload next and previous images
   useEffect(() => {
     if (currentIndex < items.length - 1) {
       const nextItem = items[currentIndex + 1];
@@ -122,32 +153,37 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
 
   return (
     <div 
-      className={`fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-0 md:p-4 transition-opacity duration-300 ease-in-out ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      className={`fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center z-50 p-0 md:p-4 transition-opacity duration-300 ease-in-out ${isVisible ? 'opacity-100' : 'opacity-0'}`}
       onClick={handleClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="media-title"
     >
       <div 
-        className={`bg-gray-900 border border-gray-800 rounded-none md:rounded-xl shadow-2xl w-full max-w-[90vw] h-full md:h-[90vh] flex flex-col md:flex-row overflow-hidden transition-all duration-300 ease-in-out ${isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        className={`bg-gray-900 border border-gray-800 rounded-none md:rounded-2xl shadow-2xl w-full max-w-[95vw] h-full md:h-[90vh] flex flex-col md:flex-row overflow-hidden transition-all duration-300 ease-in-out ${isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Media Container */}
-        <div className="relative w-full md:w-[75%] h-[60%] md:h-full flex items-center justify-center bg-black">
-          <div key={item.id} className="w-full h-full animate-fade-in flex items-center justify-center">
+        {/* Media Container - Handles Swipes */}
+        <div 
+            className="relative w-full md:w-[75%] h-[60%] md:h-full flex items-center justify-center bg-black/50"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+        >
+          <div key={item.id} className="w-full h-full animate-fade-in flex items-center justify-center p-2 md:p-8">
             {isPhoto ? (
-              <div className="w-full h-full overflow-hidden flex items-center justify-center">
+              <div className="w-full h-full overflow-hidden flex items-center justify-center relative">
                 <img 
                   src={item.src} 
                   alt={item.description || 'Full screen view'} 
-                  className={`max-h-full max-w-full object-contain select-none ${isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
+                  className={`max-h-full max-w-full object-contain select-none transition-transform duration-200 ${isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
                   onClick={handleZoomClick}
                   style={zoomStyle}
                   draggable={false}
                 />
               </div>
             ) : (
-              <div className="w-full h-full relative flex items-center justify-center bg-black">
+              <div className="w-full h-full relative flex items-center justify-center bg-black rounded-lg overflow-hidden shadow-2xl border border-gray-800">
                 {isDirectVideo(item.videoSrc) ? (
                   <video 
                     src={item.videoSrc}
@@ -167,62 +203,90 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
               </div>
             )}
           </div>
+          
+           {/* Mobile Swipe Indicators (Hint) */}
+           <div className="absolute inset-x-4 top-1/2 flex justify-between pointer-events-none md:hidden opacity-0">
+               <ChevronLeftIcon className="w-8 h-8 text-white/20" />
+               <ChevronRightIcon className="w-8 h-8 text-white/20" />
+           </div>
         </div>
 
         {/* Sidebar */}
-        <div className="w-full md:w-[25%] h-[40%] md:h-full flex flex-col bg-gray-900 border-l border-gray-800">
+        <div className="w-full md:w-[25%] h-[40%] md:h-full flex flex-col bg-gray-900 border-l border-gray-800 relative z-10">
           <div className="p-6 flex-grow overflow-y-auto no-scrollbar">
             <div className="flex items-center gap-x-3 mb-6 border-b border-gray-800 pb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-pink-600 to-purple-600 rounded flex items-center justify-center text-white font-bold text-sm">
+              <div className="w-10 h-10 bg-gradient-to-br from-pink-600 to-purple-600 rounded-lg shadow-lg flex items-center justify-center text-white font-bold text-sm">
                 OK
               </div>
-              <h2 id="media-title" className="text-xl font-bold text-white tracking-widest uppercase" style={{ fontFamily: '"Orbitron", sans-serif' }}>
-                  OTTAKO-KUN
-              </h2>
+              <div>
+                  <h2 id="media-title" className="text-xl font-bold text-white tracking-widest uppercase leading-none mb-1">
+                      OTTAKO-KUN
+                  </h2>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest">Gallery Viewer</p>
+              </div>
             </div>
             
-            <div className="mb-2">
-               <span className="text-xs font-semibold text-cyan-500 uppercase tracking-wider">Description</span>
+            <div className="mb-3 flex items-center justify-between">
+               <span className="text-xs font-bold text-cyan-500 uppercase tracking-wider">Details</span>
+               {item.category && (
+                 <span className="text-[10px] font-bold px-2 py-0.5 rounded border border-pink-500/30 bg-pink-500/10 text-pink-400 uppercase">
+                   {item.category}
+                 </span>
+               )}
             </div>
-             <div className="prose prose-invert prose-sm prose-p:text-gray-300 prose-p:leading-relaxed">
-               <p>{item.description || 'No description available.'}</p>
+             <div className="prose prose-invert prose-sm prose-p:text-gray-400 prose-p:font-light prose-p:leading-relaxed mb-8">
+               <p>{item.description || 'No description available for this artwork.'}</p>
              </div>
+
+             {item.tags && item.tags.length > 0 && (
+               <div>
+                 <span className="text-[10px] font-semibold text-gray-600 uppercase tracking-wider block mb-3">Tags</span>
+                 <div className="flex flex-wrap gap-2">
+                   {item.tags.map(tag => (
+                     <span key={tag} className="text-xs text-gray-400 bg-gray-800 hover:bg-gray-700 px-2.5 py-1 rounded transition-colors cursor-default">
+                       #{tag}
+                     </span>
+                   ))}
+                 </div>
+               </div>
+             )}
           </div>
 
-          <div className="p-6 bg-gray-800/50 border-t border-gray-800">
+          <div className="p-6 bg-gray-900 border-t border-gray-800">
             <button
               onClick={handleShareClick}
-              className="w-full flex items-center justify-center gap-x-2 px-4 py-3 rounded-lg bg-pink-600 hover:bg-pink-700 text-white transition-all duration-200 font-bold tracking-wide shadow-lg shadow-pink-900/20"
+              className="w-full group flex items-center justify-center gap-x-2 px-4 py-3.5 rounded-xl bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-500 hover:to-pink-400 text-white transition-all duration-300 font-bold tracking-wide shadow-lg shadow-pink-900/20 hover:shadow-pink-500/30 transform hover:-translate-y-0.5"
             >
-              <ShareIcon className="w-5 h-5" />
-              <span>SHARE</span>
+              <ShareIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <span>SHARE THIS</span>
             </button>
           </div>
         </div>
       </div>
       
-      {/* Navigation Buttons */}
+      {/* Desktop Navigation Buttons (Hidden on mobile to rely on swipe/layout) */}
       <button
         onClick={(e) => { e.stopPropagation(); goToPrevious(); }}
         disabled={currentIndex === 0}
-        className="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 text-white/70 hover:text-white bg-black/40 hover:bg-pink-500 rounded-full p-3 transition-all z-50 disabled:opacity-0 disabled:cursor-not-allowed backdrop-blur-sm"
+        className="hidden md:flex absolute left-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white bg-black/30 hover:bg-black/80 border border-transparent hover:border-gray-700 rounded-full p-4 transition-all z-50 disabled:opacity-0 disabled:cursor-not-allowed backdrop-blur-sm group"
         aria-label="Previous item"
       >
-        <ChevronLeftIcon className="w-8 h-8"/>
+        <ChevronLeftIcon className="w-8 h-8 group-hover:-translate-x-1 transition-transform"/>
       </button>
 
       <button
         onClick={(e) => { e.stopPropagation(); goToNext(); }}
         disabled={currentIndex >= items.length - 1}
-        className="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 text-white/70 hover:text-white bg-black/40 hover:bg-pink-500 rounded-full p-3 transition-all z-50 disabled:opacity-0 disabled:cursor-not-allowed backdrop-blur-sm"
+        className="hidden md:flex absolute right-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white bg-black/30 hover:bg-black/80 border border-transparent hover:border-gray-700 rounded-full p-4 transition-all z-50 disabled:opacity-0 disabled:cursor-not-allowed backdrop-blur-sm group"
         aria-label="Next item"
       >
-        <ChevronRightIcon className="w-8 h-8"/>
+        <ChevronRightIcon className="w-8 h-8 group-hover:translate-x-1 transition-transform"/>
       </button>
       
+      {/* Close Button */}
       <button 
         onClick={handleClose} 
-        className="absolute top-4 right-4 text-white/70 hover:text-white z-50 bg-black/40 hover:bg-red-500 rounded-full p-2 transition-colors backdrop-blur-sm"
+        className="absolute top-4 right-4 z-[60] text-white/70 hover:text-white bg-black/50 hover:bg-red-500/80 rounded-full p-2.5 transition-all backdrop-blur-md"
         aria-label="Close"
       >
           <CloseIcon className="w-6 h-6"/>

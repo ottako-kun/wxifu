@@ -9,4 +9,6 @@ export interface MediaItem {
   src: string; // The URL for the image (or video thumbnail)
   videoSrc?: string; // The URL for video playback
   description?: string;
+  category?: string;
+  tags?: string[];
 }

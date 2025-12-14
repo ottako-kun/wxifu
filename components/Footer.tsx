@@ -57,7 +57,7 @@ const Footer: React.FC = () => {
           <div className="w-full max-w-xs h-px bg-gradient-to-r from-transparent via-gray-800 to-transparent mb-8"></div>
 
           <div className="flex flex-col md:flex-row items-center gap-4 text-xs text-gray-700 uppercase tracking-wider">
-            <span>&copy; {new Date().getFullYear()} Ottako-Kun.</span>
+            <span>&copy; {new Date().getFullYear()} OTAKU-X.</span>
             <span className="hidden md:inline text-gray-800">|</span>
             <span>For mature audiences only</span>
           </div>
