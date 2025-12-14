@@ -458,6 +458,7 @@ const App: React.FC = () => {
                       onBack={() => setCurrentView('home')} 
                       onUserClick={handleUserClick} // Recursive nav if needed
                       onMessageClick={handleOpenChat}
+                      onDataChange={handleDataChange}
                    />
                )}
            </div>

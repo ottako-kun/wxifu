@@ -23,9 +23,10 @@ interface ProfileViewProps {
   onBack: () => void;
   onUserClick?: (user: { id: string; name: string; avatar: string }) => void;
   onMessageClick?: (user: UserProfileData) => void;
+  onDataChange?: () => void;
 }
 
-const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMedia, onBack, onUserClick, onMessageClick }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMedia, onBack, onUserClick, onMessageClick, onDataChange }) => {
   const isOwner = session?.user.id === profileData.id;
   
   const [isEditing, setIsEditing] = useState(false);
@@ -250,7 +251,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
         </div>
 
         {userMedia.length > 0 ? (
-          <MediaGrid items={userMedia} onUserClick={onUserClick} />
+          <MediaGrid 
+            items={userMedia} 
+            onUserClick={onUserClick}
+            session={session}
+            onDataChange={onDataChange} 
+          />
         ) : (
            <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-gray-800 rounded-3xl bg-gray-900/20">
              <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mb-4">

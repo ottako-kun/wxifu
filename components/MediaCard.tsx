@@ -3,9 +3,11 @@ import { MediaItem, MediaType } from '../types';
 import MediaDetailModal from './MediaDetailModal';
 import PlayIcon from './icons/PlayIcon';
 import ShareIcon from './icons/ShareIcon';
+import TrashIcon from './icons/TrashIcon';
 import SharePopover from './SharePopover';
 import VideoIcon from './icons/VideoIcon';
 import { Session } from '@supabase/supabase-js';
+import { deleteMediaItem } from '../lib/supabaseClient';
 
 interface MediaCardProps {
   item: MediaItem;
@@ -20,6 +22,9 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const isOwner = session?.user.id === item.user_id;
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
@@ -29,6 +34,21 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   const handleShareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     setShareAnchorEl(e.currentTarget);
+  };
+
+  const handleQuickDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to delete this post? This cannot be undone.')) return;
+    
+    setIsDeleting(true);
+    const { error } = await deleteMediaItem(item.id);
+    setIsDeleting(false);
+
+    if (error) {
+        alert('Failed to delete item: ' + error.message);
+    } else {
+        if (onDataChange) onDataChange();
+    }
   };
 
   const closeSharePopover = () => {
@@ -49,7 +69,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   return (
     <>
       <div 
-        className={`group relative overflow-hidden rounded-xl shadow-lg cursor-pointer mb-3 md:mb-6 break-inside-avoid bg-gray-900 border border-gray-800 hover:border-pink-500/50 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:shadow-pink-500/10 ${!isImageLoaded ? 'min-h-[200px] animate-pulse-bg' : ''}`}
+        className={`group relative overflow-hidden rounded-xl shadow-lg cursor-pointer mb-3 md:mb-6 break-inside-avoid bg-gray-900 border border-gray-800 hover:border-pink-500/50 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:shadow-pink-500/10 ${!isImageLoaded ? 'min-h-[200px] animate-pulse-bg' : ''} ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
         onClick={openModal}
       >
         <img 
@@ -117,14 +137,26 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
                       </div>
                   )}
 
-                  <button
-                    onClick={handleShareClick}
-                    className="p-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition-colors border border-white/10 shrink-0 ml-auto"
-                    aria-label="Share media"
-                    title="Share"
-                  >
-                    <ShareIcon className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    {isOwner && (
+                       <button
+                         onClick={handleQuickDelete}
+                         className="p-1.5 bg-red-500/20 hover:bg-red-500/80 hover:text-white backdrop-blur-md rounded-full text-red-200 transition-colors border border-red-500/30 shrink-0"
+                         aria-label="Delete post"
+                         title="Delete"
+                       >
+                         <TrashIcon className="w-3.5 h-3.5" />
+                       </button>
+                    )}
+                    <button
+                        onClick={handleShareClick}
+                        className="p-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition-colors border border-white/10 shrink-0"
+                        aria-label="Share media"
+                        title="Share"
+                    >
+                        <ShareIcon className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
               </div>
             </div>
           </div>
