@@ -11,6 +11,8 @@ body {
     radial-gradient(at 79% 53%, hsla(343, 68%, 79%, 0.05) 0px, transparent 50%);
   margin: 0;
   min-height: 100vh;
+  /* Prevent native pull-to-refresh to allow custom implementation */
+  overscroll-behavior-y: contain; 
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -62,4 +64,12 @@ h1, h2, h3, h4, h5, h6 {
 .no-scrollbar {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
+}
+
+/* Padding for notched phones */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pt-safe-top {
+  padding-top: env(safe-area-inset-top);
 }

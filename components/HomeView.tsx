@@ -9,6 +9,7 @@ import { useGalleryFilters } from '../hooks/useGalleryFilters';
 import { signInWithGoogle } from '../lib/supabaseClient';
 import GalleryControls from './GalleryControls';
 import { fetchMangaList } from '../lib/mangadex';
+import PullToRefresh from './PullToRefresh';
 
 interface HomeViewProps {
   photoMedia: MediaItem[];
@@ -113,8 +114,20 @@ const HomeView: React.FC<HomeViewProps> = ({
     };
   }, [visibleCount, sortedItems.length, loadMore]);
 
+  // Wrap the refresh in a promise for PullToRefresh
+  const handleRefresh = async () => {
+     onDataChange();
+     // If manga tab, refetch manga too
+     if (activeTab === 'manga') {
+         const data = await fetchMangaList();
+         setMangaMedia(data);
+     }
+     // Slight artificial delay so the spinner shows for a satisfying moment
+     await new Promise(r => setTimeout(r, 1000));
+  };
+
   return (
-    <>
+    <PullToRefresh onRefresh={handleRefresh}>
       <Hero />
       <main className="container mx-auto px-4 py-8">
         {/* Tabs */}
@@ -251,7 +264,7 @@ const HomeView: React.FC<HomeViewProps> = ({
             </>
         )}
       </main>
-    </>
+    </PullToRefresh>
   );
 };
 
