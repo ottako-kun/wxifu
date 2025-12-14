@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { MediaItem } from '../types';
 import CloseIcon from './icons/CloseIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
@@ -22,10 +22,54 @@ const MangaReaderModal: React.FC<MangaReaderModalProps> = ({ item, onClose }) =>
       closeReader 
   } = useMangaReader(item.externalId);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  // Track scroll progress
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || viewMode !== 'reader') return;
+
+    const handleScroll = () => {
+        const totalHeight = el.scrollHeight - el.clientHeight;
+        const progress = totalHeight > 0 ? (el.scrollTop / totalHeight) * 100 : 0;
+        setScrollProgress(progress);
+    };
+
+    el.addEventListener('scroll', handleScroll);
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, [viewMode, pages]);
+
+  const handleTap = (e: React.MouseEvent) => {
+    if (!containerRef.current || viewMode !== 'reader') return;
+    
+    // Determine click position
+    const { clientX, currentTarget } = e;
+    const width = currentTarget.clientWidth;
+    const clickX = clientX;
+
+    // Left 30% -> Scroll Up
+    if (clickX < width * 0.3) {
+        containerRef.current.scrollBy({ top: -window.innerHeight * 0.8, behavior: 'smooth' });
+    }
+    // Right 30% -> Scroll Down
+    else if (clickX > width * 0.7) {
+        containerRef.current.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
+    }
+    // Center -> Toggle controls (Optional, simplified here)
+  };
+
   return (
     <div className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-xl flex flex-col animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-gray-900 border-b border-gray-800 z-10">
+      <div className="flex items-center justify-between p-4 bg-gray-900 border-b border-gray-800 z-10 relative shadow-md">
+         {viewMode === 'reader' && (
+             <div 
+                className="absolute bottom-0 left-0 h-1 bg-pink-500 transition-all duration-100 ease-out" 
+                style={{ width: `${scrollProgress}%` }}
+             ></div>
+         )}
+         
          <div className="flex items-center gap-4 overflow-hidden">
             {viewMode === 'reader' && (
                 <button onClick={closeReader} className="p-2 hover:bg-gray-800 rounded-full text-white transition-colors">
@@ -45,7 +89,11 @@ const MangaReaderModal: React.FC<MangaReaderModalProps> = ({ item, onClose }) =>
       </div>
 
       {/* Content */}
-      <div className="flex-grow overflow-y-auto bg-black relative">
+      <div 
+        ref={containerRef}
+        className="flex-grow overflow-y-auto bg-black relative no-scrollbar"
+        onClick={handleTap}
+      >
          {isLoading && (
              <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
                  <LoadingSpinner className="w-10 h-10 text-pink-500" />
@@ -78,7 +126,7 @@ const MangaReaderModal: React.FC<MangaReaderModalProps> = ({ item, onClose }) =>
                      {chapters.map((ch) => (
                          <button 
                             key={ch.id}
-                            onClick={() => loadChapter(ch)}
+                            onClick={(e) => { e.stopPropagation(); loadChapter(ch); }}
                             className="w-full flex items-center justify-between p-4 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg group transition-all"
                          >
                             <div className="text-left">
@@ -97,7 +145,7 @@ const MangaReaderModal: React.FC<MangaReaderModalProps> = ({ item, onClose }) =>
                  </div>
              </div>
          ) : (
-             <div className="w-full min-h-full bg-[#1a1a1a] flex flex-col items-center py-4 space-y-2">
+             <div className="w-full min-h-full bg-[#1a1a1a] flex flex-col items-center py-4 space-y-2 cursor-pointer">
                  {pages.map((pageUrl, idx) => (
                      <img 
                         key={idx}
@@ -107,7 +155,20 @@ const MangaReaderModal: React.FC<MangaReaderModalProps> = ({ item, onClose }) =>
                         loading="lazy"
                      />
                  ))}
-                 <div className="py-10 text-gray-500 text-sm">End of Chapter</div>
+                 <div className="py-20 text-gray-500 text-sm flex flex-col items-center gap-2">
+                    <span>End of Chapter</span>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); closeReader(); }}
+                        className="px-4 py-2 bg-gray-800 rounded text-white text-xs hover:bg-gray-700"
+                    >
+                        Back to Chapters
+                    </button>
+                 </div>
+                 
+                 {/* Tap Hints (Visible briefly or on hover for desktop) */}
+                 <div className="fixed top-1/2 left-4 w-12 h-24 bg-white/5 rounded-full hidden md:flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+                     <ChevronLeftIcon className="w-8 h-8 text-white/50" />
+                 </div>
              </div>
          )}
       </div>

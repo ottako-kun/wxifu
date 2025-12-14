@@ -131,14 +131,35 @@ const HomeView: React.FC<HomeViewProps> = ({
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <Hero />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 min-h-screen">
         
-        {/* Extracted Tabs Component */}
-        <GalleryTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+        {/* Sticky Header for Controls */}
+        <div className="sticky top-[64px] z-40 py-4 -mx-4 px-4 bg-gradient-to-b from-[#050505] via-[#050505]/95 to-transparent backdrop-blur-sm transition-all duration-300">
+             <GalleryTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+             
+             {/* Show controls only if signed in (for following) or normal tabs */}
+             {(activeTab !== 'following' || session) && (
+                <GalleryControls 
+                    galleryName={galleryName}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    searchInputRef={searchInputRef}
+                    sortOrder={sortOrder}
+                    toggleSort={toggleSort}
+                    selectedCategory={selectedCategory}
+                    setSelectedCategory={setSelectedCategory}
+                    availableCategories={availableCategories}
+                    selectedTags={selectedTags}
+                    toggleTag={toggleTag}
+                    availableTags={availableTags}
+                    clearFilters={clearFilters}
+                />
+             )}
+        </div>
 
         {/* Following Tab - Not Signed In State */}
         {activeTab === 'following' && !session ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-gray-800 rounded-3xl bg-gray-900/20 max-w-2xl mx-auto">
+            <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-gray-800 rounded-3xl bg-gray-900/20 max-w-2xl mx-auto mt-10">
                 <div className="w-20 h-20 rounded-full bg-gray-800 flex items-center justify-center mb-6">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-gray-500">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -157,23 +178,6 @@ const HomeView: React.FC<HomeViewProps> = ({
             </div>
         ) : (
             <>
-                {/* Controls Container */}
-                <GalleryControls 
-                    galleryName={galleryName}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    searchInputRef={searchInputRef}
-                    sortOrder={sortOrder}
-                    toggleSort={toggleSort}
-                    selectedCategory={selectedCategory}
-                    setSelectedCategory={setSelectedCategory}
-                    availableCategories={availableCategories}
-                    selectedTags={selectedTags}
-                    toggleTag={toggleTag}
-                    availableTags={availableTags}
-                    clearFilters={clearFilters}
-                />
-
                 {/* Grid Content */}
                 {itemsToDisplay.length > 0 || isCurrentLoading ? (
                   sortedItems.length > 0 || isCurrentLoading ? (

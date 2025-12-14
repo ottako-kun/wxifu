@@ -136,7 +136,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   return (
     <>
       <div 
-        className={`group relative overflow-hidden rounded-xl bg-gray-900 border border-gray-800 cursor-pointer mb-3 break-inside-avoid shadow-lg transition-all duration-300 ${!isImageLoaded ? 'min-h-[200px] animate-pulse-bg' : ''} ${isDeleting ? 'opacity-50 pointer-events-none' : ''} hover:shadow-pink-500/10 hover:border-gray-700`}
+        className={`group relative overflow-hidden rounded-xl bg-gray-900 border border-gray-800 cursor-pointer mb-3 break-inside-avoid shadow-lg transition-all duration-300 hover:shadow-pink-500/10 hover:border-gray-700 hover:ring-1 hover:ring-pink-500/30 ${!isImageLoaded ? 'min-h-[200px] animate-pulse-bg' : ''} ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
         onClick={handleCardClick}
         onTouchEnd={handleTouchEnd}
       >
@@ -145,7 +145,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
                 src={item.src} 
                 alt={item.description || "Gallery content"} 
                 className={`w-full h-auto object-cover block transition-all duration-700 ease-in-out
-                    ${isImageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}
+                    ${isImageLoaded ? 'opacity-100 scale-100 group-hover:scale-105' : 'opacity-0 scale-105'}
                     ${!isUnlocked ? 'blur-md brightness-50' : ''}
                 `}
                 loading="lazy"
@@ -219,12 +219,12 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
              )}
         </div>
 
-        {/* --- DESKTOP: Hover Overlay --- */}
-        <div className="hidden md:flex absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-col justify-end p-4 z-20">
+        {/* --- DESKTOP: Hover Overlay (Updated for better visibility) --- */}
+        <div className="hidden md:flex absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-col justify-end p-4 z-20">
             {/* Center Play Button for Video */}
             {item.type === MediaType.Video && isUnlocked && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] transform scale-90 group-hover:scale-110 transition-transform duration-300">
                         <PlayIcon className="w-6 h-6 text-white ml-1" />
                     </div>
                 </div>
