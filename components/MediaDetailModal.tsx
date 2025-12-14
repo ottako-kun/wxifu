@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { MediaItem, MediaType } from '../types';
-import { deleteMediaItem, updateMediaItem } from '../lib/supabaseClient';
+import { deleteMediaItem, updateMediaItem, reportMediaItem } from '../lib/supabaseClient';
 import CloseIcon from './icons/CloseIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import ChevronRightIcon from './icons/ChevronRightIcon';
@@ -8,7 +8,9 @@ import ShareIcon from './icons/ShareIcon';
 import TrashIcon from './icons/TrashIcon';
 import PencilIcon from './icons/PencilIcon';
 import LockIcon from './icons/LockIcon';
+import FlagIcon from './icons/FlagIcon';
 import SharePopover from './SharePopover';
+import ReportModal from './ReportModal';
 import { APP_CONFIG } from '../gallery-data';
 import { Session } from '@supabase/supabase-js';
 import CommentSection from './CommentSection';
@@ -27,9 +29,11 @@ interface MediaDetailModalProps {
 const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex, onClose, onUserClick, session, onDataChange }) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isVisible, setIsVisible] = useState(false);
-  const [isZoomed, setIsZoomed] = useState(false);
-  const [zoomStyle, setZoomStyle] = useState<React.CSSProperties>({});
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
+  
+  // Transform State for Zoom/Pan
+  const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
   
   // Edit State
   const [isEditing, setIsEditing] = useState(false);
@@ -38,7 +42,16 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   const [editTags, setEditTags] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Touch handling state
+  // Report State
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
+
+  // Interaction Refs
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const pinchStartRef = useRef<{ dist: number; scale: number } | null>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  
+  // Swipe Refs for Navigation
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const minSwipeDistance = 50;
@@ -51,7 +64,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   const { confirm } = useConfirm();
   const toast = useToast();
   
-  // Premium Logic (Placeholder for future purchase logic)
+  // Premium Logic
   const isUnlocked = isOwner || !item.is_premium;
 
   // Initialize edit state when item changes
@@ -60,7 +73,39 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     setEditCategory(item.category || '');
     setEditTags(item.tags ? item.tags.join(', ') : '');
     setIsEditing(false);
-  }, [item]);
+    
+    // Reset transform on item change
+    setTransform({ scale: 1, x: 0, y: 0 });
+    setIsDragging(false);
+  }, [item, currentIndex]);
+
+  // Calculate Related Items (Simple Algorithm: Same Category or Tag overlap)
+  const relatedItems = useMemo(() => {
+      // 1. Filter items excluding current
+      const candidates = items.filter(i => i.id !== item.id);
+      
+      // 2. Score them
+      const scored = candidates.map(c => {
+          let score = 0;
+          if (c.category === item.category) score += 2;
+          if (c.user_id === item.user_id) score += 1;
+          const sharedTags = c.tags?.filter(t => item.tags?.includes(t)).length || 0;
+          score += sharedTags * 2;
+          return { item: c, score };
+      });
+
+      // 3. Sort by score and take top 6
+      return scored
+        .filter(s => s.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 6)
+        .map(s => s.item);
+
+      // Fallback: If no matches, just take random recent ones? 
+      // For now, if no relations, show nothing or just next items.
+      // Let's stick to strict relations to ensure relevance.
+  }, [item, items]);
+
 
   const goToPrevious = useCallback(() => {
     setCurrentIndex(prevIndex => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
@@ -70,13 +115,18 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     setCurrentIndex(prevIndex => (prevIndex < items.length - 1 ? prevIndex + 1 : prevIndex));
   }, [items.length]);
 
+  const handleRelatedClick = (relatedId: string) => {
+      const index = items.findIndex(i => i.id === relatedId);
+      if (index !== -1) setCurrentIndex(index);
+  };
+
   const handleClose = useCallback(() => {
     setIsVisible(false);
     setTimeout(onClose, 300); // Corresponds to transition duration
   }, [onClose]);
   
   const handleShareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation(); // Prevent modal close
+    e.stopPropagation();
     setShareAnchorEl(e.currentTarget);
   };
 
@@ -98,47 +148,195 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   };
 
   const handleUnlockClick = () => {
-      toast.info("Payment System Integration Coming Soon! This will allow users to purchase 'Otaku Coins' to unlock premium content.");
+      toast.info("Payment System Integration Coming Soon!");
   };
 
-  // Check if the video URL is a direct file (MP4, WEBM, etc.) or an embed (YouTube, Drive, etc.)
   const isDirectVideo = (url?: string) => {
     if (!url) return false;
     return /\.(mp4|webm|ogg|mov)($|\?)/i.test(url);
   };
 
-  // Reset zoom state when navigating between media items
-  useEffect(() => {
-    setIsZoomed(false);
-    setZoomStyle({
-      transform: 'scale(1)',
-      transformOrigin: 'center center',
-    });
-  }, [currentIndex]);
+  // --- REPORTING ---
+  const handleReportSubmit = async (reason: string, details: string) => {
+      if (!session) {
+          toast.error("You must be logged in to report.");
+          return;
+      }
+      setIsReporting(true);
+      const { error } = await reportMediaItem({
+          media_id: item.id,
+          reporter_id: session.user.id,
+          reason,
+          details
+      });
+      setIsReporting(false);
+      setIsReportModalOpen(false);
+      if (error) {
+          toast.error("Failed to submit report.");
+      } else {
+          toast.success("Report submitted. Thank you for keeping the community safe.");
+      }
+  };
+
+  // --- ZOOM & PAN HANDLERS ---
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!isUnlocked) return;
+    // e.preventDefault(); // Note: React synthetic events can't be prevented this way for passive listeners, but standard logic applies
+    
+    const scaleAmount = -e.deltaY * 0.002;
+    const newScale = Math.min(Math.max(1, transform.scale + scaleAmount), 4);
+    
+    setTransform(prev => ({
+      ...prev,
+      scale: newScale,
+      // Reset position if zoomed out completely
+      x: newScale === 1 ? 0 : prev.x,
+      y: newScale === 1 ? 0 : prev.y
+    }));
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isUnlocked || transform.scale <= 1) return;
+    e.preventDefault();
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !dragStartRef.current) return;
+    e.preventDefault();
+    const x = e.clientX - dragStartRef.current.x;
+    const y = e.clientY - dragStartRef.current.y;
+    setTransform(prev => ({ ...prev, x, y }));
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    dragStartRef.current = null;
+  };
+
+  // --- TOUCH HANDLERS (Pinch & Pan) ---
+
+  const getTouchDistance = (touches: React.TouchList) => {
+    return Math.hypot(
+      touches[0].clientX - touches[1].clientX,
+      touches[0].clientY - touches[1].clientY
+    );
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isUnlocked) return;
+
+    if (e.touches.length === 2) {
+      // Start Pinch
+      const dist = getTouchDistance(e.touches);
+      pinchStartRef.current = { dist, scale: transform.scale };
+    } else if (e.touches.length === 1) {
+      // Start Pan (only if zoomed) OR Start Swipe Nav (if scale 1)
+      if (transform.scale > 1) {
+         e.stopPropagation(); // Stop swipe nav
+         dragStartRef.current = { 
+             x: e.touches[0].clientX - transform.x, 
+             y: e.touches[0].clientY - transform.y 
+         };
+         setIsDragging(true);
+      } else {
+         // Pass through for Navigation Swipe
+         touchStartX.current = e.touches[0].clientX;
+         touchEndX.current = null;
+      }
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isUnlocked) return;
+
+    if (e.touches.length === 2 && pinchStartRef.current) {
+      // Pinch Zooming
+      e.stopPropagation();
+      e.preventDefault();
+      
+      const dist = getTouchDistance(e.touches);
+      const scaleChange = dist / pinchStartRef.current.dist;
+      const newScale = Math.min(Math.max(1, pinchStartRef.current.scale * scaleChange), 4);
+      
+      setTransform(prev => ({ ...prev, scale: newScale }));
+    } else if (e.touches.length === 1 && transform.scale > 1 && dragStartRef.current) {
+      // Panning
+      e.stopPropagation();
+      // e.preventDefault(); // Keeping default can help with browser behavior sometimes, but preventing stops scroll
+      
+      const x = e.touches[0].clientX - dragStartRef.current.x;
+      const y = e.touches[0].clientY - dragStartRef.current.y;
+      setTransform(prev => ({ ...prev, x, y }));
+    } else if (e.touches.length === 1 && transform.scale === 1) {
+      // Swipe Nav tracking
+      touchEndX.current = e.touches[0].clientX;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    dragStartRef.current = null;
+    pinchStartRef.current = null;
+    
+    // Handle Swipe Nav End
+    if (transform.scale === 1 && touchStartX.current && touchEndX.current) {
+       const distance = touchStartX.current - touchEndX.current;
+       const isLeftSwipe = distance > minSwipeDistance;
+       const isRightSwipe = distance < -minSwipeDistance;
+
+       if (isLeftSwipe && currentIndex < items.length - 1) {
+           goToNext();
+       } else if (isRightSwipe && currentIndex > 0) {
+           goToPrevious();
+       }
+       // Reset
+       touchStartX.current = null;
+       touchEndX.current = null;
+    }
+  };
 
   const handleZoomClick = (e: React.MouseEvent<HTMLImageElement>) => {
     e.stopPropagation();
-    if (!isUnlocked) return; // Disable zoom on locked content
+    if (!isUnlocked) return;
 
-    if (isZoomed) {
-      setIsZoomed(false);
-      setZoomStyle({
-        transform: 'scale(1)',
-        transformOrigin: 'center center',
-        transition: 'transform 0.3s ease-out'
-      });
+    if (transform.scale > 1) {
+      // Reset
+      setTransform({ scale: 1, x: 0, y: 0 });
     } else {
-      const img = e.currentTarget;
-      const { left, top, width, height } = img.getBoundingClientRect();
+      // Zoom in to click point
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left; // x position within the element.
+      const y = e.clientY - rect.top;  // y position within the element.
       
-      const originX = ((e.clientX - left) / width) * 100;
-      const originY = ((e.clientY - top) / height) * 100;
+      // We want to center this point.
+      // Current center is w/2, h/2.
+      // Offset from center is (x - w/2), (y - h/2).
+      // We need to move the image OPPOSITE to this offset, scaled.
       
-      setIsZoomed(true);
-      setZoomStyle({
-        transform: 'scale(2.5)',
-        transformOrigin: `${originX}% ${originY}%`,
-        transition: 'transform 0.3s ease-out'
+      const targetScale = 2.5;
+      const offsetX = (rect.width / 2 - x) * (targetScale - 1);
+      const offsetY = (rect.height / 2 - y) * (targetScale - 1); // rough approximation for center zoom
+      
+      // Simpler approach: Just zoom, let user pan. Or use precise math. 
+      // Precision math: Center the clicked point.
+      // NewCenter = OldCenter + Translate.
+      // Clicked Point relative to image center = (x - w/2), (y - h/2).
+      // We want that point to be at screen center (0,0 relative translate).
+      // Translate = -(x - w/2) * targetScale? No, roughly just moving the point to center.
+      // Let's stick to a simple 2.5x zoom and try to center based on % offset.
+      
+      // Simplified robust centering:
+      // Translate moves the image.
+      // If we scale by S, the point P(x,y) moves to P(Sx, Sy).
+      // We want P to be at center.
+      
+      setTransform({
+        scale: targetScale,
+        x: (rect.width / 2 - x) * 2, // Heuristic that feels natural
+        y: (rect.height / 2 - y) * 2
       });
     }
   };
@@ -181,7 +379,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
           toast.error('Failed to update: ' + error.message);
       } else {
           setIsEditing(false);
-          // Manually update local item for immediate feedback if we don't reload whole grid
           item.description = editDesc;
           item.category = editCategory;
           item.tags = tagsArray;
@@ -211,30 +408,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     };
   }, [goToNext, goToPrevious, handleClose, isEditing]);
 
-  // Touch Navigation Handlers
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchEndX.current = null;
-    touchStartX.current = e.targetTouches[0].clientX;
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.targetTouches[0].clientX;
-  };
-
-  const onTouchEnd = () => {
-    if (isEditing) return;
-    if (!touchStartX.current || !touchEndX.current) return;
-    
-    const distance = touchStartX.current - touchEndX.current;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe && currentIndex < items.length - 1) {
-        goToNext();
-    } else if (isRightSwipe && currentIndex > 0) {
-        goToPrevious();
-    }
-  };
 
   return (
     <div 
@@ -248,18 +421,16 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
         className={`bg-gray-900/90 border border-gray-800 rounded-none md:rounded-3xl shadow-2xl w-full max-w-[95vw] h-full md:h-[90vh] flex flex-col md:flex-row overflow-hidden transition-all duration-300 ease-in-out ${isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Media Container - Handles Swipes */}
+        {/* Media Container */}
         <div 
-            className="relative w-full md:w-[70%] lg:w-[75%] h-[50%] md:h-full flex items-center justify-center bg-black/40"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
+            className="relative w-full md:w-[70%] lg:w-[75%] h-[50%] md:h-full flex items-center justify-center bg-black/40 overflow-hidden"
+            // Note: We moved touch handlers to the specific image container for granular control
         >
           <div key={item.id} className="w-full h-full animate-fade-in flex items-center justify-center p-0 md:p-4">
             
             {/* Locked Content Overlay */}
             {!isUnlocked && (
-                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md">
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md pointer-events-auto" onClick={(e) => e.stopPropagation()}>
                     <div className="bg-gray-900 border border-yellow-500/50 rounded-2xl p-8 text-center shadow-[0_0_30px_rgba(234,179,8,0.2)] max-w-sm mx-4">
                         <div className="w-16 h-16 bg-black/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-yellow-500/50">
                             <LockIcon className="w-8 h-8 text-yellow-500" />
@@ -279,16 +450,29 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
             )}
 
             {isPhoto ? (
-              <div className="w-full h-full overflow-hidden flex items-center justify-center relative">
+              <div 
+                  ref={imageRef}
+                  className="w-full h-full flex items-center justify-center relative touch-none"
+                  onWheel={handleWheel}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+              >
                 <img 
                   src={item.src} 
                   alt={item.description || 'Full screen view'} 
-                  className={`max-h-full max-w-full object-contain select-none transition-transform duration-200 
-                      ${isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}
+                  className={`max-h-full max-w-full object-contain select-none transition-transform duration-75 ease-out
                       ${!isUnlocked ? 'blur-2xl opacity-50' : ''}
+                      ${isDragging ? 'cursor-grabbing' : transform.scale > 1 ? 'cursor-grab' : 'cursor-zoom-in'}
                   `}
                   onClick={handleZoomClick}
-                  style={zoomStyle}
+                  style={{
+                      transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+                  }}
                   draggable={false}
                 />
               </div>
@@ -322,7 +506,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
           </div>
           
            {/* Mobile Swipe Indicators (Hint) */}
-           <div className="absolute inset-x-4 top-1/2 flex justify-between pointer-events-none md:hidden opacity-0">
+           <div className={`absolute inset-x-4 top-1/2 flex justify-between pointer-events-none md:hidden transition-opacity ${transform.scale > 1 ? 'opacity-0' : 'opacity-100'}`}>
                <ChevronLeftIcon className="w-8 h-8 text-white/20" />
                <ChevronRightIcon className="w-8 h-8 text-white/20" />
            </div>
@@ -443,20 +627,52 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                 )}
             </div>
 
-            {/* Comments Section - Added Here */}
+            {/* Comments Section */}
             <div className="flex-grow px-6 pb-4">
                 <CommentSection mediaId={item.id} session={session} />
             </div>
 
+            {/* Related Media Section */}
+            {relatedItems.length > 0 && (
+                <div className="px-6 py-4 border-t border-gray-800">
+                    <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">More Like This</h3>
+                    <div className="grid grid-cols-3 gap-2">
+                        {relatedItems.map(rel => (
+                            <div 
+                                key={rel.id} 
+                                onClick={() => handleRelatedClick(rel.id)}
+                                className="aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity relative group/rel"
+                            >
+                                <img src={rel.src} alt="Related" className="w-full h-full object-cover" />
+                                {rel.is_premium && !isOwner && rel.user_id !== session?.user.id && (
+                                    <div className="absolute top-1 right-1 bg-black/60 p-0.5 rounded-full">
+                                        <LockIcon className="w-3 h-3 text-yellow-500" />
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
           </div>
 
-          <div className="p-6 bg-black/20 border-t border-gray-800 backdrop-blur-sm flex-shrink-0">
+          <div className="p-6 bg-black/20 border-t border-gray-800 backdrop-blur-sm flex-shrink-0 flex gap-2">
             <button
               onClick={handleShareClick}
-              className="w-full group flex items-center justify-center gap-x-2 px-4 py-4 rounded-xl bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-500 hover:to-pink-400 text-white transition-all duration-300 font-bold tracking-wide shadow-lg shadow-pink-900/20 hover:shadow-pink-500/30 transform hover:-translate-y-0.5 border border-white/10"
+              className="flex-grow group flex items-center justify-center gap-x-2 px-4 py-4 rounded-xl bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-500 hover:to-pink-400 text-white transition-all duration-300 font-bold tracking-wide shadow-lg shadow-pink-900/20 hover:shadow-pink-500/30 transform hover:-translate-y-0.5 border border-white/10"
             >
               <ShareIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
               <span>SHARE THIS</span>
+            </button>
+            
+            {/* Report Button */}
+            <button
+                onClick={() => setIsReportModalOpen(true)}
+                className="p-4 rounded-xl bg-gray-800 hover:bg-red-900/30 text-gray-400 hover:text-red-400 border border-gray-700 hover:border-red-800 transition-colors"
+                title="Report Content"
+            >
+                <FlagIcon className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -496,6 +712,14 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
           onClose={closeSharePopover}
           anchorEl={shareAnchorEl}
         />
+      )}
+
+      {isReportModalOpen && (
+          <ReportModal 
+              onClose={() => setIsReportModalOpen(false)}
+              onSubmit={handleReportSubmit}
+              isSubmitting={isReporting}
+          />
       )}
     </div>
   );

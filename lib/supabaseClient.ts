@@ -351,3 +351,13 @@ export const getInboxUsers = async (currentUserId: string) => {
         };
     });
 };
+
+// --- REPORTING SYSTEM ---
+export const reportMediaItem = async (reportData: {
+  media_id: string;
+  reporter_id: string;
+  reason: string;
+  details?: string;
+}) => {
+  return await supabase.from('reports').insert([reportData]);
+};
