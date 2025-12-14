@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { MediaItem } from '../types';
 import MediaGrid from './MediaGrid';
-import { updateUserProfile } from '../lib/supabaseClient';
+import { updateUserProfile, getFollowStatus, followUser, unfollowUser } from '../lib/supabaseClient';
 import { getDriveId } from '../gallery-data';
 import CloseIcon from './icons/CloseIcon';
 import UploadIcon from './icons/UploadIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
+import ChatIcon from './icons/ChatIcon';
 
 export interface UserProfileData {
     id: string;
@@ -21,9 +22,10 @@ interface ProfileViewProps {
   userMedia: MediaItem[];
   onBack: () => void;
   onUserClick?: (user: { id: string; name: string; avatar: string }) => void;
+  onMessageClick?: (user: UserProfileData) => void;
 }
 
-const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMedia, onBack, onUserClick }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMedia, onBack, onUserClick, onMessageClick }) => {
   const isOwner = session?.user.id === profileData.id;
   
   const [isEditing, setIsEditing] = useState(false);
@@ -32,12 +34,57 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   const [avatarUrl, setAvatarUrl] = useState(profileData.avatar || '');
   const [isSaving, setIsSaving] = useState(false);
 
+  // Social State
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isMutual, setIsMutual] = useState(false);
+  const [loadingSocial, setLoadingSocial] = useState(false);
+
   // Sync state if profileData changes (e.g. switching viewed profile)
   useEffect(() => {
       setDisplayName(profileData.name || '');
       setBio(profileData.bio || '');
       setAvatarUrl(profileData.avatar || '');
+      
+      // Reset social state
+      setIsFollowing(false);
+      setIsMutual(false);
   }, [profileData]);
+
+  // Check Follow Status
+  useEffect(() => {
+    if (session && !isOwner) {
+        const checkStatus = async () => {
+            setLoadingSocial(true);
+            const { isFollowing, isMutual } = await getFollowStatus(session.user.id, profileData.id);
+            setIsFollowing(isFollowing);
+            setIsMutual(isMutual);
+            setLoadingSocial(false);
+        };
+        checkStatus();
+    }
+  }, [session, profileData.id, isOwner]);
+
+  const handleFollowToggle = async () => {
+      if (!session) return;
+      setLoadingSocial(true);
+      try {
+          if (isFollowing) {
+              await unfollowUser(session.user.id, profileData.id);
+              setIsFollowing(false);
+              setIsMutual(false); // Can't be mutual if I don't follow
+          } else {
+              await followUser(session.user.id, profileData.id);
+              setIsFollowing(true);
+              // Check mutual status again immediately to update UI if they were already following me
+              const { isMutual } = await getFollowStatus(session.user.id, profileData.id);
+              setIsMutual(isMutual);
+          }
+      } catch (err) {
+          console.error("Follow action failed", err);
+      } finally {
+          setLoadingSocial(false);
+      }
+  };
 
   // Stats
   const postCount = userMedia.length;
@@ -117,14 +164,39 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
                 <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight font-orbitron">
                 {profileData.name || 'Anonymous User'}
                 </h2>
-                {isOwner && (
+                
+                {isOwner ? (
                     <button 
                     onClick={() => setIsEditing(true)}
                     className="px-4 py-1.5 bg-gray-800/80 hover:bg-gray-700 text-gray-200 text-xs font-bold uppercase tracking-wider rounded-full border border-gray-700 transition-colors"
                     >
                     Edit Profile
                     </button>
-                )}
+                ) : session ? (
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleFollowToggle}
+                            disabled={loadingSocial}
+                            className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 shadow-lg ${
+                                isFollowing 
+                                ? 'bg-gray-800 text-gray-300 border border-gray-600 hover:bg-red-900/50 hover:border-red-500/50 hover:text-red-300' 
+                                : 'bg-gradient-to-r from-pink-600 to-pink-500 text-white shadow-pink-500/20 hover:shadow-pink-500/40 hover:-translate-y-0.5'
+                            }`}
+                        >
+                            {loadingSocial ? '...' : isFollowing ? 'Following' : 'Follow'}
+                        </button>
+                        
+                        {isMutual && onMessageClick && (
+                            <button
+                                onClick={() => onMessageClick(profileData)}
+                                className="px-4 py-2 bg-cyan-900/30 border border-cyan-500 text-cyan-400 rounded-full hover:bg-cyan-800/50 transition-all shadow-[0_0_10px_rgba(6,182,212,0.15)]"
+                                aria-label="Send Message"
+                            >
+                                <ChatIcon className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+                ) : null}
             </div>
           </div>
 

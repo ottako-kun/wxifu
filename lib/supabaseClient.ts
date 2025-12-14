@@ -110,3 +110,58 @@ export const insertMediaItem = async (item: {
 
   return { data, error };
 };
+
+// --- SOCIAL & MESSAGING FEATURES ---
+
+export const getFollowStatus = async (currentUserId: string, targetUserId: string) => {
+    // Check if I follow them
+    const { data: iFollow } = await supabase
+        .from('follows')
+        .select('*')
+        .eq('follower_id', currentUserId)
+        .eq('following_id', targetUserId)
+        .single();
+    
+    // Check if they follow me
+    const { data: theyFollow } = await supabase
+        .from('follows')
+        .select('*')
+        .eq('follower_id', targetUserId)
+        .eq('following_id', currentUserId)
+        .single();
+
+    return {
+        isFollowing: !!iFollow,
+        isFollowedBy: !!theyFollow,
+        isMutual: !!iFollow && !!theyFollow
+    };
+};
+
+export const followUser = async (currentUserId: string, targetUserId: string) => {
+    return await supabase.from('follows').insert({
+        follower_id: currentUserId,
+        following_id: targetUserId
+    });
+};
+
+export const unfollowUser = async (currentUserId: string, targetUserId: string) => {
+    return await supabase.from('follows').delete()
+        .eq('follower_id', currentUserId)
+        .eq('following_id', targetUserId);
+};
+
+export const getMessages = async (user1: string, user2: string) => {
+    return await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${user1},receiver_id.eq.${user2}),and(sender_id.eq.${user2},receiver_id.eq.${user1})`)
+        .order('created_at', { ascending: true });
+};
+
+export const sendMessage = async (senderId: string, receiverId: string, content: string) => {
+    return await supabase.from('messages').insert({
+        sender_id: senderId,
+        receiver_id: receiverId,
+        content: content
+    });
+};

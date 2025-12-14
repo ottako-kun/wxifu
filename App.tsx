@@ -4,6 +4,7 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import MediaGrid from './components/MediaGrid';
 import ProfileView, { UserProfileData } from './components/ProfileView';
+import ChatWindow from './components/ChatWindow';
 import { fallbackPhotoMedia, fallbackVideoMedia, processMediaItem, APP_CONFIG } from './gallery-data';
 import { supabase, insertMediaItem } from './lib/supabaseClient';
 import Footer from './components/Footer';
@@ -29,6 +30,9 @@ const App: React.FC = () => {
   
   // Auth State
   const [session, setSession] = useState<Session | null>(null);
+
+  // Chat State
+  const [activeChatUser, setActiveChatUser] = useState<UserProfileData | null>(null);
 
   // Data State
   const [photoMedia, setPhotoMedia] = useState<MediaItem[]>([]);
@@ -59,6 +63,10 @@ const App: React.FC = () => {
       // If user logs out while on profile view and it was their profile, go home
       if (!session && currentView === 'profile' && activeProfile?.id === session?.user.id) {
         setCurrentView('home');
+      }
+      // Close chat on logout
+      if (!session) {
+          setActiveChatUser(null);
       }
     });
 
@@ -258,8 +266,12 @@ const App: React.FC = () => {
     return all.filter(item => item.user_id === activeProfile.id);
   }, [photoMedia, videoMedia, activeProfile]);
 
+  const handleOpenChat = (user: UserProfileData) => {
+      setActiveChatUser(user);
+  };
+
   return (
-    <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white">
+    <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative">
       <Header 
         session={session} 
         onNavigate={handleNavigateToProfile} 
@@ -435,6 +447,7 @@ const App: React.FC = () => {
                       userMedia={profileMedia} 
                       onBack={() => setCurrentView('home')} 
                       onUserClick={handleUserClick} // Recursive nav if needed
+                      onMessageClick={handleOpenChat}
                    />
                )}
            </div>
@@ -455,6 +468,15 @@ const App: React.FC = () => {
                 />
             )}
         </>
+      )}
+
+      {/* Chat Window */}
+      {session && activeChatUser && (
+          <ChatWindow 
+              currentUser={{ id: session.user.id }}
+              targetUser={activeChatUser}
+              onClose={() => setActiveChatUser(null)}
+          />
       )}
     </div>
   );

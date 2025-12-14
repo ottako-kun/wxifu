@@ -15,3 +15,18 @@ export interface MediaItem {
   author?: string; // Username of the uploader
   author_avatar?: string; // Avatar URL of the uploader
 }
+
+export interface Message {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  created_at: string;
+}
+
+export interface UserProfileData {
+    id: string;
+    name: string;
+    avatar: string;
+    bio?: string;
+}
