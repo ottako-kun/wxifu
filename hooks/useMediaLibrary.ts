@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, getFollowedMedia } from '../lib/supabaseClient';
 import { fallbackPhotoMedia, fallbackVideoMedia, processMediaItem } from '../gallery-data';
 import { MediaItem, MediaType } from '../types';
+import { Session } from '@supabase/supabase-js';
 
-export const useMediaLibrary = () => {
+export const useMediaLibrary = (session: Session | null) => {
   const [photoMedia, setPhotoMedia] = useState<MediaItem[]>([]);
   const [videoMedia, setVideoMedia] = useState<MediaItem[]>([]);
+  const [followedMedia, setFollowedMedia] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
@@ -54,7 +56,7 @@ export const useMediaLibrary = () => {
         }
       }
 
-      // Process Fetched Data
+      // Process Global Fetched Data
       const fetchedPhotos: MediaItem[] = [];
       const fetchedVideos: MediaItem[] = [];
 
@@ -66,14 +68,31 @@ export const useMediaLibrary = () => {
               fetchedPhotos.push(processed);
           }
       });
-
-      // MERGE STRATEGY:
-      // 1. Fetched Data (from Supabase) appears first (usually newer).
-      // 2. Fallback Data (from gallery-data.ts) appears after.
-      // This ensures your static file links ALWAYS show up.
       
       setPhotoMedia([...fetchedPhotos, ...fallbackPhotoMedia]);
       setVideoMedia([...fetchedVideos, ...fallbackVideoMedia]);
+
+      // --- FETCH FOLLOWED MEDIA ---
+      if (session) {
+          const { data: followedDataRaw } = await getFollowedMedia(session.user.id);
+          
+          if (followedDataRaw && followedDataRaw.length > 0) {
+              const processedFollowed = followedDataRaw.map((item, index) => {
+                  const processed = processMediaItem(item, index);
+                  // Ensure profile info is attached correctly if join worked
+                  if (item.profiles) {
+                      processed.author = item.profiles.name || processed.author;
+                      processed.author_avatar = item.profiles.avatar || processed.author_avatar;
+                  }
+                  return processed;
+              });
+              setFollowedMedia(processedFollowed);
+          } else {
+              setFollowedMedia([]);
+          }
+      } else {
+          setFollowedMedia([]);
+      }
 
     } catch (err: any) {
       console.error("Error fetching media:", err.message);
@@ -83,11 +102,11 @@ export const useMediaLibrary = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  return { photoMedia, videoMedia, isLoading, refresh: fetchData };
+  return { photoMedia, videoMedia, followedMedia, isLoading, refresh: fetchData };
 };

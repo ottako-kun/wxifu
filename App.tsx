@@ -32,7 +32,7 @@ const AppContent: React.FC = () => {
   // Navigation State
   const [currentView, setCurrentView] = useState<ViewState>('home');
   const [activeProfile, setActiveProfile] = useState<UserProfileData | null>(null);
-  const [activeTab, setActiveTab] = useState<'photos' | 'videos'>('photos');
+  const [activeTab, setActiveTab] = useState<'photos' | 'videos' | 'following'>('photos');
 
   // Auth State
   const [session, setSession] = useState<Session | null>(null);
@@ -41,7 +41,7 @@ const AppContent: React.FC = () => {
   const [activeChatUser, setActiveChatUser] = useState<UserProfileData | null>(null);
 
   // Data State (via Custom Hook)
-  const { photoMedia, videoMedia, isLoading, refresh } = useMediaLibrary();
+  const { photoMedia, videoMedia, followedMedia, isLoading, refresh } = useMediaLibrary(session);
 
   // Upload State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -220,6 +220,7 @@ const AppContent: React.FC = () => {
           <HomeView 
              photoMedia={photoMedia}
              videoMedia={videoMedia}
+             followedMedia={followedMedia}
              isLoading={isLoading}
              session={session}
              onUserClick={handleUserClick}

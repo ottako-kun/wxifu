@@ -152,6 +152,29 @@ export const updateMediaItem = async (id: string, updates: { description?: strin
   return await supabase.from('media').update(updates).eq('id', id);
 };
 
+export const getFollowedMedia = async (userId: string) => {
+    // 1. Get IDs of users I follow
+    const { data: follows, error: followError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', userId);
+    
+    if (followError || !follows) return { data: [], error: followError };
+    
+    const followingIds = follows.map(f => f.following_id);
+    
+    if (followingIds.length === 0) return { data: [], error: null };
+
+    // 2. Fetch media from these users
+    const { data, error } = await supabase
+        .from('media')
+        .select('*, profiles(name, avatar)')
+        .in('user_id', followingIds)
+        .order('created_at', { ascending: false });
+        
+    return { data, error };
+};
+
 // --- LIKES SYSTEM ---
 
 export const getLikeCount = async (mediaId: string) => {
