@@ -4,7 +4,6 @@ import MediaGrid from './MediaGrid';
 import SearchIcon from './icons/SearchIcon';
 import SortAscendingIcon from './icons/SortAscendingIcon';
 import CloseIcon from './icons/CloseIcon';
-import ChevronRightIcon from './icons/ChevronRightIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
 import { MediaItem } from '../types';
 import { Session } from '@supabase/supabase-js';
@@ -69,6 +68,30 @@ const HomeView: React.FC<HomeViewProps> = ({
   useEffect(() => {
     clearFilters();
   }, [activeTab]);
+
+  // Infinite Scroll Observer
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && visibleCount < sortedItems.length) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: '400px' } // Load well before the user hits the bottom
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [visibleCount, sortedItems.length, loadMore]);
 
   return (
     <>
@@ -219,17 +242,10 @@ const HomeView: React.FC<HomeViewProps> = ({
                         onDataChange={onDataChange}
                     />
 
-                    {/* Load More Button */}
+                    {/* Infinite Scroll Sentinel */}
                     {visibleCount < sortedItems.length && (
-                        <div className="flex justify-center pt-8">
-                        <button
-                            onClick={loadMore}
-                            className="group relative px-8 py-3 bg-gray-900 hover:bg-black border border-gray-800 hover:border-pink-500 text-gray-300 hover:text-white rounded-full transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-pink-500/20"
-                        >
-                            <span className="font-semibold tracking-wider text-sm uppercase">Load More</span>
-                            <ChevronRightIcon className="w-4 h-4 group-hover:translate-y-0.5 transition-transform duration-300 rotate-90" />
-                        </button>
-                        <p className="sr-only">Showing {visibleItems.length} of {sortedItems.length} items</p>
+                        <div ref={observerTarget} className="flex justify-center py-8 w-full">
+                            <LoadingSpinner className="w-8 h-8 text-pink-500/50" />
                         </div>
                     )}
 
