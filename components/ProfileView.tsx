@@ -1,14 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { MediaItem } from '../types';
 import MediaGrid from './MediaGrid';
-import { updateUserProfile, getFollowStatus, followUser, unfollowUser, getProfileStats, supabase } from '../lib/supabaseClient';
-import { getDriveId } from '../gallery-data';
-import CloseIcon from './icons/CloseIcon';
+import { getFollowStatus, followUser, unfollowUser, getProfileStats, supabase } from '../lib/supabaseClient';
 import UploadIcon from './icons/UploadIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import ChatIcon from './icons/ChatIcon';
+import CloseIcon from './icons/CloseIcon';
+import EditProfileModal from './EditProfileModal';
 
 export interface UserProfileData {
     id: string;
@@ -31,10 +30,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   const isOwner = session?.user.id === profileData.id;
   
   const [isEditing, setIsEditing] = useState(false);
-  const [displayName, setDisplayName] = useState(profileData.name || '');
-  const [bio, setBio] = useState(profileData.bio || '');
-  const [avatarUrl, setAvatarUrl] = useState(profileData.avatar || '');
-  const [isSaving, setIsSaving] = useState(false);
 
   // Social State
   const [isFollowing, setIsFollowing] = useState(false);
@@ -47,10 +42,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
 
   // Sync state if profileData changes (e.g. switching viewed profile)
   useEffect(() => {
-      setDisplayName(profileData.name || '');
-      setBio(profileData.bio || '');
-      setAvatarUrl(profileData.avatar || '');
-      
       // Reset social state
       setIsFollowing(false);
       setIsMutual(false);
@@ -144,42 +135,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
 
   // Stats
   const postCount = userMedia.length;
-
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isOwner) return;
-    setIsSaving(true);
-    
-    // Process Avatar URL for Google Drive links
-    let finalAvatarUrl = avatarUrl;
-    if (avatarUrl) {
-        const driveId = getDriveId(avatarUrl);
-        // Basic check if it looks like a drive link or just an ID
-        if (driveId && (avatarUrl.includes('drive.google.com') || avatarUrl.includes('/d/') || avatarUrl.length < 50)) {
-            // If it's a drive ID, use the direct display link
-             if (driveId.length > 10) { // arbitrary length check for ID
-                 finalAvatarUrl = `https://lh3.googleusercontent.com/d/${driveId}`;
-             }
-        }
-    }
-
-    try {
-      const { error } = await updateUserProfile({
-        full_name: displayName,
-        bio: bio,
-        avatar_url: finalAvatarUrl
-      });
-      if (error) throw error;
-      setIsEditing(false);
-      // Force reload to reflect changes globally
-      window.location.reload(); 
-    } catch (err) {
-      console.error(err);
-      alert('Failed to update profile');
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl animate-fade-in">
@@ -328,71 +283,16 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
 
       {/* Edit Profile Modal */}
       {isEditing && isOwner && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-           <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
-              <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                 <h3 className="font-bold text-white">Edit Profile</h3>
-                 <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-white">
-                    <CloseIcon className="w-5 h-5" />
-                 </button>
-              </div>
-              
-              <form onSubmit={handleSaveProfile} className="p-6 space-y-6">
-                 {/* Avatar Input */}
-                 <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Avatar Image Link</label>
-                    <div className="flex gap-4 items-center">
-                        <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-800 flex-shrink-0 border border-gray-700">
-                            {avatarUrl ? (
-                                <img src={avatarUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => {e.currentTarget.style.display='none'}} />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs font-bold">?</div>
-                            )}
-                        </div>
-                        <div className="flex-grow">
-                            <input 
-                            type="text" 
-                            value={avatarUrl}
-                            onChange={(e) => setAvatarUrl(e.target.value)}
-                            placeholder="https://drive.google.com/..."
-                            className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white focus:border-pink-500 focus:outline-none text-sm"
-                            />
-                        </div>
-                    </div>
-                    <p className="text-[10px] text-gray-500 mt-2">Paste a direct link or a Google Drive link.</p>
-                 </div>
-
-                 <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Display Name</label>
-                    <input 
-                      type="text" 
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white focus:border-pink-500 focus:outline-none"
-                    />
-                 </div>
-                 
-                 <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Bio</label>
-                    <textarea 
-                      rows={4}
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white focus:border-pink-500 focus:outline-none resize-none"
-                      placeholder="Tell us about yourself..."
-                    />
-                 </div>
-
-                 <button
-                   type="submit"
-                   disabled={isSaving}
-                   className="w-full py-3 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg transition-colors disabled:opacity-50 shadow-lg shadow-pink-500/20"
-                 >
-                   {isSaving ? 'Saving...' : 'Save Changes'}
-                 </button>
-              </form>
-           </div>
-        </div>
+        <EditProfileModal
+            currentName={profileData.name}
+            currentBio={profileData.bio || ''}
+            currentAvatar={profileData.avatar || ''}
+            onClose={() => setIsEditing(false)}
+            onUpdateSuccess={() => {
+                setIsEditing(false);
+                window.location.reload();
+            }}
+        />
       )}
     </div>
   );

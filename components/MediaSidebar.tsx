@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { MediaItem } from '../types';
 import { Session } from '@supabase/supabase-js';
-import { updateMediaItem, deleteMediaItem, getFollowStatus, followUser, unfollowUser } from '../lib/supabaseClient';
+import { deleteMediaItem, getFollowStatus, followUser, unfollowUser } from '../lib/supabaseClient';
 import { APP_CONFIG } from '../gallery-data';
 import PencilIcon from './icons/PencilIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -12,6 +11,7 @@ import LockIcon from './icons/LockIcon';
 import CommentSection from './CommentSection';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmationContext';
+import EditMediaForm from './EditMediaForm';
 
 interface MediaSidebarProps {
   item: MediaItem;
@@ -39,11 +39,7 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
   onDeleteSuccess
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editDesc, setEditDesc] = useState('');
-  const [editCategory, setEditCategory] = useState('');
-  const [editTags, setEditTags] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-
+  
   // Follow State
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
@@ -51,10 +47,8 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
   const toast = useToast();
   const { confirm } = useConfirm();
 
+  // Reset editing mode when item changes
   useEffect(() => {
-    setEditDesc(item.description || '');
-    setEditCategory(item.category || '');
-    setEditTags(item.tags ? item.tags.join(', ') : '');
     setIsEditing(false);
   }, [item]);
 
@@ -92,27 +86,11 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
       }
   };
 
-  const handleUpdate = async () => {
-    setIsSaving(true);
-    const tagsArray = editTags.split(',').map(t => t.trim()).filter(Boolean);
-    const { error } = await updateMediaItem(item.id, {
-        description: editDesc,
-        category: editCategory,
-        tags: tagsArray
-    });
-    setIsSaving(false);
-
-    if (error) {
-        toast.error('Failed to update: ' + error.message);
-    } else {
-        setIsEditing(false);
-        // Mutate local item to reflect changes immediately in UI
-        item.description = editDesc;
-        item.category = editCategory;
-        item.tags = tagsArray;
-        toast.success('Post updated');
-        if (onDataChange) onDataChange();
-    }
+  const handleEditSuccess = (updatedFields: Partial<MediaItem>) => {
+      setIsEditing(false);
+      // Mutate local item to reflect changes immediately in UI
+      Object.assign(item, updatedFields);
+      if (onDataChange) onDataChange();
   };
 
   const handleDelete = async () => {
@@ -125,9 +103,7 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
 
     if (!isConfirmed) return;
 
-    setIsSaving(true);
     const { error } = await deleteMediaItem(item.id);
-    setIsSaving(false);
     
     if (error) {
         toast.error('Failed to delete item: ' + error.message);
@@ -203,40 +179,11 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
             </div>
             
             {isEditing ? (
-                <div className="space-y-4 animate-fade-in mb-6">
-                    <div>
-                        <label className="text-[10px] uppercase font-bold text-gray-500">Description</label>
-                        <textarea 
-                            value={editDesc}
-                            onChange={(e) => setEditDesc(e.target.value)}
-                            className="w-full bg-black/30 border border-gray-700 rounded p-2 text-white text-sm focus:border-pink-500 focus:outline-none"
-                            rows={3}
-                        />
-                    </div>
-                    <div>
-                        <label className="text-[10px] uppercase font-bold text-gray-500">Category</label>
-                        <input 
-                            value={editCategory}
-                            onChange={(e) => setEditCategory(e.target.value)}
-                            className="w-full bg-black/30 border border-gray-700 rounded p-2 text-white text-sm focus:border-pink-500 focus:outline-none"
-                        />
-                    </div>
-                    <div>
-                        <label className="text-[10px] uppercase font-bold text-gray-500">Tags (comma separated)</label>
-                        <input 
-                            value={editTags}
-                            onChange={(e) => setEditTags(e.target.value)}
-                            className="w-full bg-black/30 border border-gray-700 rounded p-2 text-white text-sm focus:border-pink-500 focus:outline-none"
-                        />
-                    </div>
-                    <button 
-                        onClick={handleUpdate}
-                        disabled={isSaving}
-                        className="w-full py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded text-xs uppercase tracking-wider disabled:opacity-50"
-                    >
-                        {isSaving ? 'Saving...' : 'Save Changes'}
-                    </button>
-                </div>
+                <EditMediaForm 
+                    item={item} 
+                    onCancel={() => setIsEditing(false)} 
+                    onSuccess={handleEditSuccess} 
+                />
             ) : (
                 <>
                     <div className="mb-4 flex items-center justify-between">
