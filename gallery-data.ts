@@ -102,6 +102,17 @@ const CUSTOM_MEDIA_COLLECTION = [
 export const DEFAULT_VIDEO_THUMBNAIL_ID = '1sILwvb70QBKknRuhk0fJLwnO7kmdEywQ';
 export const DEFAULT_THUMB_URL = `https://lh3.googleusercontent.com/d/${DEFAULT_VIDEO_THUMBNAIL_ID}`;
 
+// Simple string hash for stable IDs
+const generateHash = (str: string) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
+};
+
 export const processMediaItem = (item: any, index: number): MediaItem => {
   // Case insensitive check for video type
   const rawType = item.type ? String(item.type).toUpperCase() : '';
@@ -109,11 +120,14 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
   
   const type = isVideo ? MediaType.Video : MediaType.Photo;
   
-  // Create a stable ID based on index if not provided
-  const id = item.id || (isVideo ? `static-vid-${index}` : `static-photo-${index}`);
-  
   // Input Source Handling
   const sourceString = item.link || item.src || item.url || '';
+  
+  // Generate stable ID based on content source rather than index
+  // This prevents UI glitches when items are reordered or filtered
+  const contentHash = generateHash(sourceString + (item.description || ''));
+  const id = item.id || (isVideo ? `static-vid-${contentHash}` : `static-photo-${contentHash}`);
+  
   const driveId = getDriveId(sourceString);
   
   let finalSrc = sourceString;

@@ -54,7 +54,10 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
       const DOUBLE_TAP_DELAY = 300;
       
       if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-          e.preventDefault(); // Prevent zoom and prevent click propagation to open modal
+          // Only prevent default if it's cancelable to avoid console errors
+          if (e.cancelable) {
+              e.preventDefault(); 
+          }
           handleLikeAction();
       }
       lastTapRef.current = now;

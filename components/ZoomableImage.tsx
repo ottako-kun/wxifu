@@ -23,7 +23,12 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, isUnlocked }) =
   const handleWheel = (e: React.WheelEvent) => {
     if (!isUnlocked) return;
     
-    const scaleAmount = -e.deltaY * 0.002;
+    // Normalize wheel delta to handle both mouse wheels and trackpads comfortably
+    // Math.sign(e.deltaY) ensures direction, 0.1 limits speed per event
+    const zoomIntensity = 0.1;
+    const direction = Math.sign(e.deltaY) * -1;
+    const scaleAmount = direction * zoomIntensity;
+    
     const newScale = Math.min(Math.max(1, transform.scale + scaleAmount), 4);
     
     setTransform(prev => ({

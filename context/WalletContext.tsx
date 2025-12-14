@@ -68,6 +68,30 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  // Check for Payment Return URL params
+  useEffect(() => {
+    if (!session) return;
+    
+    const query = new URLSearchParams(window.location.search);
+    const paymentStatus = query.get('payment');
+
+    if (paymentStatus) {
+        if (paymentStatus === 'success') {
+            toast.success("Payment Successful! Coins added.");
+            // Slight delay to ensure backend webhook/DB has processed if using real stripe
+            setTimeout(() => {
+                refreshWallet();
+            }, 1000);
+        } else if (paymentStatus === 'cancelled') {
+            toast.error("Payment Cancelled.");
+        }
+        
+        // Clean up URL
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({ path: newUrl }, '', newUrl);
+    }
+  }, [session]);
+
   useEffect(() => {
     refreshWallet();
   }, [session]);
