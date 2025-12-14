@@ -5,15 +5,18 @@ import PlayIcon from './icons/PlayIcon';
 import ShareIcon from './icons/ShareIcon';
 import SharePopover from './SharePopover';
 import VideoIcon from './icons/VideoIcon';
+import { Session } from '@supabase/supabase-js';
 
 interface MediaCardProps {
   item: MediaItem;
   items: MediaItem[];
   index: number;
   onUserClick?: (user: { id: string; name: string; avatar: string }) => void;
+  session: Session | null;
+  onDataChange?: () => void;
 }
 
-const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick }) => {
+const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, session, onDataChange }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
@@ -134,6 +137,8 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick }
             initialIndex={index} 
             onClose={closeModal} 
             onUserClick={onUserClick}
+            session={session}
+            onDataChange={onDataChange}
         />
       )}
       

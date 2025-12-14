@@ -111,6 +111,16 @@ export const insertMediaItem = async (item: {
   return { data, error };
 };
 
+// --- MEDIA MANAGEMENT ---
+
+export const deleteMediaItem = async (id: string) => {
+  return await supabase.from('media').delete().eq('id', id);
+};
+
+export const updateMediaItem = async (id: string, updates: { description?: string; category?: string; tags?: string[] }) => {
+  return await supabase.from('media').update(updates).eq('id', id);
+};
+
 // --- SOCIAL & MESSAGING FEATURES ---
 
 export const getFollowStatus = async (currentUserId: string, targetUserId: string) => {
@@ -163,5 +173,60 @@ export const sendMessage = async (senderId: string, receiverId: string, content:
         sender_id: senderId,
         receiver_id: receiverId,
         content: content
+    });
+};
+
+export const deleteMessage = async (msgId: string) => {
+  return await supabase.from('messages').delete().eq('id', msgId);
+};
+
+export const updateMessage = async (msgId: string, content: string) => {
+  return await supabase.from('messages').update({ content }).eq('id', msgId);
+};
+
+// Helper to fetch list of people the current user has chatted with
+export const getInboxUsers = async (currentUserId: string) => {
+    // 1. Get all messages where user is sender or receiver
+    const { data: messages, error } = await supabase
+        .from('messages')
+        .select('sender_id, receiver_id, created_at, content, is_read')
+        .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
+        .order('created_at', { ascending: false });
+
+    if (error || !messages) return [];
+
+    // 2. Extract unique other user IDs
+    const userMap = new Map();
+    
+    messages.forEach(msg => {
+        const otherId = msg.sender_id === currentUserId ? msg.receiver_id : msg.sender_id;
+        if (!userMap.has(otherId)) {
+            userMap.set(otherId, {
+                userId: otherId,
+                lastMessage: msg.content,
+                timestamp: msg.created_at,
+                isRead: msg.is_read || (msg.sender_id === currentUserId) // Sent messages count as read
+            });
+        }
+    });
+
+    const uniqueUserIds = Array.from(userMap.keys());
+    if (uniqueUserIds.length === 0) return [];
+
+    // 3. Fetch profile details for these users (Requires 'profiles' view or accessing auth.users safely)
+    // We try to use the 'profiles' view if it exists, otherwise fall back to placeholders
+    const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name, avatar')
+        .in('id', uniqueUserIds);
+
+    // Merge profile data with message data
+    return Array.from(userMap.values()).map(convo => {
+        const profile = profiles?.find((p: any) => p.id === convo.userId);
+        return {
+            ...convo,
+            name: profile?.name || 'Unknown User',
+            avatar: profile?.avatar || null
+        };
     });
 };

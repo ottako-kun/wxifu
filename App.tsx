@@ -5,6 +5,7 @@ import Hero from './components/Hero';
 import MediaGrid from './components/MediaGrid';
 import ProfileView, { UserProfileData } from './components/ProfileView';
 import ChatWindow from './components/ChatWindow';
+import InboxView from './components/InboxView';
 import { fallbackPhotoMedia, fallbackVideoMedia, processMediaItem, APP_CONFIG } from './gallery-data';
 import { supabase, insertMediaItem } from './lib/supabaseClient';
 import Footer from './components/Footer';
@@ -17,7 +18,7 @@ import UploadButton from './components/UploadButton';
 import UploadModal from './components/UploadModal';
 import { MediaItem, MediaType } from './types';
 
-type ViewState = 'home' | 'profile';
+type ViewState = 'home' | 'profile' | 'inbox';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>('home');
@@ -60,12 +61,11 @@ const App: React.FC = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      // If user logs out while on profile view and it was their profile, go home
-      if (!session && currentView === 'profile' && activeProfile?.id === session?.user.id) {
-        setCurrentView('home');
-      }
-      // Close chat on logout
+      // If user logs out while on protected views
       if (!session) {
+          if (currentView === 'inbox' || (currentView === 'profile' && activeProfile?.id === session?.user.id)) {
+              setCurrentView('home');
+          }
           setActiveChatUser(null);
       }
     });
@@ -155,7 +155,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleNavigateToProfile = (view: 'home' | 'profile') => {
+  const handleNavigate = (view: 'home' | 'profile' | 'inbox') => {
       if (view === 'profile' && session) {
           // Navigating to "My Profile"
           setActiveProfile({
@@ -166,6 +166,7 @@ const App: React.FC = () => {
           });
       }
       setCurrentView(view);
+      window.scrollTo(0,0);
   };
 
   const handleUserClick = (user: { id: string; name: string; avatar: string }) => {
@@ -270,11 +271,15 @@ const App: React.FC = () => {
       setActiveChatUser(user);
   };
 
+  const handleDataChange = () => {
+      fetchData(); // Reload all data when an item is updated or deleted
+  };
+
   return (
     <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative">
       <Header 
         session={session} 
-        onNavigate={handleNavigateToProfile} 
+        onNavigate={handleNavigate} 
       />
       
       <div className="flex-grow">
@@ -393,7 +398,12 @@ const App: React.FC = () => {
               ) : itemsToDisplay.length > 0 ? (
                 sortedItems.length > 0 ? (
                   <div className="animate-fade-in space-y-12">
-                    <MediaGrid items={visibleItems} onUserClick={handleUserClick} />
+                    <MediaGrid 
+                        items={visibleItems} 
+                        onUserClick={handleUserClick} 
+                        session={session}
+                        onDataChange={handleDataChange}
+                    />
                     
                     {/* Load More Button */}
                     {visibleCount < sortedItems.length && (
@@ -438,7 +448,7 @@ const App: React.FC = () => {
               )}
             </main>
           </>
-        ) : (
+        ) : currentView === 'profile' ? (
            <div className="pt-24">
                {activeProfile && (
                    <ProfileView 
@@ -451,6 +461,18 @@ const App: React.FC = () => {
                    />
                )}
            </div>
+        ) : (
+            // INBOX VIEW
+            <div className="pt-24">
+                {session && (
+                    <InboxView 
+                        currentUserId={session.user.id}
+                        onSelectUser={(user) => {
+                            setActiveChatUser(user);
+                        }}
+                    />
+                )}
+            </div>
         )}
       </div>
       

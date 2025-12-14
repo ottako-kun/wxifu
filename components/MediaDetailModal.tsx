@@ -1,26 +1,39 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MediaItem, MediaType } from '../types';
+import { deleteMediaItem, updateMediaItem } from '../lib/supabaseClient';
 import CloseIcon from './icons/CloseIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import ChevronRightIcon from './icons/ChevronRightIcon';
 import ShareIcon from './icons/ShareIcon';
+import TrashIcon from './icons/TrashIcon';
+import PencilIcon from './icons/PencilIcon';
 import SharePopover from './SharePopover';
 import { APP_CONFIG } from '../gallery-data';
+import { Session } from '@supabase/supabase-js';
 
 interface MediaDetailModalProps {
   items: MediaItem[];
   initialIndex: number;
   onClose: () => void;
   onUserClick?: (user: { id: string; name: string; avatar: string }) => void;
+  session: Session | null;
+  onDataChange?: () => void; // Callback to refresh data after edit/delete
 }
 
-const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex, onClose, onUserClick }) => {
+const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex, onClose, onUserClick, session, onDataChange }) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isVisible, setIsVisible] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomStyle, setZoomStyle] = useState<React.CSSProperties>({});
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   
+  // Edit State
+  const [isEditing, setIsEditing] = useState(false);
+  const [editDesc, setEditDesc] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
   // Touch handling state
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -28,6 +41,15 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
 
   const item = items[currentIndex];
   const isPhoto = item.type === MediaType.Photo;
+  const isOwner = session?.user.id === item.user_id;
+
+  // Initialize edit state when item changes
+  useEffect(() => {
+    setEditDesc(item.description || '');
+    setEditCategory(item.category || '');
+    setEditTags(item.tags ? item.tags.join(', ') : '');
+    setIsEditing(false);
+  }, [item]);
 
   const goToPrevious = useCallback(() => {
     setCurrentIndex(prevIndex => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
@@ -104,11 +126,49 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     }
   };
 
+  // Owner Actions
+  const handleDelete = async () => {
+      if (!confirm('Are you sure you want to delete this post? This cannot be undone.')) return;
+      setIsSaving(true);
+      const { error } = await deleteMediaItem(item.id);
+      setIsSaving(false);
+      
+      if (error) {
+          alert('Failed to delete item: ' + error.message);
+      } else {
+          if (onDataChange) onDataChange();
+          handleClose();
+      }
+  };
+
+  const handleUpdate = async () => {
+      setIsSaving(true);
+      const tagsArray = editTags.split(',').map(t => t.trim()).filter(Boolean);
+      const { error } = await updateMediaItem(item.id, {
+          description: editDesc,
+          category: editCategory,
+          tags: tagsArray
+      });
+      setIsSaving(false);
+
+      if (error) {
+          alert('Failed to update: ' + error.message);
+      } else {
+          setIsEditing(false);
+          // Manually update local item for immediate feedback if we don't reload whole grid
+          item.description = editDesc;
+          item.category = editCategory;
+          item.tags = tagsArray;
+          if (onDataChange) onDataChange();
+      }
+  };
+
   // Keyboard Navigation
   useEffect(() => {
     setIsVisible(true);
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isEditing) return; // Disable nav while editing
       if (e.key === 'ArrowRight') {
         goToNext();
       } else if (e.key === 'ArrowLeft') {
@@ -122,7 +182,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [goToNext, goToPrevious, handleClose]);
+  }, [goToNext, goToPrevious, handleClose, isEditing]);
 
   // Touch Navigation Handlers
   const onTouchStart = (e: React.TouchEvent) => {
@@ -135,6 +195,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   };
 
   const onTouchEnd = () => {
+    if (isEditing) return;
     if (!touchStartX.current || !touchEndX.current) return;
     
     const distance = touchStartX.current - touchEndX.current;
@@ -147,24 +208,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
         goToPrevious();
     }
   };
-
-  // Preload next and previous images
-  useEffect(() => {
-    if (currentIndex < items.length - 1) {
-      const nextItem = items[currentIndex + 1];
-      if (nextItem.type === MediaType.Photo) {
-        const img = new Image();
-        img.src = nextItem.src;
-      }
-    }
-    if (currentIndex > 0) {
-      const prevItem = items[currentIndex - 1];
-      if (prevItem.type === MediaType.Photo) {
-        const img = new Image();
-        img.src = prevItem.src;
-      }
-    }
-  }, [currentIndex, items]);
 
   return (
     <div 
@@ -231,52 +274,113 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
           <div className="p-6 md:p-8 flex-grow overflow-y-auto no-scrollbar">
             
             {/* Header: Brand or Author */}
-            <div className="flex items-center gap-x-4 mb-8 border-b border-gray-800 pb-6">
-              <div className="cursor-pointer group" onClick={handleAuthorClick}>
-                 {item.author_avatar ? (
-                     <img src={item.author_avatar} alt={item.author} className="w-12 h-12 rounded-full border border-pink-500 shadow-lg object-cover" />
-                 ) : (
-                     <div className="w-12 h-12 bg-gradient-to-br from-pink-600 to-purple-600 rounded-full shadow-lg flex items-center justify-center text-white font-bold text-lg border border-white/10">
-                        {item.author?.charAt(0) || APP_CONFIG.name.charAt(0)}
-                     </div>
-                 )}
+            <div className="flex items-center gap-x-4 mb-8 border-b border-gray-800 pb-6 justify-between">
+              <div className="flex items-center gap-x-4">
+                  <div className="cursor-pointer group" onClick={handleAuthorClick}>
+                    {item.author_avatar ? (
+                        <img src={item.author_avatar} alt={item.author} className="w-12 h-12 rounded-full border border-pink-500 shadow-lg object-cover" />
+                    ) : (
+                        <div className="w-12 h-12 bg-gradient-to-br from-pink-600 to-purple-600 rounded-full shadow-lg flex items-center justify-center text-white font-bold text-lg border border-white/10">
+                            {item.author?.charAt(0) || APP_CONFIG.name.charAt(0)}
+                        </div>
+                    )}
+                  </div>
+                  <div className="overflow-hidden">
+                      <h2 
+                        id="media-title" 
+                        className="text-lg font-bold text-white tracking-widest leading-none mb-1.5 font-orbitron truncate cursor-pointer hover:text-pink-400 transition-colors"
+                        onClick={handleAuthorClick}
+                      >
+                          {item.author || APP_CONFIG.name}
+                      </h2>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em]">{item.author ? 'Artist / Uploader' : 'Gallery Viewer'}</p>
+                  </div>
               </div>
-              <div className="overflow-hidden">
-                  <h2 
-                    id="media-title" 
-                    className="text-lg font-bold text-white tracking-widest leading-none mb-1.5 font-orbitron truncate cursor-pointer hover:text-pink-400 transition-colors"
-                    onClick={handleAuthorClick}
-                  >
-                      {item.author || APP_CONFIG.name}
-                  </h2>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em]">{item.author ? 'Artist / Uploader' : 'Gallery Viewer'}</p>
-              </div>
+              
+              {/* Owner Controls */}
+              {isOwner && (
+                  <div className="flex gap-2">
+                      <button 
+                        onClick={() => setIsEditing(!isEditing)} 
+                        className={`p-2 rounded-lg transition-colors ${isEditing ? 'bg-pink-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                        title="Edit Post"
+                      >
+                          <PencilIcon className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={handleDelete}
+                        className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-red-500 transition-colors"
+                        title="Delete Post"
+                      >
+                          <TrashIcon className="w-4 h-4" />
+                      </button>
+                  </div>
+              )}
             </div>
             
-            <div className="mb-4 flex items-center justify-between">
-               <span className="text-xs font-bold text-cyan-500 uppercase tracking-wider">Info</span>
-               {item.category && (
-                 <span className="text-[10px] font-bold px-2.5 py-1 rounded-md border border-pink-500/30 bg-pink-500/10 text-pink-300 uppercase shadow-[0_0_10px_rgba(236,72,153,0.1)]">
-                   {item.category}
-                 </span>
-               )}
-            </div>
-             <div className="prose prose-invert prose-sm prose-p:text-gray-300 prose-p:font-light prose-p:leading-relaxed mb-8">
-               <p>{item.description || 'No description available for this artwork.'}</p>
-             </div>
+            {isEditing ? (
+                <div className="space-y-4 animate-fade-in">
+                    <div>
+                        <label className="text-[10px] uppercase font-bold text-gray-500">Description</label>
+                        <textarea 
+                            value={editDesc}
+                            onChange={(e) => setEditDesc(e.target.value)}
+                            className="w-full bg-black/30 border border-gray-700 rounded p-2 text-white text-sm focus:border-pink-500 focus:outline-none"
+                            rows={3}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-[10px] uppercase font-bold text-gray-500">Category</label>
+                        <input 
+                            value={editCategory}
+                            onChange={(e) => setEditCategory(e.target.value)}
+                            className="w-full bg-black/30 border border-gray-700 rounded p-2 text-white text-sm focus:border-pink-500 focus:outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-[10px] uppercase font-bold text-gray-500">Tags (comma separated)</label>
+                        <input 
+                            value={editTags}
+                            onChange={(e) => setEditTags(e.target.value)}
+                            className="w-full bg-black/30 border border-gray-700 rounded p-2 text-white text-sm focus:border-pink-500 focus:outline-none"
+                        />
+                    </div>
+                    <button 
+                        onClick={handleUpdate}
+                        disabled={isSaving}
+                        className="w-full py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded text-xs uppercase tracking-wider disabled:opacity-50"
+                    >
+                        {isSaving ? 'Saving...' : 'Save Changes'}
+                    </button>
+                </div>
+            ) : (
+                <>
+                    <div className="mb-4 flex items-center justify-between">
+                    <span className="text-xs font-bold text-cyan-500 uppercase tracking-wider">Info</span>
+                    {item.category && (
+                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-md border border-pink-500/30 bg-pink-500/10 text-pink-300 uppercase shadow-[0_0_10px_rgba(236,72,153,0.1)]">
+                        {item.category}
+                        </span>
+                    )}
+                    </div>
+                    <div className="prose prose-invert prose-sm prose-p:text-gray-300 prose-p:font-light prose-p:leading-relaxed mb-8">
+                    <p>{item.description || 'No description available for this artwork.'}</p>
+                    </div>
 
-             {item.tags && item.tags.length > 0 && (
-               <div>
-                 <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-3">Tags</span>
-                 <div className="flex flex-wrap gap-2">
-                   {item.tags.map(tag => (
-                     <span key={tag} className="text-xs text-gray-300 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg transition-colors cursor-default">
-                       #{tag}
-                     </span>
-                   ))}
-                 </div>
-               </div>
-             )}
+                    {item.tags && item.tags.length > 0 && (
+                    <div>
+                        <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-3">Tags</span>
+                        <div className="flex flex-wrap gap-2">
+                        {item.tags.map(tag => (
+                            <span key={tag} className="text-xs text-gray-300 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg transition-colors cursor-default">
+                            #{tag}
+                            </span>
+                        ))}
+                        </div>
+                    </div>
+                    )}
+                </>
+            )}
           </div>
 
           <div className="p-6 bg-black/20 border-t border-gray-800 backdrop-blur-sm">

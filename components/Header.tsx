@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { signInWithGoogle, signOut } from '../lib/supabaseClient';
 import GoogleIcon from './icons/GoogleIcon';
+import InboxIcon from './icons/InboxIcon';
 import { APP_CONFIG } from '../gallery-data';
 
 interface HeaderProps {
   session: Session | null;
-  onNavigate?: (view: 'home' | 'profile') => void;
+  onNavigate?: (view: 'home' | 'profile' | 'inbox') => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
@@ -21,6 +22,11 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
 
   const handleProfileClick = () => {
     if (onNavigate) onNavigate('profile');
+    setIsMenuOpen(false);
+  };
+  
+  const handleInboxClick = () => {
+    if (onNavigate) onNavigate('inbox');
     setIsMenuOpen(false);
   };
 
@@ -53,6 +59,15 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
         <div className="relative">
           {session ? (
             <div className="flex items-center gap-3">
+              {/* Inbox Icon (Visible on Desktop) */}
+              <button 
+                onClick={handleInboxClick}
+                className="hidden sm:flex p-2 text-gray-400 hover:text-cyan-400 transition-colors rounded-full hover:bg-gray-800"
+                title="Messages"
+              >
+                  <InboxIcon className="w-6 h-6" />
+              </button>
+
               <div 
                 className="flex items-center gap-3 cursor-pointer p-1 pr-3 rounded-full hover:bg-gray-800/50 transition-colors"
                 onClick={toggleMenu}
@@ -78,12 +93,19 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
 
               {/* Dropdown */}
               {isMenuOpen && (
-                 <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl py-1 animate-fade-in">
+                 <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl py-1 animate-fade-in z-50">
                     <button
                       onClick={handleProfileClick}
                       className="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-800 hover:text-white transition-colors"
                     >
                       My Profile
+                    </button>
+                    <button
+                      onClick={handleInboxClick}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-800 hover:text-white transition-colors flex items-center justify-between"
+                    >
+                      <span>Messages</span>
+                      <InboxIcon className="w-4 h-4 text-gray-500" />
                     </button>
                     <div className="h-px bg-gray-800 my-1"></div>
                     <button

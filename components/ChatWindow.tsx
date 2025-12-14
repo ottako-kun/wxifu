@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase, getMessages, sendMessage } from '../lib/supabaseClient';
+import { supabase, getMessages, sendMessage, deleteMessage, updateMessage } from '../lib/supabaseClient';
 import { UserProfileData, Message } from '../types';
 import CloseIcon from './icons/CloseIcon';
 import SendIcon from './icons/SendIcon';
+import TrashIcon from './icons/TrashIcon';
+import PencilIcon from './icons/PencilIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
 
 interface ChatWindowProps {
@@ -15,6 +17,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  
+  // Edit State
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -22,8 +29,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    // Only scroll to bottom on initial load or new message arrival, not during edits
+    if (!editingId) {
+        scrollToBottom();
+    }
+  }, [messages, editingId]);
 
   // Load Initial Messages
   useEffect(() => {
@@ -38,21 +48,38 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
 
     fetchHistory();
 
-    // Subscribe to real-time new messages
+    // Subscribe to real-time changes (INSERT, UPDATE, DELETE)
     const channel = supabase
       .channel(`chat:${currentUser.id}-${targetUser.id}`)
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'messages',
-          filter: `receiver_id=eq.${currentUser.id}`, // Listen for messages sent TO me
         },
         (payload) => {
-           // Verify it's from the person we are chatting with
-           if (payload.new.sender_id === targetUser.id) {
-               setMessages((prev) => [...prev, payload.new as Message]);
+           // Handle Insert
+           if (payload.eventType === 'INSERT') {
+               const newMsg = payload.new as Message;
+               // Check if this message belongs to current chat
+               if ((newMsg.sender_id === currentUser.id && newMsg.receiver_id === targetUser.id) ||
+                   (newMsg.sender_id === targetUser.id && newMsg.receiver_id === currentUser.id)) {
+                   setMessages((prev) => {
+                       // Avoid duplicates (optimistic updates might have added it)
+                       if (prev.some(m => m.id === newMsg.id)) return prev;
+                       return [...prev, newMsg];
+                   });
+               }
+           }
+           // Handle Delete
+           if (payload.eventType === 'DELETE') {
+               setMessages(prev => prev.filter(m => m.id !== payload.old.id));
+           }
+           // Handle Update
+           if (payload.eventType === 'UPDATE') {
+               const updatedMsg = payload.new as Message;
+               setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
            }
         }
       )
@@ -68,11 +95,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
     if (!newMessage.trim()) return;
 
     const content = newMessage.trim();
-    setNewMessage(''); // Clear input immediately for UX
+    setNewMessage(''); 
 
     // Optimistic update
+    const tempId = 'temp-' + Date.now();
     const optimisticMsg: Message = {
-        id: 'temp-' + Date.now(),
+        id: tempId,
         sender_id: currentUser.id,
         receiver_id: targetUser.id,
         content: content,
@@ -84,15 +112,39 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
     
     if (error) {
         console.error('Failed to send', error);
-        // Remove optimistic message if failed
-        setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+        setMessages(prev => prev.filter(m => m.id !== tempId));
         alert('Failed to send message');
-    } else if (data) {
-        // Replace optimistic ID with real ID if needed, but for now simple append is okay 
-        // because we aren't editing/deleting. 
-        // Note: Realtime subscription doesn't usually catch my OWN inserts unless configured, 
-        // so optimistic update is good.
+    } else {
+        // We rely on Realtime subscription to replace the optimistic message with real ID,
+        // or we could manually replace it here if realtime is slow.
+        // Simple approach: filter out temp ID when real one arrives via subscription, 
+        // OR just update the ID here if `data` returns it.
+        // Since subscription is active, let's just remove temp ID and let subscription add real one to avoid dupe keys
+        setMessages(prev => prev.filter(m => m.id !== tempId)); 
     }
+  };
+
+  const handleDelete = async (msgId: string) => {
+      if (!confirm('Delete this message?')) return;
+      const { error } = await deleteMessage(msgId);
+      if (error) {
+          alert('Failed to delete');
+      }
+      // UI update handled by realtime subscription
+  };
+
+  const startEdit = (msg: Message) => {
+      setEditingId(msg.id);
+      setEditText(msg.content);
+  };
+
+  const submitEdit = async (msgId: string) => {
+      if (editText.trim() === '') return; // Don't allow empty
+      const { error } = await updateMessage(msgId, editText);
+      if (error) {
+          alert('Failed to update');
+      }
+      setEditingId(null);
   };
 
   return (
@@ -131,19 +183,58 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
          ) : (
              messages.map((msg) => {
                  const isMe = msg.sender_id === currentUser.id;
+                 const isEditingThis = editingId === msg.id;
+
                  return (
-                     <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                     <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group/msg`}>
                          <div 
-                           className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
+                           className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm relative ${
                                isMe 
                                ? 'bg-pink-600 text-white rounded-br-none' 
                                : 'bg-gray-800 text-gray-200 rounded-bl-none border border-gray-700'
                            }`}
                          >
-                             <p>{msg.content}</p>
-                             <p className={`text-[9px] mt-1 text-right ${isMe ? 'text-pink-200' : 'text-gray-500'}`}>
-                                 {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                             </p>
+                             {isEditingThis ? (
+                                 <div className="flex flex-col gap-2 min-w-[200px]">
+                                     <input 
+                                        value={editText}
+                                        onChange={(e) => setEditText(e.target.value)}
+                                        className="bg-black/20 rounded p-1 text-white w-full border border-white/20"
+                                        autoFocus
+                                     />
+                                     <div className="flex justify-end gap-2 text-xs">
+                                         <button onClick={() => setEditingId(null)} className="opacity-70 hover:opacity-100">Cancel</button>
+                                         <button onClick={() => submitEdit(msg.id)} className="font-bold">Save</button>
+                                     </div>
+                                 </div>
+                             ) : (
+                                 <>
+                                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                                    <p className={`text-[9px] mt-1 text-right ${isMe ? 'text-pink-200' : 'text-gray-500'}`}>
+                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                    
+                                    {/* Action Buttons (Only for sender) */}
+                                    {isMe && !msg.id.startsWith('temp') && (
+                                        <div className="absolute top-0 right-full mr-2 hidden group-hover/msg:flex items-center gap-1 bg-gray-800 rounded-lg p-1 border border-gray-700">
+                                            <button 
+                                                onClick={() => startEdit(msg)}
+                                                className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
+                                                title="Edit"
+                                            >
+                                                <PencilIcon className="w-3 h-3" />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDelete(msg.id)}
+                                                className="p-1 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded"
+                                                title="Delete"
+                                            >
+                                                <TrashIcon className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    )}
+                                 </>
+                             )}
                          </div>
                      </div>
                  );
