@@ -10,9 +10,10 @@ import { useWallet } from '../context/WalletContext';
 interface HeaderProps {
   session: Session | null;
   onNavigate?: (view: 'home' | 'profile' | 'inbox') => void;
+  onOpenShop?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
+const Header: React.FC<HeaderProps> = ({ session, onNavigate, onOpenShop }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { balance } = useWallet();
 
@@ -62,11 +63,18 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
         <div className="relative">
           {session ? (
             <div className="flex items-center gap-3">
-              {/* Coin Balance */}
-              <div className="flex items-center gap-1.5 bg-yellow-900/20 border border-yellow-500/30 px-3 py-1.5 rounded-full">
-                  <CoinIcon className="w-4 h-4 text-yellow-500" />
+              {/* Coin Balance - Clickable for Shop */}
+              <button 
+                  onClick={onOpenShop}
+                  className="flex items-center gap-1.5 bg-yellow-900/20 border border-yellow-500/30 px-3 py-1.5 rounded-full hover:bg-yellow-900/40 hover:border-yellow-500 transition-all cursor-pointer group/coin"
+                  title="Buy Coins"
+              >
+                  <CoinIcon className="w-4 h-4 text-yellow-500 group-hover/coin:scale-110 transition-transform" />
                   <span className="text-xs font-bold text-yellow-400 font-orbitron">{balance}</span>
-              </div>
+                  <div className="w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center text-black text-[10px] font-bold ml-1 opacity-0 group-hover/coin:opacity-100 transition-opacity">
+                      +
+                  </div>
+              </button>
 
               {/* Inbox Icon (Visible on Desktop) */}
               <button 

@@ -8,6 +8,7 @@ interface WalletContextType {
   unlockedIds: string[];
   refreshWallet: () => Promise<void>;
   unlockContent: (mediaId: string, price: number, authorId?: string) => Promise<boolean>;
+  addCoins: (amount: number) => Promise<boolean>;
   isUnlocked: (mediaId: string) => boolean;
   isLoading: boolean;
 }
@@ -75,12 +76,34 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
   };
 
+  const addCoins = async (amount: number) => {
+      if (!session) return false;
+      try {
+          // This is a simulated top-up. 
+          // In production, this would be handled by a Supabase Edge Function triggered by a Stripe Webhook.
+          const newBalance = balance + amount;
+          
+          const { error } = await supabase
+              .from('profiles')
+              .update({ coins: newBalance })
+              .eq('id', session.user.id);
+
+          if (error) throw error;
+          
+          setBalance(newBalance);
+          return true;
+      } catch (error) {
+          console.error("Failed to add coins", error);
+          return false;
+      }
+  };
+
   const isUnlocked = (mediaId: string) => {
       return unlockedIds.includes(mediaId);
   };
 
   return (
-    <WalletContext.Provider value={{ balance, unlockedIds, refreshWallet, unlockContent, isUnlocked, isLoading }}>
+    <WalletContext.Provider value={{ balance, unlockedIds, refreshWallet, unlockContent, addCoins, isUnlocked, isLoading }}>
       {children}
     </WalletContext.Provider>
   );

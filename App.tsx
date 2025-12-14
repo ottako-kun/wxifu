@@ -12,6 +12,7 @@ import UploadModal from './components/UploadModal';
 import BottomNav from './components/BottomNav';
 import AgeVerificationModal from './components/AgeVerificationModal';
 import LegalModal from './components/LegalModal';
+import CoinShopModal from './components/CoinShopModal';
 import { MediaType } from './types';
 import { useMediaLibrary } from './hooks/useMediaLibrary';
 import { useMediaUpload } from './hooks/useMediaUpload';
@@ -44,6 +45,9 @@ const AppContent: React.FC = () => {
 
   // Chat State
   const [activeChatUser, setActiveChatUser] = useState<UserProfileData | null>(null);
+  
+  // Coin Shop State
+  const [isShopOpen, setIsShopOpen] = useState(false);
 
   // Data State (via Custom Hook)
   const { photoMedia, videoMedia, followedMedia, isLoading, refresh } = useMediaLibrary(session);
@@ -177,6 +181,14 @@ const AppContent: React.FC = () => {
   const handleOpenChat = (user: UserProfileData) => {
       setActiveChatUser(user);
   };
+  
+  const handleOpenShop = () => {
+      if (!session) {
+          toast.error("Please sign in to access the Coin Shop.");
+          return;
+      }
+      setIsShopOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative pb-16 md:pb-0">
@@ -188,7 +200,8 @@ const AppContent: React.FC = () => {
 
       <Header 
         session={session} 
-        onNavigate={handleNavigate} 
+        onNavigate={handleNavigate}
+        onOpenShop={handleOpenShop}
       />
       
       <div className="flex-grow">
@@ -269,6 +282,11 @@ const AppContent: React.FC = () => {
               targetUser={activeChatUser}
               onClose={() => setActiveChatUser(null)}
           />
+      )}
+      
+      {/* Coin Shop Modal */}
+      {isShopOpen && (
+          <CoinShopModal onClose={() => setIsShopOpen(false)} />
       )}
 
       {/* Legal Modals */}
