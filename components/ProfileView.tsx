@@ -11,12 +11,15 @@ import GiftIcon from './icons/GiftIcon';
 import EditProfileModal from './EditProfileModal';
 import TipModal from './TipModal';
 import { useProfileStats } from '../hooks/useProfileStats';
+import Avatar from './Avatar';
+import { useWallet } from '../context/WalletContext';
 
 export interface UserProfileData {
     id: string;
     name: string;
     avatar: string;
     bio?: string;
+    frame?: string;
 }
 
 interface ProfileViewProps {
@@ -40,6 +43,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   const [isMutual, setIsMutual] = useState(false);
   const [loadingSocial, setLoadingSocial] = useState(false);
   
+  // Frame State
+  const { activeFrame } = useWallet(); // Current user's frame
+  const [viewedUserFrame, setViewedUserFrame] = useState('none');
+  
   // Stats Logic (Extracted)
   const { followersCount, followingCount, incrementFollowers, decrementFollowers } = useProfileStats(profileData.id);
 
@@ -48,7 +55,17 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
       // Reset social state
       setIsFollowing(false);
       setIsMutual(false);
-  }, [profileData]);
+      
+      // Check for frame in localStorage hack (Simulating DB fetch)
+      if (isOwner) {
+          setViewedUserFrame(activeFrame);
+      } else {
+          // In real app, profileData would have 'frame' from DB. 
+          // Here we mock it or default to none for others unless we stored it globally
+          const stored = localStorage.getItem(`frame_${profileData.id}`);
+          setViewedUserFrame(stored || 'none');
+      }
+  }, [profileData, isOwner, activeFrame]);
 
   // Check Follow Status (Am I following them?)
   useEffect(() => {
@@ -108,21 +125,13 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
       <div className="flex flex-col md:flex-row items-center md:items-start gap-8 mb-16 border-b border-gray-800 pb-12">
         {/* Avatar */}
         <div className="flex-shrink-0">
-          <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-tr from-pink-500 to-cyan-500 p-1 shadow-[0_0_30px_rgba(236,72,153,0.3)]">
-            <div className="w-full h-full rounded-full bg-black overflow-hidden relative">
-               {profileData.avatar ? (
-                  <img 
-                    src={profileData.avatar} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover"
-                  />
-               ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-white bg-gray-900">
-                    {profileData.name?.[0]?.toUpperCase() || '?'}
-                  </div>
-               )}
-            </div>
-          </div>
+            <Avatar 
+                src={profileData.avatar} 
+                alt={profileData.name} 
+                frame={viewedUserFrame}
+                size="2xl"
+                className="shadow-2xl"
+            />
         </div>
 
         {/* Info */}

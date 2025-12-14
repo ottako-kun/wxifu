@@ -216,7 +216,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative pb-16 md:pb-0">
+    <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative pb-20 md:pb-0">
       
       <ToastContainer />
 

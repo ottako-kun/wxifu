@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { signInWithGoogle, signOut } from '../lib/supabaseClient';
@@ -6,6 +7,7 @@ import InboxIcon from './icons/InboxIcon';
 import CoinIcon from './icons/CoinIcon';
 import { APP_CONFIG } from '../gallery-data';
 import { useWallet } from '../context/WalletContext';
+import Avatar from './Avatar';
 
 interface HeaderProps {
   session: Session | null;
@@ -15,7 +17,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ session, onNavigate, onOpenShop }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { balance } = useWallet();
+  const { balance, activeFrame } = useWallet();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -35,7 +37,7 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate, onOpenShop }) => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-black/80 backdrop-blur-md z-20 border-b border-pink-500/20">
+    <header className="fixed top-0 left-0 right-0 bg-black/80 backdrop-blur-md z-[60] border-b border-pink-500/20">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         {/* Logo and Title */}
         <a href="/" onClick={handleLogoClick} className="flex items-center gap-x-3 group cursor-pointer">
@@ -89,17 +91,12 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate, onOpenShop }) => {
                 className="flex items-center gap-3 cursor-pointer p-1 pr-3 rounded-full hover:bg-gray-800/50 transition-colors"
                 onClick={toggleMenu}
               >
-                {session.user.user_metadata.avatar_url ? (
-                  <img 
+                <Avatar 
                     src={session.user.user_metadata.avatar_url} 
-                    alt="Profile" 
-                    className="w-9 h-9 rounded-full border-2 border-cyan-500/50 shadow-[0_0_10px_rgba(6,182,212,0.3)]"
-                  />
-                ) : (
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-cyan-500 flex items-center justify-center text-white font-bold">
-                    {session.user.email?.[0].toUpperCase()}
-                  </div>
-                )}
+                    alt={session.user.email} 
+                    frame={activeFrame}
+                    size="md"
+                />
                 <div className="hidden sm:block text-right">
                   <p className="text-xs font-bold text-white leading-none">
                     {session.user.user_metadata.full_name || session.user.email?.split('@')[0]}

@@ -6,11 +6,13 @@ import { useToast } from './ToastContext';
 interface WalletContextType {
   balance: number;
   unlockedIds: string[];
+  activeFrame: string;
   refreshWallet: () => Promise<void>;
   unlockContent: (mediaId: string, price: number, authorId?: string) => Promise<boolean>;
   purchasePackage: (packageId: string) => Promise<void>;
   addCoins: (amount: number) => Promise<boolean>;
   tipUser: (recipientId: string, amount: number) => Promise<boolean>;
+  buyFrame: (frameId: string, price: number) => Promise<boolean>;
   isUnlocked: (mediaId: string) => boolean;
   isLoading: boolean;
   claimDailyReward: () => Promise<boolean>;
@@ -22,6 +24,7 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined);
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [balance, setBalance] = useState(0);
   const [unlockedIds, setUnlockedIds] = useState<string[]>([]);
+  const [activeFrame, setActiveFrame] = useState('none');
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
@@ -42,12 +45,19 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!session) {
         setBalance(0);
         setUnlockedIds([]);
+        setActiveFrame('none');
         return;
     }
 
     try {
         const { coins } = await getUserBalance(session.user.id);
         const { unlockedIds } = await getUnlockedMedia(session.user.id);
+        
+        // Fetch Frame (Simulating extra column since we can't migrate DB easily in this environment)
+        // In real app: const { data } = await supabase.from('profiles').select('frame')...
+        const savedFrame = localStorage.getItem(`frame_${session.user.id}`);
+        if (savedFrame) setActiveFrame(savedFrame);
+
         setBalance(coins);
         setUnlockedIds(unlockedIds);
     } catch (error) {
@@ -120,9 +130,8 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           
           if (senderError) throw senderError;
 
-          // 2. Add to Recipient (Optimistic / Fire & Forget for prototype)
+          // 2. Add to Recipient
           if (recipientId && !recipientId.startsWith('static')) {
-              // Get recipient current balance first to be safe, or use RPC in prod
               const { data: recipientData } = await supabase.from('profiles').select('coins').eq('id', recipientId).single();
               if (recipientData) {
                    await supabase
@@ -141,6 +150,42 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           return false;
       } finally {
           setIsLoading(false);
+      }
+  };
+  
+  // Logic for Buying/Equipping a Frame
+  const buyFrame = async (frameId: string, price: number) => {
+      if (!session) return false;
+      
+      // If we had a real backend, we'd check if user owns it. 
+      // Here we assume buying = equipping immediately, and price is deducted every switch (harsh!) 
+      // OR we just simulate ownership via LocalStorage for prototype.
+      
+      if (balance < price) {
+          toast.error("Insufficient coins");
+          return false;
+      }
+      
+      try {
+           const newBalance = balance - price;
+           const { error } = await supabase
+              .from('profiles')
+              .update({ coins: newBalance })
+              .eq('id', session.user.id);
+            
+           if (error) throw error;
+
+           // Save frame selection locally (mocking DB column)
+           localStorage.setItem(`frame_${session.user.id}`, frameId);
+           setActiveFrame(frameId);
+           setBalance(newBalance);
+           toast.success("Frame Equipped!");
+           return true;
+
+      } catch (error) {
+          console.error("Frame buy failed", error);
+          toast.error("Transaction failed");
+          return false;
       }
   };
 
@@ -213,11 +258,13 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     <WalletContext.Provider value={{ 
         balance, 
         unlockedIds, 
+        activeFrame,
         refreshWallet, 
         unlockContent, 
         purchasePackage, 
         addCoins,
         tipUser,
+        buyFrame,
         isUnlocked, 
         isLoading,
         claimDailyReward,

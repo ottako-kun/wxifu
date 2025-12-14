@@ -37,6 +37,7 @@ export interface UserProfileData {
     avatar: string;
     bio?: string;
     coins?: number;
+    frame?: string; // ID of the equipped frame
 }
 
 export interface Comment {

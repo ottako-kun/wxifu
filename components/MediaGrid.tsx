@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { MediaItem } from '../types';
 import MediaCard from './MediaCard';
@@ -12,7 +13,7 @@ interface MediaGridProps {
 
 const MediaGrid: React.FC<MediaGridProps> = ({ items, onUserClick, session, onDataChange }) => {
   return (
-    <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-6 xl:columns-8 gap-2 md:gap-4 inline-block text-left w-full">
+    <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-6 xl:columns-8 gap-2 md:gap-4 block w-full space-y-2 md:space-y-4">
       {items.map((item, index) => (
         <MediaCard 
             key={item.id} 

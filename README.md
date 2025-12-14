@@ -19,6 +19,7 @@ Ottako-X has evolved from a simple gallery into a fully-featured **Social Media 
 *   **Follow System**: Follow your favorite creators and see their posts in a dedicated feed.
 *   **Real-time Chat**: Instant direct messaging between users (powered by Supabase Realtime).
 *   **Interactions**: Like and Comment on posts to engage with the community.
+*   **Avatar Frames**: Users can equip special frames (Neon, Gold, Glitch) to stand out.
 
 ### 🛠 **Creator Tools**
 *   **Content Management**: Upload, edit, and delete your own media posts.
@@ -32,8 +33,9 @@ Ottako-X has evolved from a simple gallery into a fully-featured **Social Media 
 
 ### 💰 **Monetization (Coin System)**
 *   **Wallet**: Users have a coin balance stored in the database.
-*   **Shop**: Users can purchase coins via Stripe (requires backend setup).
+*   **Shop**: Users can purchase coins via Stripe (requires backend setup) or by watching ads.
 *   **Unlocking**: Users spend coins to unlock premium content.
+*   **Cosmetics**: Users spend coins on Avatar Frames.
 
 ## 💻 Tech Stack
 
@@ -57,6 +59,7 @@ create table public.profiles (
   avatar text,
   bio text,
   coins integer default 0,
+  frame text default 'none', -- New column for avatar frames
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );
 
