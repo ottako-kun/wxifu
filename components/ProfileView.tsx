@@ -3,13 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { MediaItem } from '../types';
 import MediaGrid from './MediaGrid';
-import { getFollowStatus, followUser, unfollowUser } from '../lib/supabaseClient';
 import UploadIcon from './icons/UploadIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import EditProfileModal from './EditProfileModal';
 import TipModal from './TipModal';
 import { useProfileStats } from '../hooks/useProfileStats';
 import { useWallet } from '../context/WalletContext';
+import { useFollow } from '../hooks/useFollow';
 import ProfileHeader from './ProfileHeader';
 
 export interface UserProfileData {
@@ -36,10 +36,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   const [isEditing, setIsEditing] = useState(false);
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
 
-  // Social State
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [isMutual, setIsMutual] = useState(false);
-  const [loadingSocial, setLoadingSocial] = useState(false);
+  // Use Follow Hook
+  const { isFollowing, isMutual, isLoading: loadingSocial, toggleFollow } = useFollow(session?.user.id, profileData.id);
   
   // Frame State
   const { activeFrame } = useWallet(); // Current user's frame
@@ -50,10 +48,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
 
   // Sync state if profileData changes (e.g. switching viewed profile)
   useEffect(() => {
-      // Reset social state
-      setIsFollowing(false);
-      setIsMutual(false);
-      
       // Check for frame in localStorage hack (Simulating DB fetch)
       if (isOwner) {
           setViewedUserFrame(activeFrame);
@@ -65,43 +59,15 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
       }
   }, [profileData, isOwner, activeFrame]);
 
-  // Check Follow Status (Am I following them?)
-  useEffect(() => {
-    if (session && !isOwner) {
-        const checkStatus = async () => {
-            setLoadingSocial(true);
-            const { isFollowing, isMutual } = await getFollowStatus(session.user.id, profileData.id);
-            setIsFollowing(isFollowing);
-            setIsMutual(isMutual);
-            setLoadingSocial(false);
-        };
-        checkStatus();
-    }
-  }, [session, profileData.id, isOwner]);
-
-  const handleFollowToggle = async () => {
-      if (!session) return;
-      setLoadingSocial(true);
-      try {
+  const handleFollowToggleWrapper = async () => {
+      if (await toggleFollow(profileData.name)) {
+          // Optimistically update stats if successful
           if (isFollowing) {
-              await unfollowUser(session.user.id, profileData.id);
-              setIsFollowing(false);
-              setIsMutual(false); // Can't be mutual if I don't follow
-              decrementFollowers(); // Optimistic update
+              decrementFollowers();
           } else {
-              await followUser(session.user.id, profileData.id);
-              setIsFollowing(true);
-              // Check mutual status again immediately to update UI if they were already following me
-              const { isMutual } = await getFollowStatus(session.user.id, profileData.id);
-              setIsMutual(isMutual);
-              incrementFollowers(); // Optimistic update
+              incrementFollowers();
           }
-          // Refresh global data (like Following tab in Home)
           if (onDataChange) onDataChange();
-      } catch (err) {
-          console.error("Follow action failed", err);
-      } finally {
-          setLoadingSocial(false);
       }
   };
 
@@ -131,7 +97,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
           loadingSocial={loadingSocial}
           viewedUserFrame={viewedUserFrame}
           onEditClick={() => setIsEditing(true)}
-          onFollowToggle={handleFollowToggle}
+          onFollowToggle={handleFollowToggleWrapper}
           onTipClick={() => setIsTipModalOpen(true)}
           onMessageClick={onMessageClick}
       />

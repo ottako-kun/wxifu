@@ -1,13 +1,13 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase, getMessages, sendMessage, deleteMessage, updateMessage } from '../lib/supabaseClient';
 import { UserProfileData, Message } from '../types';
 import CloseIcon from './icons/CloseIcon';
 import SendIcon from './icons/SendIcon';
 import TrashIcon from './icons/TrashIcon';
 import PencilIcon from './icons/PencilIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
-import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmationContext';
+import { useChat } from '../hooks/useChat';
 
 interface ChatWindowProps {
   currentUser: { id: string };
@@ -16,16 +16,18 @@ interface ChatWindowProps {
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClose }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { messages, loading, send, remove, edit } = useChat({ 
+      currentUserId: currentUser.id, 
+      targetUserId: targetUser.id 
+  });
+
   const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
   
   // Edit State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const toast = useToast();
   const { confirm } = useConfirm();
 
   const scrollToBottom = () => {
@@ -39,89 +41,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
     }
   }, [messages, editingId]);
 
-  // Load Initial Messages
-  useEffect(() => {
-    const fetchHistory = async () => {
-      setLoading(true);
-      const { data, error } = await getMessages(currentUser.id, targetUser.id);
-      if (!error && data) {
-        setMessages(data as Message[]);
-      }
-      setLoading(false);
-    };
-
-    fetchHistory();
-
-    // Subscribe to real-time changes (INSERT, UPDATE, DELETE)
-    const channel = supabase
-      .channel(`chat:${currentUser.id}-${targetUser.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-        },
-        (payload) => {
-           // Handle Insert
-           if (payload.eventType === 'INSERT') {
-               const newMsg = payload.new as Message;
-               // Check if this message belongs to current chat
-               if ((newMsg.sender_id === currentUser.id && newMsg.receiver_id === targetUser.id) ||
-                   (newMsg.sender_id === targetUser.id && newMsg.receiver_id === currentUser.id)) {
-                   setMessages((prev) => {
-                       // Avoid duplicates (optimistic updates might have added it)
-                       if (prev.some(m => m.id === newMsg.id)) return prev;
-                       return [...prev, newMsg];
-                   });
-               }
-           }
-           // Handle Delete
-           if (payload.eventType === 'DELETE') {
-               setMessages(prev => prev.filter(m => m.id !== payload.old.id));
-           }
-           // Handle Update
-           if (payload.eventType === 'UPDATE') {
-               const updatedMsg = payload.new as Message;
-               setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
-           }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentUser.id, targetUser.id]);
-
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
-
+    
     const content = newMessage.trim();
     setNewMessage(''); 
-
-    // Optimistic update
-    const tempId = 'temp-' + Date.now();
-    const optimisticMsg: Message = {
-        id: tempId,
-        sender_id: currentUser.id,
-        receiver_id: targetUser.id,
-        content: content,
-        created_at: new Date().toISOString()
-    };
-    setMessages(prev => [...prev, optimisticMsg]);
-
-    const { data, error } = await sendMessage(currentUser.id, targetUser.id, content);
-    
-    if (error) {
-        console.error('Failed to send', error);
-        setMessages(prev => prev.filter(m => m.id !== tempId));
-        toast.error('Failed to send message');
-    } else {
-        // We rely on Realtime subscription to replace the optimistic message with real ID
-        setMessages(prev => prev.filter(m => m.id !== tempId)); 
-    }
+    await send(content);
   };
 
   const handleDelete = async (msgId: string) => {
@@ -132,11 +58,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
           variant: 'danger'
       });
       if (!isConfirmed) return;
-      
-      const { error } = await deleteMessage(msgId);
-      if (error) {
-          toast.error('Failed to delete message');
-      }
+      await remove(msgId);
   };
 
   const startEdit = (msg: Message) => {
@@ -145,11 +67,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
   };
 
   const submitEdit = async (msgId: string) => {
-      if (editText.trim() === '') return; // Don't allow empty
-      const { error } = await updateMessage(msgId, editText);
-      if (error) {
-          toast.error('Failed to update message');
-      }
+      if (editText.trim() === '') return;
+      await edit(msgId, editText);
       setEditingId(null);
   };
 

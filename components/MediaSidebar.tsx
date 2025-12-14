@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { MediaItem } from '../types';
 import { Session } from '@supabase/supabase-js';
-import { deleteMediaItem, getFollowStatus, followUser, unfollowUser } from '../lib/supabaseClient';
+import { deleteMediaItem } from '../lib/supabaseClient';
 import { APP_CONFIG } from '../gallery-data';
 import PencilIcon from './icons/PencilIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -14,6 +15,7 @@ import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmationContext';
 import EditMediaForm from './EditMediaForm';
 import TipModal from './TipModal';
+import { useFollow } from '../hooks/useFollow';
 
 interface MediaSidebarProps {
   item: MediaItem;
@@ -43,9 +45,8 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   
-  // Follow State
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [isFollowLoading, setIsFollowLoading] = useState(false);
+  // Use Follow Hook
+  const { isFollowing, isLoading: isFollowLoading, toggleFollow } = useFollow(session?.user.id, item.user_id || '');
 
   const toast = useToast();
   const { confirm } = useConfirm();
@@ -55,37 +56,9 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
     setIsEditing(false);
   }, [item]);
 
-  // Check Follow Status
-  useEffect(() => {
-    if (session && !isOwner && item.user_id && !item.user_id.startsWith('static')) {
-        const checkStatus = async () => {
-            const { isFollowing } = await getFollowStatus(session.user.id, item.user_id!);
-            setIsFollowing(isFollowing);
-        };
-        checkStatus();
-    }
-  }, [session, isOwner, item.user_id]);
-
-  const handleFollowToggle = async () => {
-      if (!session || !item.user_id) return;
-      
-      setIsFollowLoading(true);
-      try {
-          if (isFollowing) {
-              await unfollowUser(session.user.id, item.user_id);
-              setIsFollowing(false);
-              toast.success(`Unfollowed ${item.author}`);
-          } else {
-              await followUser(session.user.id, item.user_id);
-              setIsFollowing(true);
-              toast.success(`Following ${item.author}`);
-          }
+  const handleFollowToggleWrapper = async () => {
+      if (await toggleFollow(item.author || 'Artist')) {
           if (onDataChange) onDataChange();
-      } catch (err) {
-          console.error(err);
-          toast.error("Failed to update follow status");
-      } finally {
-          setIsFollowLoading(false);
       }
   };
 
@@ -145,7 +118,7 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
                         <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em]">{item.author ? 'Artist' : 'Viewer'}</p>
                         {!isOwner && session && item.user_id && !item.user_id.startsWith('static') && (
                             <button 
-                                onClick={handleFollowToggle}
+                                onClick={handleFollowToggleWrapper}
                                 disabled={isFollowLoading}
                                 className={`ml-2 text-[10px] font-bold px-2 py-0.5 rounded border transition-colors uppercase ${
                                     isFollowing 

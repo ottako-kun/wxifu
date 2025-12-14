@@ -1,24 +1,18 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
 import Header from './components/Header';
 import ProfileView, { UserProfileData } from './components/ProfileView';
-import ChatWindow from './components/ChatWindow';
 import InboxView from './components/InboxView';
 import { supabase } from './lib/supabaseClient';
 import Footer from './components/Footer';
-import UploadButton from './components/UploadButton';
-import UploadModal from './components/UploadModal';
 import BottomNav from './components/BottomNav';
 import AgeVerificationModal from './components/AgeVerificationModal';
-import LegalModal from './components/LegalModal';
-import CoinShopModal from './components/CoinShopModal';
-import DailyRewardModal from './components/DailyRewardModal';
+import GlobalModalLayer from './components/GlobalModalLayer';
 import { MediaType } from './types';
 import { useMediaLibrary } from './hooks/useMediaLibrary';
 import { useMediaUpload } from './hooks/useMediaUpload';
 import HomeView from './components/HomeView';
-import { APP_CONFIG } from './gallery-data';
 
 // Notification System
 import { ToastProvider } from './context/ToastContext';
@@ -137,7 +131,8 @@ const AppContent: React.FC = () => {
       */
   }, [session, isAgeVerified, checkIfRewardAvailable]);
 
-  const onUploadSubmitWrapper = async (data: any) => {
+  // Wrapped in useCallback to allow children to be memoized
+  const onUploadSubmitWrapper = useCallback(async (data: any) => {
       const type = await handleUploadSubmit(data);
       if (type) {
          // Switch tab to the type uploaded so user sees it immediately
@@ -147,9 +142,9 @@ const AppContent: React.FC = () => {
             setActiveTab('photos');
         }
       }
-  };
+  }, [handleUploadSubmit]);
 
-  const handleNavigate = (view: 'home' | 'profile' | 'inbox') => {
+  const handleNavigate = useCallback((view: 'home' | 'profile' | 'inbox') => {
       if (view === 'profile' && session) {
           // Navigating to "My Profile"
           setActiveProfile({
@@ -168,9 +163,9 @@ const AppContent: React.FC = () => {
       
       setCurrentView(view);
       window.scrollTo(0,0);
-  };
+  }, [session, toast]);
   
-  const handleSearchClick = () => {
+  const handleSearchClick = useCallback(() => {
       if (currentView !== 'home') {
           handleNavigate('home');
           // Add a small timeout to allow view transition before focusing
@@ -180,9 +175,9 @@ const AppContent: React.FC = () => {
       } else {
           searchInputRef.current?.focus();
       }
-  };
+  }, [currentView, handleNavigate]);
 
-  const handleUserClick = (user: { id: string; name: string; avatar: string }) => {
+  const handleUserClick = useCallback((user: { id: string; name: string; avatar: string }) => {
       setActiveProfile({
           id: user.id,
           name: user.name,
@@ -191,7 +186,7 @@ const AppContent: React.FC = () => {
       });
       setCurrentView('profile');
       window.scrollTo(0, 0);
-  };
+  }, [session]);
 
   // Media for Profile (Combine both photo and video)
   const profileMedia = React.useMemo(() => {
@@ -201,22 +196,26 @@ const AppContent: React.FC = () => {
     return all.filter(item => item.user_id === activeProfile.id);
   }, [photoMedia, videoMedia, activeProfile]);
 
-  const handleOpenChat = (user: UserProfileData) => {
+  const handleOpenChat = useCallback((user: UserProfileData) => {
       setActiveChatUser(user);
-  };
+  }, []);
   
-  const handleOpenShop = () => {
+  const handleOpenShop = useCallback(() => {
       if (!session) {
           toast.error("Please sign in to access the Coin Shop.");
           return;
       }
       setIsShopOpen(true);
-  };
+  }, [session, toast]);
   
-  const handleClaimReward = async () => {
+  const handleClaimReward = useCallback(async () => {
       await claimDailyReward();
       setIsDailyRewardOpen(false);
-  };
+  }, [claimDailyReward]);
+
+  const handleChatClose = useCallback(() => setActiveChatUser(null), []);
+  const handleShopClose = useCallback(() => setIsShopOpen(false), []);
+  const handleLegalClose = useCallback(() => setActiveLegalModal(null), []);
 
   return (
     <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative pb-20 md:pb-0">
@@ -266,9 +265,7 @@ const AppContent: React.FC = () => {
                 {session && (
                     <InboxView 
                         currentUserId={session.user.id}
-                        onSelectUser={(user) => {
-                            setActiveChatUser(user);
-                        }}
+                        onSelectUser={handleOpenChat}
                     />
                 )}
             </div>
@@ -289,65 +286,28 @@ const AppContent: React.FC = () => {
         session={session}
       />
       
-      {/* Upload Button (Desktop Only via CSS) & Modal */}
-      {session && (
-        <>
-            <UploadButton onClick={handleUploadClick} isUploading={isUploading} />
-            {isModalOpen && (
-                <UploadModal 
-                    onClose={closeUploadModal} 
-                    onSubmit={onUploadSubmitWrapper}
-                    isSubmitting={isUploading}
-                />
-            )}
-        </>
-      )}
-
-      {/* Chat Window */}
-      {session && activeChatUser && (
-          <ChatWindow 
-              currentUser={{ id: session.user.id }}
-              targetUser={activeChatUser}
-              onClose={() => setActiveChatUser(null)}
-          />
-      )}
-      
-      {/* Coin Shop Modal */}
-      {isShopOpen && (
-          <CoinShopModal onClose={() => setIsShopOpen(false)} />
-      )}
-      
-      {/* Daily Reward Modal */}
-      {isDailyRewardOpen && (
-          <DailyRewardModal onClaim={handleClaimReward} />
-      )}
-
-      {/* Legal Modals */}
-      {activeLegalModal === 'privacy' && (
-        <LegalModal title="Privacy Policy" onClose={() => setActiveLegalModal(null)}>
-            <div className="space-y-4">
-                <p><strong className="text-white block mb-1">1. Introduction</strong>Welcome to {APP_CONFIG.name}. We are committed to protecting your privacy and ensuring you have a safe experience on our platform.</p>
-                <p><strong className="text-white block mb-1">2. Data Collection</strong>We collect minimal data required for authentication via Google (email, name, avatar). We also store the media files you upload and any metadata associated with them (descriptions, tags). We do not collect real names unless provided.</p>
-                <p><strong className="text-white block mb-1">3. Data Usage</strong>Your data is used solely to provide the gallery service, display your public profile, and facilitate social interactions (likes, comments, messages). We do not sell your personal data to third parties.</p>
-                <p><strong className="text-white block mb-1">4. Cookies & Storage</strong>We use cookies and local storage for session management to keep you logged in and to remember your preferences (e.g., age verification status).</p>
-                <p><strong className="text-white block mb-1">5. Third-Party Services</strong>We use Supabase for database and authentication services, and Google for user login. Please refer to their respective privacy policies for how they handle data.</p>
-                <p><strong className="text-white block mb-1">6. Content Visibility</strong>Please be aware that any content you upload or comments you make are public and viewable by other users of the site.</p>
-            </div>
-        </LegalModal>
-      )}
-
-      {activeLegalModal === 'terms' && (
-        <LegalModal title="Terms of Service" onClose={() => setActiveLegalModal(null)}>
-            <div className="space-y-4">
-                <p><strong className="text-white block mb-1">1. Age Requirement</strong>You must be at least 18 years old (or the age of majority in your jurisdiction) to access this site. By entering and using this service, you legally confirm you are an adult.</p>
-                <p><strong className="text-white block mb-1">2. User Generated Content</strong>You retain full ownership of the content you upload. By uploading content to {APP_CONFIG.name}, you grant us a worldwide, non-exclusive, royalty-free license to display, reproduce, and distribute your content on this platform.</p>
-                <p><strong className="text-white block mb-1">3. Prohibited Content</strong>We have a <span className="text-red-400 font-bold">zero-tolerance policy</span> for illegal content. You may not upload content that depicts non-consensual sexual acts, child sexual abuse material (CSAM), real-world violence, or any content illegal under US or international law.</p>
-                <p><strong className="text-white block mb-1">4. Conduct</strong>Harassment, hate speech, and spamming are strictly prohibited. We aim to foster a respectful community for artists and enthusiasts.</p>
-                <p><strong className="text-white block mb-1">5. Account Termination</strong>We reserve the right to suspend or ban any account found violating these terms, at our sole discretion, without prior notice.</p>
-                <p><strong className="text-white block mb-1">6. Disclaimer</strong>This site is provided "as is". We are not responsible for user-submitted content. View discretion is advised.</p>
-            </div>
-        </LegalModal>
-      )}
+      {/* Global Modals (Extracted for cleaner code and separation of concerns) */}
+      <GlobalModalLayer 
+          session={session}
+          // Upload
+          isUploading={isUploading}
+          isUploadModalOpen={isModalOpen}
+          onUploadClick={handleUploadClick}
+          onUploadClose={closeUploadModal}
+          onUploadSubmit={onUploadSubmitWrapper}
+          // Chat
+          activeChatUser={activeChatUser}
+          onChatClose={handleChatClose}
+          // Shop
+          isShopOpen={isShopOpen}
+          onShopClose={handleShopClose}
+          // Reward
+          isDailyRewardOpen={isDailyRewardOpen}
+          onClaimReward={handleClaimReward}
+          // Legal
+          activeLegalModal={activeLegalModal}
+          onLegalClose={handleLegalClose}
+      />
     </div>
   );
 };

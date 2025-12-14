@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { MediaItem, MediaType } from '../types';
 import MediaDetailModal from './MediaDetailModal';
 import MangaReaderModal from './MangaReaderModal';
@@ -10,10 +11,11 @@ import VideoIcon from './icons/VideoIcon';
 import LockIcon from './icons/LockIcon';
 import HeartIcon from './icons/HeartIcon';
 import { Session } from '@supabase/supabase-js';
-import { deleteMediaItem, getLikeCount, checkUserLiked, toggleLike } from '../lib/supabaseClient';
+import { deleteMediaItem } from '../lib/supabaseClient';
 import { useConfirm } from '../context/ConfirmationContext';
 import { useToast } from '../context/ToastContext';
 import { useWallet } from '../context/WalletContext';
+import { useMediaLikes } from '../hooks/useMediaLikes';
 
 interface MediaCardProps {
   item: MediaItem;
@@ -32,10 +34,6 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   const [isDeleting, setIsDeleting] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   
-  // Likes State
-  const [likeCount, setLikeCount] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
-
   const { confirm } = useConfirm();
   const toast = useToast();
   const { isUnlocked: checkIsUnlocked } = useWallet();
@@ -45,31 +43,11 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   const isUnlocked = isOwner || !item.is_premium || checkIsUnlocked(item.id); 
   const isStatic = item.id.startsWith('static-') || item.type === MediaType.Manga;
   
+  // Use Custom Hook for Likes
+  const { likeCount, isLiked, toggleLike } = useMediaLikes(item.id, session?.user.id, isStatic);
+  
   // Double tap logic
   const lastTapRef = useRef<number>(0);
-
-  // Fetch Likes on Mount
-  useEffect(() => {
-    if (isStatic) return;
-
-    let mounted = true;
-
-    const fetchLikes = async () => {
-      const { count } = await getLikeCount(item.id);
-      if (mounted) setLikeCount(count);
-
-      if (session) {
-        const { isLiked } = await checkUserLiked(item.id, session.user.id);
-        if (mounted) setIsLiked(isLiked);
-      }
-    };
-
-    fetchLikes();
-
-    return () => {
-      mounted = false;
-    };
-  }, [item.id, session, isStatic]);
 
   const handleCardClick = () => {
       if (item.type === MediaType.Manga) {
@@ -87,9 +65,6 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
       if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
           e.preventDefault(); // Prevent zoom
           handleLikeAction();
-      } else {
-          // If it's a single tap, we let the onClick handler fire naturally after a delay
-          // But since this is a touchEnd, we rely on the click event bubbling up for navigation
       }
       lastTapRef.current = now;
   };
@@ -107,45 +82,11 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   const handleLikeAction = async () => {
     if (isStatic) return;
 
-    if (!session) {
-      toast.info("Please sign in to like posts!");
-      return;
-    }
-
-    // Trigger Animation
+    // Trigger Animation immediately for feedback
     setShowHeartAnimation(true);
     setTimeout(() => setShowHeartAnimation(false), 1000);
 
-    // Optimistic UI Update
-    const previousIsLiked = isLiked;
-    const previousCount = likeCount;
-
-    // If already liked and double tapped, just show animation, don't toggle off (standard UX)
-    // If clicked via button, toggle. 
-    // This function handles both, so we toggle if it's the button, 
-    // but if it's a double tap we generally only want to LIKE, not UNLIKE.
-    // However, for simplicity here, we toggle.
-    
-    const shouldLike = !previousIsLiked;
-    
-    if (previousIsLiked) {
-        // If already liked, maybe just animate? 
-        // Let's stick to toggle for the button, but maybe 'like only' for double tap?
-        // For now: Toggle
-    }
-
-    setIsLiked(shouldLike);
-    setLikeCount(prev => shouldLike ? prev + 1 : prev - 1);
-
-    const { liked, error } = await toggleLike(item.id, session.user.id);
-
-    if (error) {
-      setIsLiked(previousIsLiked);
-      setLikeCount(previousCount);
-      toast.error("Failed to update like");
-    } else {
-      setIsLiked(liked);
-    }
+    await toggleLike();
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {
@@ -371,4 +312,4 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   );
 };
 
-export default MediaCard;
+export default React.memo(MediaCard);

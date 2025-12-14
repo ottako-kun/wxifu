@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { MediaItem } from '../types';
 import MediaCard from './MediaCard';
@@ -54,4 +55,4 @@ const MediaGrid: React.FC<MediaGridProps> = ({ items, onUserClick, session, onDa
   );
 };
 
-export default MediaGrid;
+export default React.memo(MediaGrid);
