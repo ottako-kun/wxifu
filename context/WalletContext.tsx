@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, getUserBalance, getUnlockedMedia, unlockMedia } from '../lib/supabaseClient';
 import { Session } from '@supabase/supabase-js';
@@ -51,15 +52,17 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     try {
         const { coins } = await getUserBalance(session.user.id);
-        const { unlockedIds } = await getUnlockedMedia(session.user.id);
+        const { unlockedIds: dbUnlockedIds } = await getUnlockedMedia(session.user.id);
+        
+        // Fetch LocalStorage unlocks for static items
+        const localStaticUnlocks = JSON.parse(localStorage.getItem(`unlocked_static_${session.user.id}`) || '[]');
         
         // Fetch Frame (Simulating extra column since we can't migrate DB easily in this environment)
-        // In real app: const { data } = await supabase.from('profiles').select('frame')...
         const savedFrame = localStorage.getItem(`frame_${session.user.id}`);
         if (savedFrame) setActiveFrame(savedFrame);
 
         setBalance(coins);
-        setUnlockedIds(unlockedIds);
+        setUnlockedIds([...dbUnlockedIds, ...localStaticUnlocks]);
     } catch (error) {
         console.warn("Wallet sync issue:", error);
     }
@@ -77,6 +80,34 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       setIsLoading(true);
       try {
+          // Special handling for Static (Non-DB) Items
+          if (mediaId.startsWith('static-')) {
+              if (balance < price) {
+                  throw new Error("Insufficient coins");
+              }
+
+              // Deduct coins via API
+              const { error: deductError } = await supabase
+                  .from('profiles')
+                  .update({ coins: balance - price })
+                  .eq('id', session.user.id);
+
+              if (deductError) throw new Error("Transaction failed");
+
+              // Save unlock locally since we can't save static-ID to DB foreign key
+              const localKey = `unlocked_static_${session.user.id}`;
+              const currentUnlocks = JSON.parse(localStorage.getItem(localKey) || '[]');
+              if (!currentUnlocks.includes(mediaId)) {
+                  currentUnlocks.push(mediaId);
+                  localStorage.setItem(localKey, JSON.stringify(currentUnlocks));
+              }
+              
+              await refreshWallet();
+              toast.success("Content unlocked!");
+              return true;
+          }
+
+          // Standard DB Item
           await unlockMedia(session.user.id, mediaId, price, authorId);
           await refreshWallet();
           toast.success("Content unlocked!");

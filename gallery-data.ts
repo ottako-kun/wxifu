@@ -103,7 +103,10 @@ export const DEFAULT_VIDEO_THUMBNAIL_ID = '1sILwvb70QBKknRuhk0fJLwnO7kmdEywQ';
 export const DEFAULT_THUMB_URL = `https://lh3.googleusercontent.com/d/${DEFAULT_VIDEO_THUMBNAIL_ID}`;
 
 export const processMediaItem = (item: any, index: number): MediaItem => {
-  const isVideo = item.type === MediaType.Video || item.type === 'VIDEO';
+  // Case insensitive check for video type
+  const rawType = item.type ? String(item.type).toUpperCase() : '';
+  const isVideo = rawType === 'VIDEO' || rawType === MediaType.Video;
+  
   const type = isVideo ? MediaType.Video : MediaType.Photo;
   
   // Create a stable ID based on index if not provided

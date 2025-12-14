@@ -75,6 +75,8 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                         src={item.videoSrc}
                         controls
                         autoPlay
+                        loop
+                        muted
                         playsInline
                         className="max-w-full max-h-full outline-none"
                     />

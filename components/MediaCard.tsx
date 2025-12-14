@@ -135,6 +135,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
                 loading="lazy"
                 decoding="async"
                 onLoad={() => setIsImageLoaded(true)}
+                onError={() => setIsImageLoaded(true)}
             />
 
             {/* Heart Animation Overlay */}
