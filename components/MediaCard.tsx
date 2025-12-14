@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MediaItem, MediaType } from '../types';
 import MediaDetailModal from './MediaDetailModal';
 import PlayIcon from './icons/PlayIcon';
@@ -7,8 +7,9 @@ import TrashIcon from './icons/TrashIcon';
 import SharePopover from './SharePopover';
 import VideoIcon from './icons/VideoIcon';
 import LockIcon from './icons/LockIcon';
+import HeartIcon from './icons/HeartIcon';
 import { Session } from '@supabase/supabase-js';
-import { deleteMediaItem } from '../lib/supabaseClient';
+import { deleteMediaItem, getLikeCount, checkUserLiked, toggleLike } from '../lib/supabaseClient';
 import { useConfirm } from '../context/ConfirmationContext';
 import { useToast } from '../context/ToastContext';
 
@@ -26,18 +27,43 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Likes State
+  const [likeCount, setLikeCount] = useState(0);
+  const [isLiked, setIsLiked] = useState(false);
 
   const { confirm } = useConfirm();
   const toast = useToast();
 
   const isOwner = session?.user.id === item.user_id;
-  // NOTE: Real implementation would check a 'purchased_posts' table. 
-  // For now, only the owner can see it unblurred.
   const isUnlocked = isOwner || !item.is_premium; 
+  const isStatic = item.id.startsWith('static-');
+
+  // Fetch Likes on Mount
+  useEffect(() => {
+    // We don't fetch likes for static/file-based items as they aren't in the DB properly to have likes
+    if (isStatic) return;
+
+    let mounted = true;
+
+    const fetchLikes = async () => {
+      const { count } = await getLikeCount(item.id);
+      if (mounted) setLikeCount(count);
+
+      if (session) {
+        const { isLiked } = await checkUserLiked(item.id, session.user.id);
+        if (mounted) setIsLiked(isLiked);
+      }
+    };
+
+    fetchLikes();
+
+    return () => {
+      mounted = false;
+    };
+  }, [item.id, session, isStatic]);
 
   const openModal = () => {
-      // Prevent opening modal for locked content unless we implement unlocking logic there too
-      // For now, we allow opening but the detail view will handle the lock as well
       setIsModalOpen(true);
   };
   
@@ -48,6 +74,35 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   const handleShareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     setShareAnchorEl(e.currentTarget);
+  };
+
+  const handleLikeClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (isStatic) return; // Static items interact disabled
+
+    if (!session) {
+      toast.info("Please sign in to like posts!");
+      return;
+    }
+
+    // Optimistic UI Update
+    const previousIsLiked = isLiked;
+    const previousCount = likeCount;
+
+    setIsLiked(!previousIsLiked);
+    setLikeCount(prev => previousIsLiked ? prev - 1 : prev + 1);
+
+    const { liked, error } = await toggleLike(item.id, session.user.id);
+
+    if (error) {
+      // Revert if error
+      setIsLiked(previousIsLiked);
+      setLikeCount(previousCount);
+      toast.error("Failed to update like");
+    } else {
+      // Ensure sync
+      setIsLiked(liked);
+    }
   };
 
   const handleQuickDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -172,13 +227,31 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
                                  {item.author.charAt(0)}
                              </div>
                          )}
-                         <span className="text-xs font-semibold text-gray-300 group-hover/user:text-pink-300 transition-colors truncate max-w-[120px]">
+                         <span className="text-xs font-semibold text-gray-300 group-hover/user:text-pink-300 transition-colors truncate max-w-[80px] sm:max-w-[100px]">
                              {item.author}
                          </span>
                       </div>
                   )}
 
                   <div className="flex items-center gap-1.5 ml-auto">
+                    {/* Like Button (Hidden for static items) */}
+                    {!isStatic && (
+                      <button
+                        onClick={handleLikeClick}
+                        className={`flex items-center gap-1.5 px-2 py-1.5 rounded-full backdrop-blur-md border transition-all duration-300 ${
+                          isLiked 
+                            ? 'bg-pink-500/20 border-pink-500/50 text-pink-400' 
+                            : 'bg-white/10 border-white/10 text-white hover:bg-white/20'
+                        }`}
+                        aria-label={isLiked ? "Unlike" : "Like"}
+                      >
+                        <HeartIcon className={`w-3.5 h-3.5 ${isLiked ? 'text-pink-500 scale-110' : ''}`} filled={isLiked} />
+                        {likeCount > 0 && (
+                          <span className="text-[10px] font-bold">{likeCount}</span>
+                        )}
+                      </button>
+                    )}
+
                     {isOwner && (
                        <button
                          onClick={handleQuickDelete}

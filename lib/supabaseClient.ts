@@ -152,6 +152,48 @@ export const updateMediaItem = async (id: string, updates: { description?: strin
   return await supabase.from('media').update(updates).eq('id', id);
 };
 
+// --- LIKES SYSTEM ---
+
+export const getLikeCount = async (mediaId: string) => {
+  const { count, error } = await supabase
+    .from('likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('media_id', mediaId);
+  return { count: count || 0, error };
+};
+
+export const checkUserLiked = async (mediaId: string, userId: string) => {
+  const { data, error } = await supabase
+    .from('likes')
+    .select('id')
+    .eq('media_id', mediaId)
+    .eq('user_id', userId)
+    .single();
+  return { isLiked: !!data, error };
+};
+
+export const toggleLike = async (mediaId: string, userId: string) => {
+  // 1. Check if already liked
+  const { isLiked } = await checkUserLiked(mediaId, userId);
+
+  if (isLiked) {
+    // Unlike
+    const { error } = await supabase
+      .from('likes')
+      .delete()
+      .eq('media_id', mediaId)
+      .eq('user_id', userId);
+    return { liked: false, error };
+  } else {
+    // Like
+    const { error } = await supabase
+      .from('likes')
+      .insert({ media_id: mediaId, user_id: userId });
+    return { liked: true, error };
+  }
+};
+
+
 // --- COMMENT FEATURES ---
 
 export const getComments = async (mediaId: string) => {
