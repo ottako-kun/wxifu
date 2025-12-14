@@ -1,6 +1,5 @@
 import React from 'react';
 import { Session } from '@supabase/supabase-js';
-import { UserProfileData, MediaType } from '../types';
 import { APP_CONFIG } from '../gallery-data';
 import UploadButton from './UploadButton';
 import UploadModal from './UploadModal';
@@ -8,31 +7,17 @@ import ChatWindow from './ChatWindow';
 import CoinShopModal from './CoinShopModal';
 import DailyRewardModal from './DailyRewardModal';
 import LegalModal from './LegalModal';
+import { useUI } from '../context/UIContext';
+import { useWallet } from '../context/WalletContext';
 
 interface GlobalModalLayerProps {
   session: Session | null;
-  // Upload Props
+  // Upload Props (Kept here as they are tied to data refreshing logic in App)
   isUploading: boolean;
   isUploadModalOpen: boolean;
   onUploadClick: () => void;
   onUploadClose: () => void;
   onUploadSubmit: (data: any) => Promise<void>;
-  
-  // Chat Props
-  activeChatUser: UserProfileData | null;
-  onChatClose: () => void;
-  
-  // Shop Props
-  isShopOpen: boolean;
-  onShopClose: () => void;
-  
-  // Reward Props
-  isDailyRewardOpen: boolean;
-  onClaimReward: () => Promise<void>;
-  
-  // Legal Props
-  activeLegalModal: 'privacy' | 'terms' | null;
-  onLegalClose: () => void;
 }
 
 const GlobalModalLayer: React.FC<GlobalModalLayerProps> = ({
@@ -42,15 +27,21 @@ const GlobalModalLayer: React.FC<GlobalModalLayerProps> = ({
   onUploadClick,
   onUploadClose,
   onUploadSubmit,
-  activeChatUser,
-  onChatClose,
-  isShopOpen,
-  onShopClose,
-  isDailyRewardOpen,
-  onClaimReward,
-  activeLegalModal,
-  onLegalClose
 }) => {
+  const { 
+    isShopOpen, closeShop,
+    activeChatUser, closeChat,
+    isDailyRewardOpen, closeDailyReward,
+    activeLegalModal, closeLegal
+  } = useUI();
+
+  const { claimDailyReward } = useWallet();
+
+  const handleClaimReward = async () => {
+      await claimDailyReward();
+      closeDailyReward();
+  };
+
   return (
     <>
       {/* Upload Button (Desktop Only via CSS) & Modal */}
@@ -72,23 +63,23 @@ const GlobalModalLayer: React.FC<GlobalModalLayerProps> = ({
           <ChatWindow 
               currentUser={{ id: session.user.id }}
               targetUser={activeChatUser}
-              onClose={onChatClose}
+              onClose={closeChat}
           />
       )}
       
       {/* Coin Shop Modal */}
       {isShopOpen && (
-          <CoinShopModal onClose={onShopClose} />
+          <CoinShopModal onClose={closeShop} />
       )}
       
       {/* Daily Reward Modal */}
       {isDailyRewardOpen && (
-          <DailyRewardModal onClaim={onClaimReward} />
+          <DailyRewardModal onClaim={handleClaimReward} />
       )}
 
       {/* Legal Modals */}
       {activeLegalModal === 'privacy' && (
-        <LegalModal title="Privacy Policy" onClose={onLegalClose}>
+        <LegalModal title="Privacy Policy" onClose={closeLegal}>
             <div className="space-y-4">
                 <p><strong className="text-white block mb-1">1. Introduction</strong>Welcome to {APP_CONFIG.name}. We are committed to protecting your privacy and ensuring you have a safe experience on our platform.</p>
                 <p><strong className="text-white block mb-1">2. Data Collection</strong>We collect minimal data required for authentication via Google (email, name, avatar). We also store the media files you upload and any metadata associated with them (descriptions, tags). We do not collect real names unless provided.</p>
@@ -101,7 +92,7 @@ const GlobalModalLayer: React.FC<GlobalModalLayerProps> = ({
       )}
 
       {activeLegalModal === 'terms' && (
-        <LegalModal title="Terms of Service" onClose={onLegalClose}>
+        <LegalModal title="Terms of Service" onClose={closeLegal}>
             <div className="space-y-4">
                 <p><strong className="text-white block mb-1">1. Age Requirement</strong>You must be at least 18 years old (or the age of majority in your jurisdiction) to access this site. By entering and using this service, you legally confirm you are an adult.</p>
                 <p><strong className="text-white block mb-1">2. User Generated Content</strong>You retain full ownership of the content you upload. By uploading content to {APP_CONFIG.name}, you grant us a worldwide, non-exclusive, royalty-free license to display, reproduce, and distribute your content on this platform.</p>

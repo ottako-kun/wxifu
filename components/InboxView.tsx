@@ -1,17 +1,17 @@
-
 import React from 'react';
 import { UserProfileData } from '../types';
 import LoadingSpinner from './icons/LoadingSpinner';
 import ChatIcon from './icons/ChatIcon';
 import { useInbox } from '../hooks/useInbox';
+import { useUI } from '../context/UIContext';
 
 interface InboxViewProps {
   currentUserId: string;
-  onSelectUser: (user: UserProfileData) => void;
 }
 
-const InboxView: React.FC<InboxViewProps> = ({ currentUserId, onSelectUser }) => {
+const InboxView: React.FC<InboxViewProps> = ({ currentUserId }) => {
   const { conversations, loading } = useInbox(currentUserId);
+  const { openChat } = useUI();
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl animate-fade-in">
@@ -34,7 +34,7 @@ const InboxView: React.FC<InboxViewProps> = ({ currentUserId, onSelectUser }) =>
                 {conversations.map(convo => (
                     <div 
                         key={convo.userId}
-                        onClick={() => onSelectUser({
+                        onClick={() => openChat({
                             id: convo.userId,
                             name: convo.name,
                             avatar: convo.avatar || '',

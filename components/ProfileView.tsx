@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { MediaItem } from '../types';
@@ -10,6 +9,7 @@ import TipModal from './TipModal';
 import { useProfileStats } from '../hooks/useProfileStats';
 import { useWallet } from '../context/WalletContext';
 import { useFollow } from '../hooks/useFollow';
+import { useUI } from '../context/UIContext';
 import ProfileHeader from './ProfileHeader';
 
 export interface UserProfileData {
@@ -26,11 +26,10 @@ interface ProfileViewProps {
   userMedia: MediaItem[];
   onBack: () => void;
   onUserClick?: (user: { id: string; name: string; avatar: string }) => void;
-  onMessageClick?: (user: UserProfileData) => void;
   onDataChange?: () => void;
 }
 
-const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMedia, onBack, onUserClick, onMessageClick, onDataChange }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMedia, onBack, onUserClick, onDataChange }) => {
   const isOwner = session?.user.id === profileData.id;
   
   const [isEditing, setIsEditing] = useState(false);
@@ -38,6 +37,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
 
   // Use Follow Hook
   const { isFollowing, isMutual, isLoading: loadingSocial, toggleFollow } = useFollow(session?.user.id, profileData.id);
+  
+  // UI Context for Chat
+  const { openChat } = useUI();
   
   // Frame State
   const { activeFrame } = useWallet(); // Current user's frame
@@ -99,7 +101,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
           onEditClick={() => setIsEditing(true)}
           onFollowToggle={handleFollowToggleWrapper}
           onTipClick={() => setIsTipModalOpen(true)}
-          onMessageClick={onMessageClick}
+          onMessageClick={openChat}
       />
 
       {/* Profile Gallery */}

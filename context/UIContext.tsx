@@ -1,0 +1,64 @@
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { UserProfileData } from '../types';
+
+interface UIContextType {
+  // Shop State
+  isShopOpen: boolean;
+  openShop: () => void;
+  closeShop: () => void;
+
+  // Chat State
+  activeChatUser: UserProfileData | null;
+  openChat: (user: UserProfileData) => void;
+  closeChat: () => void;
+
+  // Daily Reward State
+  isDailyRewardOpen: boolean;
+  openDailyReward: () => void;
+  closeDailyReward: () => void;
+
+  // Legal Modal State
+  activeLegalModal: 'privacy' | 'terms' | null;
+  openLegal: (type: 'privacy' | 'terms') => void;
+  closeLegal: () => void;
+}
+
+const UIContext = createContext<UIContextType | undefined>(undefined);
+
+export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isShopOpen, setIsShopOpen] = useState(false);
+  const [activeChatUser, setActiveChatUser] = useState<UserProfileData | null>(null);
+  const [isDailyRewardOpen, setIsDailyRewardOpen] = useState(false);
+  const [activeLegalModal, setActiveLegalModal] = useState<'privacy' | 'terms' | null>(null);
+
+  const openShop = useCallback(() => setIsShopOpen(true), []);
+  const closeShop = useCallback(() => setIsShopOpen(false), []);
+
+  const openChat = useCallback((user: UserProfileData) => setActiveChatUser(user), []);
+  const closeChat = useCallback(() => setActiveChatUser(null), []);
+
+  const openDailyReward = useCallback(() => setIsDailyRewardOpen(true), []);
+  const closeDailyReward = useCallback(() => setIsDailyRewardOpen(false), []);
+
+  const openLegal = useCallback((type: 'privacy' | 'terms') => setActiveLegalModal(type), []);
+  const closeLegal = useCallback(() => setActiveLegalModal(null), []);
+
+  return (
+    <UIContext.Provider value={{
+      isShopOpen, openShop, closeShop,
+      activeChatUser, openChat, closeChat,
+      isDailyRewardOpen, openDailyReward, closeDailyReward,
+      activeLegalModal, openLegal, closeLegal
+    }}>
+      {children}
+    </UIContext.Provider>
+  );
+};
+
+export const useUI = () => {
+  const context = useContext(UIContext);
+  if (context === undefined) {
+    throw new Error('useUI must be used within a UIProvider');
+  }
+  return context;
+};

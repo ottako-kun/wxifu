@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { signInWithGoogle, signOut } from '../lib/supabaseClient';
@@ -7,17 +6,20 @@ import InboxIcon from './icons/InboxIcon';
 import CoinIcon from './icons/CoinIcon';
 import { APP_CONFIG } from '../gallery-data';
 import { useWallet } from '../context/WalletContext';
+import { useUI } from '../context/UIContext';
+import { useToast } from '../context/ToastContext';
 import Avatar from './Avatar';
 
 interface HeaderProps {
   session: Session | null;
   onNavigate?: (view: 'home' | 'profile' | 'inbox') => void;
-  onOpenShop?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ session, onNavigate, onOpenShop }) => {
+const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { balance, activeFrame } = useWallet();
+  const { openShop } = useUI();
+  const toast = useToast();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -34,6 +36,14 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate, onOpenShop }) => {
   const handleInboxClick = () => {
     if (onNavigate) onNavigate('inbox');
     setIsMenuOpen(false);
+  };
+
+  const handleOpenShop = () => {
+      if (!session) {
+          toast.error("Please sign in to access the Coin Shop.");
+          return;
+      }
+      openShop();
   };
 
   return (
@@ -67,7 +77,7 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate, onOpenShop }) => {
             <div className="flex items-center gap-3">
               {/* Coin Balance - Clickable for Shop */}
               <button 
-                  onClick={onOpenShop}
+                  onClick={handleOpenShop}
                   className="flex items-center gap-1.5 bg-yellow-900/20 border border-yellow-500/30 px-3 py-1.5 rounded-full hover:bg-yellow-900/40 hover:border-yellow-500 transition-all cursor-pointer group/coin"
                   title="Buy Coins"
               >

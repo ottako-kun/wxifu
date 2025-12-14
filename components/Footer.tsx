@@ -1,13 +1,11 @@
 import React from 'react';
 import TwitterIcon from './icons/TwitterIcon';
 import { APP_CONFIG } from '../gallery-data';
+import { useUI } from '../context/UIContext';
 
-interface FooterProps {
-  onOpenPrivacy: () => void;
-  onOpenTerms: () => void;
-}
+const Footer: React.FC = () => {
+  const { openLegal } = useUI();
 
-const Footer: React.FC<FooterProps> = ({ onOpenPrivacy, onOpenTerms }) => {
   return (
     <footer className="bg-black border-t border-gray-900 mt-16 pb-24 md:pb-8">
       <div className="container mx-auto px-4 py-12">
@@ -59,9 +57,9 @@ const Footer: React.FC<FooterProps> = ({ onOpenPrivacy, onOpenTerms }) => {
           <div className="w-full max-w-xs h-px bg-gradient-to-r from-transparent via-gray-800 to-transparent mb-8"></div>
 
           <div className="flex flex-col md:flex-row items-center gap-4 text-xs text-gray-600 uppercase tracking-wider mb-4">
-            <button onClick={onOpenTerms} className="hover:text-pink-500 transition-colors">Terms of Service</button>
+            <button onClick={() => openLegal('terms')} className="hover:text-pink-500 transition-colors">Terms of Service</button>
             <span className="hidden md:inline text-gray-800">•</span>
-            <button onClick={onOpenPrivacy} className="hover:text-pink-500 transition-colors">Privacy Policy</button>
+            <button onClick={() => openLegal('privacy')} className="hover:text-pink-500 transition-colors">Privacy Policy</button>
           </div>
 
           <div className="flex flex-col md:flex-row items-center gap-4 text-xs text-gray-700 uppercase tracking-wider text-center">

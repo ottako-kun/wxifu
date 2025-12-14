@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
 import Header from './components/Header';
@@ -26,6 +25,9 @@ import { ConfirmationProvider } from './context/ConfirmationContext';
 // Wallet System
 import { WalletProvider, useWallet } from './context/WalletContext';
 
+// UI State System
+import { UIProvider, useUI } from './context/UIContext';
+
 type ViewState = 'home' | 'profile' | 'inbox';
 
 // Inner component to use hooks that require Context
@@ -38,19 +40,14 @@ const AppContent: React.FC = () => {
   // Auth State
   const [session, setSession] = useState<Session | null>(null);
 
-  // Chat State
-  const [activeChatUser, setActiveChatUser] = useState<UserProfileData | null>(null);
-  
-  // Coin Shop State
-  const [isShopOpen, setIsShopOpen] = useState(false);
-  
-  // Daily Reward State
-  const [isDailyRewardOpen, setIsDailyRewardOpen] = useState(false);
-
   // Data State (via Custom Hook)
   const { photoMedia, videoMedia, followedMedia, isLoading, refresh } = useMediaLibrary(session);
 
-  // Upload State (via Custom Hook)
+  // UI Context Access
+  const { closeChat, openDailyReward } = useUI();
+  const { checkIfRewardAvailable } = useWallet();
+
+  // Upload State (via Custom Hook) - Kept here to trigger 'refresh'
   const { 
     isModalOpen, 
     isUploading, 
@@ -65,17 +62,11 @@ const AppContent: React.FC = () => {
   // Age Verification State
   const [isAgeVerified, setIsAgeVerified] = useState(false);
 
-  // Legal Pages State
-  const [activeLegalModal, setActiveLegalModal] = useState<'privacy' | 'terms' | null>(null);
-
   // Search Focus Ref for Bottom Nav integration
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Toast Hook
   const toast = useToast();
-  
-  // Wallet Logic
-  const { checkIfRewardAvailable, claimDailyReward } = useWallet();
   
   // Initialize Global Notifications
   useNotifications(session);
@@ -108,28 +99,26 @@ const AppContent: React.FC = () => {
           if (currentView === 'inbox' || (currentView === 'profile' && activeProfile?.id === session?.user.id)) {
               setCurrentView('home');
           }
-          setActiveChatUser(null);
+          closeChat();
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [currentView, activeProfile]);
+  }, [currentView, activeProfile, closeChat]);
 
   // Check Daily Reward on Session Load
   useEffect(() => {
-      // DAILY REWARD DISABLED FOR NOW
-      /*
+      // DAILY REWARD CHECK
       if (session && isAgeVerified) {
           // Small delay to let app load
           const timer = setTimeout(() => {
               if (checkIfRewardAvailable()) {
-                  setIsDailyRewardOpen(true);
+                  openDailyReward();
               }
           }, 1500);
           return () => clearTimeout(timer);
       }
-      */
-  }, [session, isAgeVerified, checkIfRewardAvailable]);
+  }, [session, isAgeVerified, checkIfRewardAvailable, openDailyReward]);
 
   // Wrapped in useCallback to allow children to be memoized
   const onUploadSubmitWrapper = useCallback(async (data: any) => {
@@ -196,27 +185,6 @@ const AppContent: React.FC = () => {
     return all.filter(item => item.user_id === activeProfile.id);
   }, [photoMedia, videoMedia, activeProfile]);
 
-  const handleOpenChat = useCallback((user: UserProfileData) => {
-      setActiveChatUser(user);
-  }, []);
-  
-  const handleOpenShop = useCallback(() => {
-      if (!session) {
-          toast.error("Please sign in to access the Coin Shop.");
-          return;
-      }
-      setIsShopOpen(true);
-  }, [session, toast]);
-  
-  const handleClaimReward = useCallback(async () => {
-      await claimDailyReward();
-      setIsDailyRewardOpen(false);
-  }, [claimDailyReward]);
-
-  const handleChatClose = useCallback(() => setActiveChatUser(null), []);
-  const handleShopClose = useCallback(() => setIsShopOpen(false), []);
-  const handleLegalClose = useCallback(() => setActiveLegalModal(null), []);
-
   return (
     <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative pb-20 md:pb-0">
       
@@ -228,7 +196,6 @@ const AppContent: React.FC = () => {
       <Header 
         session={session} 
         onNavigate={handleNavigate}
-        onOpenShop={handleOpenShop}
       />
       
       <div className="flex-grow">
@@ -254,7 +221,6 @@ const AppContent: React.FC = () => {
                       userMedia={profileMedia} 
                       onBack={() => setCurrentView('home')} 
                       onUserClick={handleUserClick} 
-                      onMessageClick={handleOpenChat}
                       onDataChange={refresh}
                    />
                )}
@@ -265,17 +231,13 @@ const AppContent: React.FC = () => {
                 {session && (
                     <InboxView 
                         currentUserId={session.user.id}
-                        onSelectUser={handleOpenChat}
                     />
                 )}
             </div>
         )}
       </div>
       
-      <Footer 
-          onOpenPrivacy={() => setActiveLegalModal('privacy')}
-          onOpenTerms={() => setActiveLegalModal('terms')}
-      />
+      <Footer />
       
       {/* Mobile Bottom Navigation */}
       <BottomNav 
@@ -286,27 +248,15 @@ const AppContent: React.FC = () => {
         session={session}
       />
       
-      {/* Global Modals (Extracted for cleaner code and separation of concerns) */}
+      {/* Global Modals */}
       <GlobalModalLayer 
           session={session}
-          // Upload
+          // Upload specifics managed here
           isUploading={isUploading}
           isUploadModalOpen={isModalOpen}
           onUploadClick={handleUploadClick}
           onUploadClose={closeUploadModal}
           onUploadSubmit={onUploadSubmitWrapper}
-          // Chat
-          activeChatUser={activeChatUser}
-          onChatClose={handleChatClose}
-          // Shop
-          isShopOpen={isShopOpen}
-          onShopClose={handleShopClose}
-          // Reward
-          isDailyRewardOpen={isDailyRewardOpen}
-          onClaimReward={handleClaimReward}
-          // Legal
-          activeLegalModal={activeLegalModal}
-          onLegalClose={handleLegalClose}
       />
     </div>
   );
@@ -317,7 +267,9 @@ const App: React.FC = () => {
     <ToastProvider>
       <WalletProvider>
         <ConfirmationProvider>
-          <AppContent />
+          <UIProvider>
+            <AppContent />
+          </UIProvider>
         </ConfirmationProvider>
       </WalletProvider>
     </ToastProvider>
