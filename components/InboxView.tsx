@@ -1,69 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { getInboxUsers, supabase } from '../lib/supabaseClient';
+
+import React from 'react';
 import { UserProfileData } from '../types';
 import LoadingSpinner from './icons/LoadingSpinner';
 import ChatIcon from './icons/ChatIcon';
+import { useInbox } from '../hooks/useInbox';
 
 interface InboxViewProps {
   currentUserId: string;
   onSelectUser: (user: UserProfileData) => void;
 }
 
-interface ConversationItem {
-  userId: string;
-  name: string;
-  avatar: string | null;
-  lastMessage: string;
-  timestamp: string;
-  isRead: boolean;
-}
-
 const InboxView: React.FC<InboxViewProps> = ({ currentUserId, onSelectUser }) => {
-  const [conversations, setConversations] = useState<ConversationItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchConversations = async (isBackground = false) => {
-    if (!isBackground) setLoading(true);
-    const data = await getInboxUsers(currentUserId);
-    setConversations(data);
-    if (!isBackground) setLoading(false);
-  };
-
-  useEffect(() => {
-    // Initial fetch
-    fetchConversations();
-
-    // Subscribe to real-time message updates
-    const channel = supabase
-      .channel('inbox_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen for INSERT, UPDATE (read status), DELETE
-          schema: 'public',
-          table: 'messages',
-        },
-        (payload) => {
-           // Type assertion to access ids safely
-           const newMsg = payload.new as { sender_id?: string; receiver_id?: string } | null;
-           const oldMsg = payload.old as { sender_id?: string; receiver_id?: string } | null;
-           
-           // Check if the change involves the current user
-           const involvesUser = 
-             (newMsg?.sender_id === currentUserId || newMsg?.receiver_id === currentUserId) ||
-             (oldMsg?.sender_id === currentUserId || oldMsg?.receiver_id === currentUserId);
-
-           if (involvesUser) {
-               fetchConversations(true); // Refresh in background
-           }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentUserId]);
+  const { conversations, loading } = useInbox(currentUserId);
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl animate-fade-in">

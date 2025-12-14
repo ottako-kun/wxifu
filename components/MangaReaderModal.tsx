@@ -1,10 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { MediaItem } from '../types';
-import { fetchMangaChapters, fetchChapterPages } from '../lib/mangadex';
 import CloseIcon from './icons/CloseIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
+import { useMangaReader } from '../hooks/useMangaReader';
 
 interface MangaReaderModalProps {
   item: MediaItem;
@@ -12,41 +12,15 @@ interface MangaReaderModalProps {
 }
 
 const MangaReaderModal: React.FC<MangaReaderModalProps> = ({ item, onClose }) => {
-  const [chapters, setChapters] = useState<any[]>([]);
-  const [pages, setPages] = useState<string[]>([]);
-  const [currentChapter, setCurrentChapter] = useState<any | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<'chapters' | 'reader'>('chapters');
-
-  useEffect(() => {
-    if (!item.externalId) return;
-    const loadChapters = async () => {
-      setIsLoading(true);
-      const data = await fetchMangaChapters(item.externalId!);
-      // Deduplicate chapters based on chapter number
-      const uniqueChapters = data.filter((v: any, i: number, a: any[]) => 
-        a.findIndex((t: any) => t.attributes.chapter === v.attributes.chapter) === i
-      );
-      setChapters(uniqueChapters);
-      setIsLoading(false);
-    };
-    loadChapters();
-  }, [item.externalId]);
-
-  const handleChapterClick = async (chapter: any) => {
-    setIsLoading(true);
-    setCurrentChapter(chapter);
-    const imageUrls = await fetchChapterPages(chapter.id);
-    setPages(imageUrls);
-    setViewMode('reader');
-    setIsLoading(false);
-  };
-
-  const handleBackToChapters = () => {
-    setViewMode('chapters');
-    setPages([]);
-    setCurrentChapter(null);
-  };
+  const { 
+      chapters, 
+      pages, 
+      currentChapter, 
+      isLoading, 
+      viewMode, 
+      loadChapter, 
+      closeReader 
+  } = useMangaReader(item.externalId);
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-xl flex flex-col animate-fade-in">
@@ -54,7 +28,7 @@ const MangaReaderModal: React.FC<MangaReaderModalProps> = ({ item, onClose }) =>
       <div className="flex items-center justify-between p-4 bg-gray-900 border-b border-gray-800 z-10">
          <div className="flex items-center gap-4 overflow-hidden">
             {viewMode === 'reader' && (
-                <button onClick={handleBackToChapters} className="p-2 hover:bg-gray-800 rounded-full text-white transition-colors">
+                <button onClick={closeReader} className="p-2 hover:bg-gray-800 rounded-full text-white transition-colors">
                     <ChevronLeftIcon className="w-6 h-6" />
                 </button>
             )}
@@ -104,7 +78,7 @@ const MangaReaderModal: React.FC<MangaReaderModalProps> = ({ item, onClose }) =>
                      {chapters.map((ch) => (
                          <button 
                             key={ch.id}
-                            onClick={() => handleChapterClick(ch)}
+                            onClick={() => loadChapter(ch)}
                             className="w-full flex items-center justify-between p-4 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg group transition-all"
                          >
                             <div className="text-left">

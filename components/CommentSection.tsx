@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { Comment } from '../types';
-import { getComments, addComment, deleteComment, updateComment, supabase } from '../lib/supabaseClient';
 import TrashIcon from './icons/TrashIcon';
 import PencilIcon from './icons/PencilIcon';
 import SendIcon from './icons/SendIcon';
-import CloseIcon from './icons/CloseIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
-import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmationContext';
+import { useComments } from '../hooks/useComments';
 
 interface CommentSectionProps {
   mediaId: string;
@@ -16,77 +15,26 @@ interface CommentSectionProps {
 }
 
 const CommentSection: React.FC<CommentSectionProps> = ({ mediaId, session }) => {
-  const [comments, setComments] = useState<Comment[]>([]);
+  // Use Custom Hook
+  const { comments, isLoading, postComment, removeComment, editComment } = useComments(mediaId, session);
+  
   const [newComment, setNewComment] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Edit State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
 
-  const toast = useToast();
   const { confirm } = useConfirm();
-
-  // Fetch comments on mount or media change
-  useEffect(() => {
-    const fetchComments = async () => {
-      setIsLoading(true);
-      const { data, error } = await getComments(mediaId);
-      if (!error && data) {
-        setComments(data as Comment[]);
-      }
-      setIsLoading(false);
-    };
-
-    fetchComments();
-
-    // Setup Realtime subscription
-    const channel = supabase
-      .channel(`comments:${mediaId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'comments',
-          filter: `media_id=eq.${mediaId}`,
-        },
-        (payload) => {
-           if (payload.eventType === 'INSERT') {
-               setComments(prev => [...prev, payload.new as Comment]);
-           } else if (payload.eventType === 'DELETE') {
-               setComments(prev => prev.filter(c => c.id !== payload.old.id));
-           } else if (payload.eventType === 'UPDATE') {
-               setComments(prev => prev.map(c => c.id === payload.new.id ? payload.new as Comment : c));
-           }
-        }
-      )
-      .subscribe();
-
-    return () => {
-        supabase.removeChannel(channel);
-    };
-  }, [mediaId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session || !newComment.trim()) return;
+    if (!newComment.trim()) return;
 
     setIsSubmitting(true);
-    const { error } = await addComment({
-        media_id: mediaId,
-        user_id: session.user.id,
-        content: newComment.trim(),
-        author_name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'Anonymous',
-        author_avatar: session.user.user_metadata.avatar_url
-    });
-
-    if (error) {
-        toast.error('Failed to post comment: ' + error.message);
-    } else {
+    const result = await postComment(newComment);
+    if (result.success) {
         setNewComment('');
-        toast.success('Comment posted');
     }
     setIsSubmitting(false);
   };
@@ -100,18 +48,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ mediaId, session }) => 
       });
 
       if (!isConfirmed) return;
-      
-      // Optimistic Update
-      const oldComments = [...comments];
-      setComments(prev => prev.filter(c => c.id !== commentId));
-      
-      const { error } = await deleteComment(commentId);
-      if (error) {
-          toast.error('Failed to delete comment.');
-          setComments(oldComments);
-      } else {
-          toast.success('Comment deleted');
-      }
+      await removeComment(commentId);
   };
 
   const startEdit = (comment: Comment) => {
@@ -126,13 +63,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({ mediaId, session }) => 
 
   const handleUpdate = async (commentId: string) => {
       if (!editContent.trim()) return;
-      
-      const { error } = await updateComment(commentId, editContent);
-      if (error) {
-          toast.error("Failed to update comment.");
-      } else {
+      const result = await editComment(commentId, editContent);
+      if (result.success) {
           setEditingId(null);
-          toast.success("Comment updated");
       }
   };
 
