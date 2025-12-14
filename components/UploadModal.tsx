@@ -6,7 +6,6 @@ import PhotoIcon from './icons/PhotoIcon';
 import VideoIcon from './icons/VideoIcon';
 import LockIcon from './icons/LockIcon';
 import { MediaType } from '../types';
-import { GoogleGenAI } from "@google/genai";
 
 interface UploadFormData {
   type: MediaType;
@@ -36,7 +35,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
   });
   
   const [tagInput, setTagInput] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleChange = (field: keyof UploadFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -57,47 +55,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
 
   const removeTag = (tagToRemove: string) => {
     setFormData(prev => ({ ...prev, tags: prev.tags.filter(tag => tag !== tagToRemove) }));
-  };
-
-  const handleMagicGenerate = async () => {
-    if (!formData.category && !formData.description) {
-      alert("Please enter a category or a rough description first so the AI has context!");
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `
-        You are an assistant for an anime art gallery. 
-        Context: The user is uploading content with Category: "${formData.category}" and rough draft: "${formData.description}".
-        
-        Task: 
-        1. Write a catchy, premium 1-sentence description.
-        2. Generate 5 relevant, popular anime/art tags (lowercase, no hash symbol).
-        
-        Return pure JSON: { "description": "string", "tags": ["string", "string"] }
-      `;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: { responseMimeType: 'application/json' }
-      });
-
-      if (response.text) {
-        const result = JSON.parse(response.text);
-        setFormData(prev => ({
-          ...prev,
-          description: result.description || prev.description,
-          tags: [...new Set([...prev.tags, ...(result.tags || [])])]
-        }));
-      }
-    } catch (error) {
-      console.error("AI Generation failed", error);
-    } finally {
-      setIsGenerating(false);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -223,25 +180,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
               className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
             />
           </div>
-
-          {/* AI Generation Button */}
-          <div className="flex justify-end">
-            <button
-                type="button"
-                onClick={handleMagicGenerate}
-                disabled={isGenerating}
-                className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold hover:shadow-lg hover:shadow-purple-500/30 transition-all disabled:opacity-50"
-            >
-                {isGenerating ? (
-                    <span className="animate-pulse">✨ Divining...</span>
-                ) : (
-                    <>
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" /></svg>
-                        <span>AI Auto-Fill</span>
-                    </>
-                )}
-            </button>
-          </div>
           
           {/* Tags - Dynamic Input */}
           <div>
@@ -290,7 +228,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
           {/* Submit */}
           <button
             type="submit"
-            disabled={isSubmitting || isGenerating}
+            disabled={isSubmitting}
             className="w-full py-4 bg-gradient-to-r from-pink-600 to-cyan-600 hover:from-pink-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-pink-900/20 transform transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
