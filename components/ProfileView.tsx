@@ -1,13 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { MediaItem } from '../types';
 import MediaGrid from './MediaGrid';
-import { getFollowStatus, followUser, unfollowUser, getProfileStats, supabase } from '../lib/supabaseClient';
+import { getFollowStatus, followUser, unfollowUser } from '../lib/supabaseClient';
 import UploadIcon from './icons/UploadIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import ChatIcon from './icons/ChatIcon';
-import CloseIcon from './icons/CloseIcon';
 import EditProfileModal from './EditProfileModal';
+import { useProfileStats } from '../hooks/useProfileStats';
 
 export interface UserProfileData {
     id: string;
@@ -36,9 +37,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   const [isMutual, setIsMutual] = useState(false);
   const [loadingSocial, setLoadingSocial] = useState(false);
   
-  // Stats State
-  const [followersCount, setFollowersCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
+  // Stats Logic (Extracted)
+  const { followersCount, followingCount, incrementFollowers, decrementFollowers } = useProfileStats(profileData.id);
 
   // Sync state if profileData changes (e.g. switching viewed profile)
   useEffect(() => {
@@ -46,52 +46,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
       setIsFollowing(false);
       setIsMutual(false);
   }, [profileData]);
-
-  // Fetch Stats (Followers/Following) and Subscribe to Changes
-  useEffect(() => {
-     const fetchStats = async () => {
-         const stats = await getProfileStats(profileData.id);
-         setFollowersCount(stats.followers);
-         setFollowingCount(stats.following);
-     };
-
-     fetchStats();
-
-     // Realtime Subscription to update counts when someone follows/unfollows
-     const channel = supabase
-        .channel(`public:follows:${profileData.id}`)
-        .on(
-            'postgres_changes', 
-            { 
-                event: '*', 
-                schema: 'public', 
-                table: 'follows',
-                filter: `following_id=eq.${profileData.id}` 
-            }, 
-            () => {
-                // If someone follows/unfollows THIS user, refresh followers count
-                fetchStats();
-            }
-        )
-        .on(
-            'postgres_changes', 
-            { 
-                event: '*', 
-                schema: 'public', 
-                table: 'follows',
-                filter: `follower_id=eq.${profileData.id}` 
-            }, 
-            () => {
-                // If THIS user follows/unfollows someone, refresh following count
-                fetchStats();
-            }
-        )
-        .subscribe();
-
-     return () => {
-         supabase.removeChannel(channel);
-     };
-  }, [profileData.id]);
 
   // Check Follow Status (Am I following them?)
   useEffect(() => {
@@ -115,14 +69,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
               await unfollowUser(session.user.id, profileData.id);
               setIsFollowing(false);
               setIsMutual(false); // Can't be mutual if I don't follow
-              setFollowersCount(prev => Math.max(0, prev - 1)); // Optimistic update
+              decrementFollowers(); // Optimistic update
           } else {
               await followUser(session.user.id, profileData.id);
               setIsFollowing(true);
               // Check mutual status again immediately to update UI if they were already following me
               const { isMutual } = await getFollowStatus(session.user.id, profileData.id);
               setIsMutual(isMutual);
-              setFollowersCount(prev => prev + 1); // Optimistic update
+              incrementFollowers(); // Optimistic update
           }
           // Refresh global data (like Following tab in Home)
           if (onDataChange) onDataChange();

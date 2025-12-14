@@ -5,7 +5,7 @@ import Header from './components/Header';
 import ProfileView, { UserProfileData } from './components/ProfileView';
 import ChatWindow from './components/ChatWindow';
 import InboxView from './components/InboxView';
-import { supabase, insertMediaItem } from './lib/supabaseClient';
+import { supabase } from './lib/supabaseClient';
 import Footer from './components/Footer';
 import UploadButton from './components/UploadButton';
 import UploadModal from './components/UploadModal';
@@ -14,6 +14,7 @@ import AgeVerificationModal from './components/AgeVerificationModal';
 import LegalModal from './components/LegalModal';
 import { MediaType } from './types';
 import { useMediaLibrary } from './hooks/useMediaLibrary';
+import { useMediaUpload } from './hooks/useMediaUpload';
 import HomeView from './components/HomeView';
 import { APP_CONFIG } from './gallery-data';
 
@@ -44,9 +45,17 @@ const AppContent: React.FC = () => {
   // Data State (via Custom Hook)
   const { photoMedia, videoMedia, followedMedia, isLoading, refresh } = useMediaLibrary(session);
 
-  // Upload State
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  // Upload State (via Custom Hook)
+  const { 
+    isModalOpen, 
+    isUploading, 
+    openModal: handleUploadClick, 
+    closeModal: closeUploadModal, 
+    handleUploadSubmit 
+  } = useMediaUpload({ 
+      session, 
+      onUploadSuccess: refresh 
+  });
   
   // Age Verification State
   const [isAgeVerified, setIsAgeVerified] = useState(false);
@@ -98,45 +107,16 @@ const AppContent: React.FC = () => {
     return () => subscription.unsubscribe();
   }, [currentView, activeProfile]);
 
-  const handleUploadSubmit = async (data: { type: MediaType; src: string; description: string; category: string; tags: string[]; is_premium: boolean; price: number }) => {
-    if (!session) return;
-    setIsUploading(true);
-    try {
-        const { error } = await insertMediaItem({
-            type: data.type,
-            src: data.src,
-            description: data.description,
-            category: data.category,
-            tags: data.tags,
-            user_id: session.user.id,
-            author: session.user.user_metadata.full_name || session.user.email?.split('@')[0],
-            author_avatar: session.user.user_metadata.avatar_url,
-            is_premium: data.is_premium,
-            price: data.price
-        });
-
-        if (error) {
-            throw error;
-        }
-
-        // Refresh data to show new item
-        await refresh();
-        setIsUploadModalOpen(false);
-        toast.success('Successfully added to gallery!');
-        
-        // Switch tab to the type uploaded so user sees it immediately
-        if (data.type === MediaType.Video) {
+  const onUploadSubmitWrapper = async (data: any) => {
+      const type = await handleUploadSubmit(data);
+      if (type) {
+         // Switch tab to the type uploaded so user sees it immediately
+         if (type === MediaType.Video) {
             setActiveTab('videos');
         } else {
             setActiveTab('photos');
         }
-
-    } catch (err: any) {
-        console.error("Upload error:", err);
-        toast.error(`Failed to upload: ${err.message}`);
-    } finally {
-        setIsUploading(false);
-    }
+      }
   };
 
   const handleNavigate = (view: 'home' | 'profile' | 'inbox') => {
@@ -193,14 +173,6 @@ const AppContent: React.FC = () => {
 
   const handleOpenChat = (user: UserProfileData) => {
       setActiveChatUser(user);
-  };
-
-  const handleUploadClick = () => {
-      if (!session) {
-          toast.error("Please sign in to upload media.");
-          return;
-      }
-      setIsUploadModalOpen(true);
   };
 
   return (
@@ -277,10 +249,10 @@ const AppContent: React.FC = () => {
       {session && (
         <>
             <UploadButton onClick={handleUploadClick} isUploading={isUploading} />
-            {isUploadModalOpen && (
+            {isModalOpen && (
                 <UploadModal 
-                    onClose={() => setIsUploadModalOpen(false)} 
-                    onSubmit={handleUploadSubmit}
+                    onClose={closeUploadModal} 
+                    onSubmit={onUploadSubmitWrapper}
                     isSubmitting={isUploading}
                 />
             )}

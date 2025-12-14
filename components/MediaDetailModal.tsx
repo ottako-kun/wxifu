@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MediaItem, MediaType } from '../types';
 import { reportMediaItem } from '../lib/supabaseClient';
 import CloseIcon from './icons/CloseIcon';
@@ -12,6 +12,7 @@ import { Session } from '@supabase/supabase-js';
 import { useToast } from '../context/ToastContext';
 import ZoomableImage from './ZoomableImage';
 import MediaSidebar from './MediaSidebar';
+import { useRelatedMedia } from '../hooks/useRelatedMedia';
 
 interface MediaDetailModalProps {
   items: MediaItem[];
@@ -37,6 +38,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   
   // Hooks
   const toast = useToast();
+  const relatedItems = useRelatedMedia(item, items);
   
   // Premium Logic
   const isUnlocked = isOwner || !item.is_premium;
@@ -45,29 +47,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const minSwipeDistance = 50;
-
-  // Calculate Related Items (Simple Algorithm: Same Category or Tag overlap)
-  const relatedItems = useMemo(() => {
-      // 1. Filter items excluding current
-      const candidates = items.filter(i => i.id !== item.id);
-      
-      // 2. Score them
-      const scored = candidates.map(c => {
-          let score = 0;
-          if (c.category === item.category) score += 2;
-          if (c.user_id === item.user_id) score += 1;
-          const sharedTags = c.tags?.filter(t => item.tags?.includes(t)).length || 0;
-          score += sharedTags * 2;
-          return { item: c, score };
-      });
-
-      // 3. Sort by score and take top 6
-      return scored
-        .filter(s => s.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 6)
-        .map(s => s.item);
-  }, [item, items]);
 
 
   const goToPrevious = useCallback(() => {
