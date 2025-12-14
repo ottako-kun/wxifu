@@ -8,7 +8,7 @@ interface WalletContextType {
   unlockedIds: string[];
   refreshWallet: () => Promise<void>;
   unlockContent: (mediaId: string, price: number, authorId?: string) => Promise<boolean>;
-  addCoins: (amount: number) => Promise<boolean>;
+  purchasePackage: (packageId: string) => Promise<void>;
   isUnlocked: (mediaId: string) => boolean;
   isLoading: boolean;
 }
@@ -76,25 +76,57 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
   };
 
-  const addCoins = async (amount: number) => {
-      if (!session) return false;
-      try {
-          // This is a simulated top-up. 
-          // In production, this would be handled by a Supabase Edge Function triggered by a Stripe Webhook.
-          const newBalance = balance + amount;
-          
-          const { error } = await supabase
-              .from('profiles')
-              .update({ coins: newBalance })
-              .eq('id', session.user.id);
+  const purchasePackage = async (packageId: string) => {
+      if (!session) {
+          toast.error("Please sign in to purchase coins.");
+          return;
+      }
 
-          if (error) throw error;
+      setIsLoading(true);
+      try {
+          // 1. Call Supabase Edge Function to initiate Stripe Checkout
+          const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+              body: { 
+                  packageId, 
+                  returnUrl: window.location.origin // Where to send user back to
+              }
+          });
+
+          if (error) {
+              console.error("Function error:", error);
+              throw new Error("Could not connect to payment server.");
+          }
+
+          if (data?.url) {
+              // 2. Redirect user to Stripe
+              window.location.href = data.url;
+          } else {
+              throw new Error("No payment URL returned.");
+          }
           
-          setBalance(newBalance);
-          return true;
-      } catch (error) {
-          console.error("Failed to add coins", error);
-          return false;
+      } catch (error: any) {
+          console.error("Purchase failed:", error);
+          
+          // --- DEV MODE FALLBACK --- 
+          // If you haven't deployed the function yet, this allows testing the UI.
+          // Remove this block in production!
+          if (error.message.includes('Function not found') || error.message.includes('Failed to fetch')) {
+               console.warn("DEV MODE: Simulating purchase because Edge Function is missing.");
+               toast.info("DEV MODE: Simulating purchase...");
+               setTimeout(async () => {
+                   // Simulate adding 100 coins
+                   const newBalance = balance + 100;
+                   await supabase.from('profiles').update({ coins: newBalance }).eq('id', session.user.id);
+                   await refreshWallet();
+                   toast.success("DEV MODE: +100 Coins Added");
+                   setIsLoading(false);
+               }, 1500);
+               return;
+          }
+          // -------------------------
+
+          toast.error("Payment initialization failed. Please try again.");
+          setIsLoading(false);
       }
   };
 
@@ -103,7 +135,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   return (
-    <WalletContext.Provider value={{ balance, unlockedIds, refreshWallet, unlockContent, addCoins, isUnlocked, isLoading }}>
+    <WalletContext.Provider value={{ balance, unlockedIds, refreshWallet, unlockContent, purchasePackage, isUnlocked, isLoading }}>
       {children}
     </WalletContext.Provider>
   );

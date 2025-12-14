@@ -3,7 +3,6 @@ import CloseIcon from './icons/CloseIcon';
 import CoinIcon from './icons/CoinIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
 import { useWallet } from '../context/WalletContext';
-import { useToast } from '../context/ToastContext';
 
 interface CoinShopModalProps {
   onClose: () => void;
@@ -18,24 +17,14 @@ const PACKAGES = [
 
 const CoinShopModal: React.FC<CoinShopModalProps> = ({ onClose }) => {
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const { addCoins } = useWallet();
-  const toast = useToast();
+  const { purchasePackage } = useWallet();
 
   const handlePurchase = async (pkg: typeof PACKAGES[0]) => {
     setProcessingId(pkg.id);
-    
-    // SIMULATION: In a real app, this would redirect to Stripe Checkout
-    // or call a Supabase Edge Function to process payment.
-    setTimeout(async () => {
-        const success = await addCoins(pkg.coins + pkg.bonus);
-        setProcessingId(null);
-        if (success) {
-            toast.success(`Purchase successful! +${pkg.coins + pkg.bonus} Coins`);
-            onClose();
-        } else {
-            toast.error("Purchase failed. Please try again.");
-        }
-    }, 1500);
+    await purchasePackage(pkg.id);
+    // Note: If successful, the page redirects to Stripe, so we don't need to stop loading state.
+    // If it fails (and is caught in context), we stop loading.
+    setProcessingId(null);
   };
 
   return (
