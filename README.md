@@ -41,10 +41,20 @@ Ottako-X has evolved from a simple gallery into a fully-featured **Social Media 
 
 ## 🗄 Database Schema (Supabase)
 
-To run this project, your Supabase project requires the following tables:
+To run this project, your Supabase project requires the following tables. Run `supabase_setup.sql` to apply updates.
 
 1.  **profiles**: `id` (uuid, PK), `name` (text), `avatar` (text), `bio` (text).
-2.  **media**: `id` (uuid), `user_id` (uuid), `type` (text), `src` (text), `description` (text), `category` (text), `tags` (text[]), `is_premium` (bool).
+2.  **media**: 
+    *   `id` (uuid, PK)
+    *   `user_id` (uuid, FK)
+    *   `type` (text: 'PHOTO' | 'VIDEO' | 'MANGA')
+    *   `src` (text)
+    *   `description` (text)
+    *   `category` (text)
+    *   `tags` (text[])
+    *   `is_premium` (bool)
+    *   `external_id` (text, optional for API items)
+    *   `pages` (text[], optional for uploaded manga)
 3.  **likes**: `id`, `user_id`, `media_id`.
 4.  **comments**: `id`, `user_id`, `media_id`, `content`.
 5.  **follows**: `follower_id`, `following_id`.
