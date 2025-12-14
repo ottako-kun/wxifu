@@ -38,7 +38,7 @@ export const APP_CONFIG = {
 
 // 1. Add your Google Drive links here.
 // 2. Ensure the file on Google Drive is set to "Anyone with the link" -> "Viewer".
-// 3. For Videos, it's best to use a thumbnail image if possible, but the code will try to handle it.
+// 3. You can optionally add 'author' and 'author_avatar' to credit specific users.
 
 const CUSTOM_MEDIA_COLLECTION = [
   // --- PHOTOS & ANIMATED GIFS ---
@@ -47,70 +47,77 @@ const CUSTOM_MEDIA_COLLECTION = [
     link: 'https://media.giphy.com/media/LpdlqTkgO2Lwwixwv7/giphy.gif',
     description: 'Neo Tokyo Rain',
     category: 'Scenery',
-    tags: []
+    tags: ['cyberpunk', 'rain'],
+    author: 'NeonDrifter' // Example: Custom Author
   },
   {
     type: 'PHOTO',
     link: 'https://media.giphy.com/media/h4fzD3yY2qGbe/giphy.gif',
     description: 'Midnight Drive',
     category: 'Vibe',
-    tags: []
+    tags: ['drive', 'night'],
+    author: 'NightRider'
   },
   {
     type: 'PHOTO',
     link: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop',
     description: 'Shinjuku Nights',
     category: 'Photography',
-    tags: []
+    tags: ['tokyo', 'real'],
+    author: 'ShutterBug'
   },
   {
     type: 'PHOTO',
     link: 'https://media.giphy.com/media/j2pWZpr5RlpwpGVtG1/giphy.gif',
     description: 'Pixel Cityscape',
     category: 'Animation',
-    tags: []
+    tags: ['pixelart', 'city'],
+    // No author specified -> defaults to Ottako Admin
   },
   {
     type: 'PHOTO',
     link: 'https://media.giphy.com/media/i2tLw5ZyizMNy/giphy.gif',
     description: 'Cherry Blossom Fall',
     category: 'Scenery',
-    tags: []
+    tags: ['sakura', 'nature'],
+    author: 'SakuraFan'
   },
   {
     type: 'PHOTO',
     link: 'https://images.unsplash.com/photo-1615751072497-5f5169febe17?q=80&w=1200&auto=format&fit=crop',
     description: 'Cyber Geisha',
     category: 'Cosplay',
-    tags: []
+    tags: ['cosplay', 'cyber'],
+    author: 'CosplayQueen'
   },
   {
     type: 'PHOTO',
     link: 'https://media.giphy.com/media/3o6Zt481isNVuQI1l6/giphy.gif',
     description: 'Lofi Study Session',
     category: 'Vibe',
-    tags: []
+    tags: ['lofi', 'chill'],
+    author: 'LoFiGirl'
   },
   {
     type: 'PHOTO',
     link: 'https://media.giphy.com/media/12NUbkX6p4xOO4/giphy.gif',
     description: 'Space Cowboy',
     category: 'Classic',
-    tags: []
+    tags: ['anime', 'space']
   },
   {
     type: 'PHOTO',
     link: 'https://images.unsplash.com/photo-1516726817505-f5ed825624d8?q=80&w=1200&auto=format&fit=crop',
     description: 'Urban Ninja',
     category: 'Cosplay',
-    tags: []
+    tags: ['ninja', 'urban']
   },
   {
     type: 'PHOTO',
     link: 'https://media.giphy.com/media/fCda953g1W6fC/giphy.gif',
     description: 'System Glitch',
     category: 'Aesthetic',
-    tags: []
+    tags: ['glitch', 'tech']
   },
   
   // --- VIDEOS ---
@@ -120,7 +127,8 @@ const CUSTOM_MEDIA_COLLECTION = [
     thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Big_buck_bunny_poster_big.jpg/800px-Big_buck_bunny_poster_big.jpg',
     description: 'Featured Animation',
     category: 'Clip',
-    tags: []
+    tags: ['3d', 'funny'],
+    author: 'BlenderStudio'
   }
 ];
 
@@ -183,6 +191,17 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
      }
   }
 
+  // Determine Author
+  // If user_id is missing (static item), allow 'author' field or default to 'Ottako Admin'
+  const authorName = item.author || (item.user_id ? 'Unknown' : 'Ottako Admin');
+
+  // Generate a consistent user_id for static items with an author so they are clickable
+  let userId = item.user_id;
+  if (!userId) {
+      // Create a slug-like ID from the author name to act as a pseudo-user-id
+      userId = `static-${authorName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+  }
+
   return {
     id: id.toString(),
     type,
@@ -191,8 +210,8 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
     description: item.description,
     category: item.category || (type === MediaType.Photo ? 'Illustration' : 'Clip'),
     tags: item.tags || [],
-    user_id: item.user_id, // Safely pass user_id through
-    author: item.author || (item.user_id ? undefined : 'Ottako Admin'), // Default to Admin for static items
+    user_id: userId, 
+    author: authorName,
     author_avatar: item.author_avatar
   };
 };

@@ -108,7 +108,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick }
                                  {item.author.charAt(0)}
                              </div>
                          )}
-                         <span className="text-xs font-semibold text-gray-300 group-hover/user:text-pink-300 transition-colors truncate max-w-[80px]">
+                         <span className="text-xs font-semibold text-gray-300 group-hover/user:text-pink-300 transition-colors truncate max-w-[120px]">
                              {item.author}
                          </span>
                       </div>
