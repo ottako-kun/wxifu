@@ -22,17 +22,18 @@ export const useMediaLibrary = () => {
       if (!joinError && joinData) {
         fetchedData = joinData;
       } else {
-        // Attempt 2: Fallback Manual Fetch
-        console.warn("Database join failed, falling back to manual fetch...", joinError?.message);
+        // Attempt 2: Fallback Manual Fetch (Only runs if join fails, e.g., missing relation)
+        // We log quietly to not spam console if Supabase isn't set up yet
+        if (joinError?.code !== 'PGRST116') { 
+             // console.warn("Database join failed, falling back to manual fetch...", joinError?.message);
+        }
         
         const { data: mediaData, error: mediaError } = await supabase
           .from('media')
           .select('*')
           .order('created_at', { ascending: false });
           
-        if (mediaError) throw mediaError;
-
-        if (mediaData && mediaData.length > 0) {
+        if (!mediaError && mediaData && mediaData.length > 0) {
            const userIds = Array.from(new Set(
                mediaData
                   .map(m => m.user_id)
@@ -53,27 +54,30 @@ export const useMediaLibrary = () => {
         }
       }
 
-      if (fetchedData.length === 0) {
-        setPhotoMedia(fallbackPhotoMedia);
-        setVideoMedia(fallbackVideoMedia);
-      } else {
-        const fetchedPhotos: MediaItem[] = [];
-        const fetchedVideos: MediaItem[] = [];
+      // Process Fetched Data
+      const fetchedPhotos: MediaItem[] = [];
+      const fetchedVideos: MediaItem[] = [];
 
-        fetchedData.forEach((item, index) => {
-           const processed = processMediaItem(item, index);
-           if (processed.type === MediaType.Video) {
-               fetchedVideos.push(processed);
-           } else {
-               fetchedPhotos.push(processed);
-           }
-        });
-        
-        setPhotoMedia(fetchedPhotos.length > 0 ? fetchedPhotos : fallbackPhotoMedia);
-        setVideoMedia(fetchedVideos.length > 0 ? fetchedVideos : fallbackVideoMedia);
-      }
+      fetchedData.forEach((item, index) => {
+          const processed = processMediaItem(item, index);
+          if (processed.type === MediaType.Video) {
+              fetchedVideos.push(processed);
+          } else {
+              fetchedPhotos.push(processed);
+          }
+      });
+
+      // MERGE STRATEGY:
+      // 1. Fetched Data (from Supabase) appears first (usually newer).
+      // 2. Fallback Data (from gallery-data.ts) appears after.
+      // This ensures your static file links ALWAYS show up.
+      
+      setPhotoMedia([...fetchedPhotos, ...fallbackPhotoMedia]);
+      setVideoMedia([...fetchedVideos, ...fallbackVideoMedia]);
+
     } catch (err: any) {
       console.error("Error fetching media:", err.message);
+      // On critical error, still show the static gallery from the file
       setPhotoMedia(fallbackPhotoMedia);
       setVideoMedia(fallbackVideoMedia);
     } finally {

@@ -11,14 +11,19 @@ import UploadModal from './components/UploadModal';
 import BottomNav from './components/BottomNav';
 import AgeVerificationModal from './components/AgeVerificationModal';
 import { MediaType } from './types';
-
-// New Imports for Refactoring
 import { useMediaLibrary } from './hooks/useMediaLibrary';
 import HomeView from './components/HomeView';
 
+// Notification System
+import { ToastProvider } from './context/ToastContext';
+import ToastContainer from './components/ToastContainer';
+import { useNotifications } from './hooks/useNotifications';
+import { useToast } from './context/ToastContext';
+
 type ViewState = 'home' | 'profile' | 'inbox';
 
-const App: React.FC = () => {
+// Inner component to use hooks that require Context
+const AppContent: React.FC = () => {
   // Navigation State
   const [currentView, setCurrentView] = useState<ViewState>('home');
   const [activeProfile, setActiveProfile] = useState<UserProfileData | null>(null);
@@ -42,6 +47,12 @@ const App: React.FC = () => {
 
   // Search Focus Ref for Bottom Nav integration
   const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // Toast Hook
+  const toast = useToast();
+  
+  // Initialize Global Notifications
+  useNotifications(session);
 
   // Handle Age Verification
   useEffect(() => {
@@ -102,6 +113,7 @@ const App: React.FC = () => {
         // Refresh data to show new item
         await refresh();
         setIsUploadModalOpen(false);
+        toast.success('Successfully added to gallery!');
         
         // Switch tab to the type uploaded so user sees it immediately
         if (data.type === MediaType.Video) {
@@ -112,7 +124,7 @@ const App: React.FC = () => {
 
     } catch (err: any) {
         console.error("Upload error:", err);
-        alert(`Failed to add link: ${err.message}`);
+        toast.error(`Failed to upload: ${err.message}`);
     } finally {
         setIsUploading(false);
     }
@@ -128,10 +140,10 @@ const App: React.FC = () => {
               bio: session.user.user_metadata.bio
           });
       } else if (view === 'profile' && !session) {
-          alert("Please sign in to view your profile.");
+          toast.error("Please sign in to view your profile.");
           return;
       } else if (view === 'inbox' && !session) {
-          alert("Please sign in to view messages.");
+          toast.error("Please sign in to view messages.");
           return;
       }
       
@@ -176,7 +188,7 @@ const App: React.FC = () => {
 
   const handleUploadClick = () => {
       if (!session) {
-          alert("Please sign in to upload media.");
+          toast.error("Please sign in to upload media.");
           return;
       }
       setIsUploadModalOpen(true);
@@ -185,6 +197,8 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative pb-16 md:pb-0">
       
+      <ToastContainer />
+
       {/* Age Gate Overlay */}
       {!isAgeVerified && <AgeVerificationModal onVerify={handleVerifyAge} />}
 
@@ -269,6 +283,14 @@ const App: React.FC = () => {
           />
       )}
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
   );
 };
 

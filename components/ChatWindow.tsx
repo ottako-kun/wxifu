@@ -6,6 +6,7 @@ import SendIcon from './icons/SendIcon';
 import TrashIcon from './icons/TrashIcon';
 import PencilIcon from './icons/PencilIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
+import { useToast } from '../context/ToastContext';
 
 interface ChatWindowProps {
   currentUser: { id: string };
@@ -23,6 +24,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
   const [editText, setEditText] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const toast = useToast();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -113,7 +115,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
     if (error) {
         console.error('Failed to send', error);
         setMessages(prev => prev.filter(m => m.id !== tempId));
-        alert('Failed to send message');
+        toast.error('Failed to send message');
     } else {
         // We rely on Realtime subscription to replace the optimistic message with real ID
         setMessages(prev => prev.filter(m => m.id !== tempId)); 
@@ -124,9 +126,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
       if (!confirm('Delete this message?')) return;
       const { error } = await deleteMessage(msgId);
       if (error) {
-          alert('Failed to delete');
+          toast.error('Failed to delete message');
       }
-      // UI update handled by realtime subscription
   };
 
   const startEdit = (msg: Message) => {
@@ -138,7 +139,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
       if (editText.trim() === '') return; // Don't allow empty
       const { error } = await updateMessage(msgId, editText);
       if (error) {
-          alert('Failed to update');
+          toast.error('Failed to update message');
       }
       setEditingId(null);
   };

@@ -7,6 +7,7 @@ import PencilIcon from './icons/PencilIcon';
 import SendIcon from './icons/SendIcon';
 import CloseIcon from './icons/CloseIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
+import { useToast } from '../context/ToastContext';
 
 interface CommentSectionProps {
   mediaId: string;
@@ -22,6 +23,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ mediaId, session }) => 
   // Edit State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+
+  const toast = useToast();
 
   // Fetch comments on mount or media change
   useEffect(() => {
@@ -78,9 +81,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({ mediaId, session }) => 
     });
 
     if (error) {
-        alert('Failed to post comment. ' + error.message);
+        toast.error('Failed to post comment: ' + error.message);
     } else {
         setNewComment('');
+        toast.success('Comment posted');
     }
     setIsSubmitting(false);
   };
@@ -94,8 +98,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({ mediaId, session }) => 
       
       const { error } = await deleteComment(commentId);
       if (error) {
-          alert('Failed to delete comment.');
+          toast.error('Failed to delete comment.');
           setComments(oldComments);
+      } else {
+          toast.success('Comment deleted');
       }
   };
 
@@ -114,9 +120,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({ mediaId, session }) => 
       
       const { error } = await updateComment(commentId, editContent);
       if (error) {
-          alert("Failed to update comment.");
+          toast.error("Failed to update comment.");
       } else {
           setEditingId(null);
+          toast.success("Comment updated");
       }
   };
 

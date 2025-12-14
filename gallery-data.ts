@@ -21,7 +21,7 @@ export const APP_CONFIG = {
   
   // Footer Content
   footer: {
-    brand: 'OTTAKO-KUN',
+    brand: 'OTAKU-X',
     tagline: 'Liberating Otaku Culture',
     disclaimer: 'Strictly for adults (18+). All models appearing on this site are 18 years or older.'
   },
@@ -36,11 +36,34 @@ export const APP_CONFIG = {
 
 // --- CONFIGURATION: PASTE YOUR LINKS HERE ---
 
-// 1. Add your Google Drive links here.
-// 2. Ensure the file on Google Drive is set to "Anyone with the link" -> "Viewer".
-// 3. You can optionally add 'author' and 'author_avatar' to credit specific users.
+// INSTRUCTIONS FOR GOOGLE DRIVE:
+// 1. Upload your image or video to Google Drive.
+// 2. Right-click the file -> Share -> Share.
+// 3. Under "General Access", change "Restricted" to "Anyone with the link".
+// 4. Copy the link and paste it into the 'link' field below.
 
 const CUSTOM_MEDIA_COLLECTION = [
+  // --- EXAMPLE: GOOGLE DRIVE PHOTO ---
+  // {
+  //   type: 'PHOTO',
+  //   link: 'https://drive.google.com/file/d/1234567890abcdefg/view?usp=sharing',
+  //   description: 'My Awesome Artwork',
+  //   category: 'Illustration',
+  //   tags: ['oc', 'digital'],
+  //   author: 'MyName'
+  // },
+
+  // --- EXAMPLE: GOOGLE DRIVE VIDEO ---
+  // {
+  //   type: 'VIDEO',
+  //   link: 'https://drive.google.com/file/d/0987654321zyxwvu/view?usp=sharing',
+  //   thumbnail: 'https://link.to.your/thumbnail.jpg', // Optional, but recommended for videos
+  //   description: 'My Cool Animation',
+  //   category: 'Animation',
+  //   tags: ['3d', 'motion'],
+  //   author: 'MyName'
+  // },
+
   // --- PHOTOS & ANIMATED GIFS ---
   {
     type: 'PHOTO',
@@ -48,15 +71,7 @@ const CUSTOM_MEDIA_COLLECTION = [
     description: 'Neo Tokyo Rain',
     category: 'Scenery',
     tags: ['cyberpunk', 'rain'],
-    author: 'NeonDrifter' // Example: Custom Author
-  },
-  {
-    type: 'PHOTO',
-    link: 'https://media.giphy.com/media/h4fzD3yY2qGbe/giphy.gif',
-    description: 'Midnight Drive',
-    category: 'Vibe',
-    tags: ['drive', 'night'],
-    author: 'NightRider'
+    author: 'NeonDrifter'
   },
   {
     type: 'PHOTO',
@@ -68,19 +83,18 @@ const CUSTOM_MEDIA_COLLECTION = [
   },
   {
     type: 'PHOTO',
+    link: 'https://media.giphy.com/media/h4fzD3yY2qGbe/giphy.gif',
+    description: 'Midnight Drive',
+    category: 'Vibe',
+    tags: ['drive', 'night'],
+    author: 'NightRider'
+  },
+  {
+    type: 'PHOTO',
     link: 'https://media.giphy.com/media/j2pWZpr5RlpwpGVtG1/giphy.gif',
     description: 'Pixel Cityscape',
     category: 'Animation',
     tags: ['pixelart', 'city'],
-    // No author specified -> defaults to Ottako Admin
-  },
-  {
-    type: 'PHOTO',
-    link: 'https://media.giphy.com/media/i2tLw5ZyizMNy/giphy.gif',
-    description: 'Cherry Blossom Fall',
-    category: 'Scenery',
-    tags: ['sakura', 'nature'],
-    author: 'SakuraFan'
   },
   {
     type: 'PHOTO',
@@ -92,32 +106,10 @@ const CUSTOM_MEDIA_COLLECTION = [
   },
   {
     type: 'PHOTO',
-    link: 'https://media.giphy.com/media/3o6Zt481isNVuQI1l6/giphy.gif',
-    description: 'Lofi Study Session',
-    category: 'Vibe',
-    tags: ['lofi', 'chill'],
-    author: 'LoFiGirl'
-  },
-  {
-    type: 'PHOTO',
     link: 'https://media.giphy.com/media/12NUbkX6p4xOO4/giphy.gif',
     description: 'Space Cowboy',
     category: 'Classic',
     tags: ['anime', 'space']
-  },
-  {
-    type: 'PHOTO',
-    link: 'https://images.unsplash.com/photo-1516726817505-f5ed825624d8?q=80&w=1200&auto=format&fit=crop',
-    description: 'Urban Ninja',
-    category: 'Cosplay',
-    tags: ['ninja', 'urban']
-  },
-  {
-    type: 'PHOTO',
-    link: 'https://media.giphy.com/media/fCda953g1W6fC/giphy.gif',
-    description: 'System Glitch',
-    category: 'Aesthetic',
-    tags: ['glitch', 'tech']
   },
   
   // --- VIDEOS ---
@@ -161,8 +153,8 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
   const isVideo = item.type === MediaType.Video || item.type === 'VIDEO';
   const type = isVideo ? MediaType.Video : MediaType.Photo;
   
-  // Use existing ID or generate one
-  const id = item.id || (isVideo ? `vid-${index}` : `photo-${index}`);
+  // Use existing ID or generate one. Static IDs use a prefix to ensure uniqueness.
+  const id = item.id || (isVideo ? `static-vid-${index}` : `static-photo-${index}`);
   
   // Detect if the input is a full link or just an ID
   const sourceString = item.link || item.src || item.url || '';
@@ -203,7 +195,7 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
   let userId = item.user_id;
   if (!userId) {
       // Create a slug-like ID from the author name to act as a pseudo-user-id
-      userId = `static-${authorName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+      userId = `static-user-${authorName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
   }
 
   return {
@@ -216,7 +208,9 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
     tags: item.tags || [],
     user_id: userId, 
     author: authorName,
-    author_avatar: profileAvatar || item.author_avatar
+    author_avatar: profileAvatar || item.author_avatar,
+    is_premium: item.is_premium || false,
+    price: item.price || 0
   };
 };
 
