@@ -16,6 +16,7 @@ import ChevronRightIcon from './components/icons/ChevronRightIcon';
 import LoadingSpinner from './components/icons/LoadingSpinner';
 import UploadButton from './components/UploadButton';
 import UploadModal from './components/UploadModal';
+import BottomNav from './components/BottomNav';
 import { MediaItem, MediaType } from './types';
 
 type ViewState = 'home' | 'profile' | 'inbox';
@@ -50,6 +51,9 @@ const App: React.FC = () => {
   // Upload State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Search Focus Ref for Bottom Nav integration
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   // Handle Auth Session
   useEffect(() => {
@@ -102,7 +106,7 @@ const App: React.FC = () => {
              const userIds = Array.from(new Set(
                  mediaData
                     .map(m => m.user_id)
-                    .filter(id => id && id.length > 20 && !id.startsWith('static'))
+                    .filter(id => id && id && id.length > 20 && !id.startsWith('static'))
              ));
              
              // Fetch profiles manually
@@ -205,9 +209,28 @@ const App: React.FC = () => {
               avatar: session.user.user_metadata.avatar_url,
               bio: session.user.user_metadata.bio
           });
+      } else if (view === 'profile' && !session) {
+          alert("Please sign in to view your profile.");
+          return;
+      } else if (view === 'inbox' && !session) {
+          alert("Please sign in to view messages.");
+          return;
       }
+      
       setCurrentView(view);
       window.scrollTo(0,0);
+  };
+  
+  const handleSearchClick = () => {
+      if (currentView !== 'home') {
+          handleNavigate('home');
+          // Add a small timeout to allow view transition before focusing
+          setTimeout(() => {
+              searchInputRef.current?.focus();
+          }, 100);
+      } else {
+          searchInputRef.current?.focus();
+      }
   };
 
   const handleUserClick = (user: { id: string; name: string; avatar: string }) => {
@@ -316,8 +339,16 @@ const App: React.FC = () => {
       fetchData(); // Reload all data when an item is updated or deleted
   };
 
+  const handleUploadClick = () => {
+      if (!session) {
+          alert("Please sign in to upload media.");
+          return;
+      }
+      setIsUploadModalOpen(true);
+  };
+
   return (
-    <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative">
+    <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative pb-16 md:pb-0">
       <Header 
         session={session} 
         onNavigate={handleNavigate} 
@@ -356,6 +387,7 @@ const App: React.FC = () => {
                       <SearchIcon className="w-5 h-5 text-gray-500" />
                     </div>
                     <input
+                      ref={searchInputRef}
                       type="search"
                       placeholder={`Search ${galleryName}s, authors, tags...`}
                       value={searchQuery}
@@ -520,10 +552,19 @@ const App: React.FC = () => {
       
       <Footer />
       
-      {/* Upload Button & Modal (Only for logged in users) */}
+      {/* Mobile Bottom Navigation */}
+      <BottomNav 
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        onUploadClick={handleUploadClick}
+        onSearchClick={handleSearchClick}
+        session={session}
+      />
+      
+      {/* Upload Button (Desktop Only via CSS) & Modal */}
       {session && (
         <>
-            <UploadButton onClick={() => setIsUploadModalOpen(true)} isUploading={isUploading} />
+            <UploadButton onClick={handleUploadClick} isUploading={isUploading} />
             {isUploadModalOpen && (
                 <UploadModal 
                     onClose={() => setIsUploadModalOpen(false)} 

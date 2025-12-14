@@ -115,11 +115,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
         setMessages(prev => prev.filter(m => m.id !== tempId));
         alert('Failed to send message');
     } else {
-        // We rely on Realtime subscription to replace the optimistic message with real ID,
-        // or we could manually replace it here if realtime is slow.
-        // Simple approach: filter out temp ID when real one arrives via subscription, 
-        // OR just update the ID here if `data` returns it.
-        // Since subscription is active, let's just remove temp ID and let subscription add real one to avoid dupe keys
+        // We rely on Realtime subscription to replace the optimistic message with real ID
         setMessages(prev => prev.filter(m => m.id !== tempId)); 
     }
   };
@@ -148,10 +144,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
   };
 
   return (
-    <div className="fixed bottom-0 right-0 md:right-8 md:bottom-0 w-full md:w-96 h-[80vh] md:h-[600px] bg-gray-900 border border-gray-700 rounded-t-xl shadow-2xl flex flex-col z-[100] animate-fade-in">
+    <div className="fixed inset-0 md:inset-auto md:bottom-0 md:right-8 w-full md:w-96 h-full md:h-[600px] bg-gray-900 border border-gray-700 md:rounded-t-xl shadow-2xl flex flex-col z-[100] animate-fade-in pb-safe">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700 rounded-t-xl">
+      <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700 md:rounded-t-xl pt-safe-top">
         <div className="flex items-center gap-3">
+            <button onClick={onClose} className="md:hidden text-gray-400 mr-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
+            </button>
             <div className="w-10 h-10 rounded-full bg-gray-700 overflow-hidden border border-cyan-500/50">
                 {targetUser.avatar ? (
                     <img src={targetUser.avatar} alt={targetUser.name} className="w-full h-full object-cover" />
@@ -164,7 +165,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, targetUser, onClos
                 <span className="text-[10px] text-cyan-400 uppercase tracking-wider">Online</span>
             </div>
         </div>
-        <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+        <button onClick={onClose} className="hidden md:block text-gray-400 hover:text-white transition-colors">
             <CloseIcon className="w-6 h-6" />
         </button>
       </div>
