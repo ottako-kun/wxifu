@@ -13,6 +13,7 @@ import BottomNav from './components/BottomNav';
 import AgeVerificationModal from './components/AgeVerificationModal';
 import LegalModal from './components/LegalModal';
 import CoinShopModal from './components/CoinShopModal';
+import DailyRewardModal from './components/DailyRewardModal';
 import { MediaType } from './types';
 import { useMediaLibrary } from './hooks/useMediaLibrary';
 import { useMediaUpload } from './hooks/useMediaUpload';
@@ -29,7 +30,7 @@ import { useToast } from './context/ToastContext';
 import { ConfirmationProvider } from './context/ConfirmationContext';
 
 // Wallet System
-import { WalletProvider } from './context/WalletContext';
+import { WalletProvider, useWallet } from './context/WalletContext';
 
 type ViewState = 'home' | 'profile' | 'inbox';
 
@@ -48,6 +49,9 @@ const AppContent: React.FC = () => {
   
   // Coin Shop State
   const [isShopOpen, setIsShopOpen] = useState(false);
+  
+  // Daily Reward State
+  const [isDailyRewardOpen, setIsDailyRewardOpen] = useState(false);
 
   // Data State (via Custom Hook)
   const { photoMedia, videoMedia, followedMedia, isLoading, refresh } = useMediaLibrary(session);
@@ -75,6 +79,9 @@ const AppContent: React.FC = () => {
   
   // Toast Hook
   const toast = useToast();
+  
+  // Wallet Logic
+  const { checkIfRewardAvailable, claimDailyReward } = useWallet();
   
   // Initialize Global Notifications
   useNotifications(session);
@@ -113,6 +120,19 @@ const AppContent: React.FC = () => {
 
     return () => subscription.unsubscribe();
   }, [currentView, activeProfile]);
+
+  // Check Daily Reward on Session Load
+  useEffect(() => {
+      if (session && isAgeVerified) {
+          // Small delay to let app load
+          const timer = setTimeout(() => {
+              if (checkIfRewardAvailable()) {
+                  setIsDailyRewardOpen(true);
+              }
+          }, 1500);
+          return () => clearTimeout(timer);
+      }
+  }, [session, isAgeVerified, checkIfRewardAvailable]);
 
   const onUploadSubmitWrapper = async (data: any) => {
       const type = await handleUploadSubmit(data);
@@ -188,6 +208,11 @@ const AppContent: React.FC = () => {
           return;
       }
       setIsShopOpen(true);
+  };
+  
+  const handleClaimReward = async () => {
+      await claimDailyReward();
+      setIsDailyRewardOpen(false);
   };
 
   return (
@@ -287,6 +312,11 @@ const AppContent: React.FC = () => {
       {/* Coin Shop Modal */}
       {isShopOpen && (
           <CoinShopModal onClose={() => setIsShopOpen(false)} />
+      )}
+      
+      {/* Daily Reward Modal */}
+      {isDailyRewardOpen && (
+          <DailyRewardModal onClaim={handleClaimReward} />
       )}
 
       {/* Legal Modals */}

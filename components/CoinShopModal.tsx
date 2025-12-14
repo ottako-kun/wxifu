@@ -3,6 +3,7 @@ import CloseIcon from './icons/CloseIcon';
 import CoinIcon from './icons/CoinIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
 import { useWallet } from '../context/WalletContext';
+import { useToast } from '../context/ToastContext';
 
 interface CoinShopModalProps {
   onClose: () => void;
@@ -17,14 +18,24 @@ const PACKAGES = [
 
 const CoinShopModal: React.FC<CoinShopModalProps> = ({ onClose }) => {
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const { purchasePackage } = useWallet();
+  const [isWatchingAd, setIsWatchingAd] = useState(false);
+  const { purchasePackage, addCoins } = useWallet(); // Assuming addCoins is exposed for dev/rewards
+  const toast = useToast();
 
   const handlePurchase = async (pkg: typeof PACKAGES[0]) => {
     setProcessingId(pkg.id);
     await purchasePackage(pkg.id);
-    // Note: If successful, the page redirects to Stripe, so we don't need to stop loading state.
-    // If it fails (and is caught in context), we stop loading.
     setProcessingId(null);
+  };
+
+  const handleWatchAd = async () => {
+      setIsWatchingAd(true);
+      // Simulate Ad duration
+      setTimeout(async () => {
+          await addCoins(15); // Award 15 coins
+          toast.success("Ad watched! +15 Coins received.");
+          setIsWatchingAd(false);
+      }, 3000);
   };
 
   return (
@@ -53,59 +64,83 @@ const CoinShopModal: React.FC<CoinShopModalProps> = ({ onClose }) => {
            </div>
         </div>
 
-        {/* Packages */}
-        <div className="p-6 overflow-y-auto space-y-4">
-            {PACKAGES.map((pkg) => (
-                <div 
-                    key={pkg.id}
-                    className={`relative flex items-center justify-between p-4 rounded-xl border transition-all duration-300 group cursor-pointer hover:scale-[1.02]
-                        ${pkg.featured 
-                            ? 'bg-gradient-to-r from-yellow-900/40 to-black border-yellow-500 shadow-lg shadow-yellow-900/20' 
-                            : 'bg-gray-800/50 border-gray-700 hover:border-yellow-500/50 hover:bg-gray-800'
-                        }
-                    `}
-                    onClick={() => !processingId && handlePurchase(pkg)}
-                >
-                    {pkg.featured && (
-                        <div className="absolute -top-3 left-4 bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded shadow-md uppercase tracking-wider">
-                            Best Value
-                        </div>
-                    )}
-
-                    <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center border ${pkg.featured ? 'bg-yellow-500/20 border-yellow-500 text-yellow-500' : 'bg-gray-700 border-gray-600 text-gray-400 group-hover:text-yellow-400 group-hover:border-yellow-500/50'}`}>
-                            <CoinIcon className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <h3 className={`font-bold text-lg ${pkg.featured ? 'text-yellow-400' : 'text-white'}`}>
-                                {pkg.coins} Coins
-                            </h3>
-                            {pkg.bonus > 0 && (
-                                <p className="text-xs text-green-400 font-semibold">
-                                    +{pkg.bonus} Bonus
-                                </p>
-                            )}
-                            <p className="text-xs text-gray-500">{pkg.label}</p>
-                        </div>
+        <div className="flex-grow overflow-y-auto">
+            {/* Free Coins Section */}
+            <div className="p-4 mx-6 mt-6 bg-gradient-to-r from-gray-800 to-gray-800/50 rounded-xl border border-gray-700 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-cyan-900/50 flex items-center justify-center border border-cyan-500/30 text-cyan-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                          <path d="M4.5 4.5a3 3 0 00-3 3v9a3 3 0 003 3h8.25a3 3 0 003-3v-9a3 3 0 00-3-3H4.5zM19.94 18.75l-2.69-2.69V7.94l2.69-2.69c.944-.945 2.56-.276 2.56 1.06v11.38c0 1.336-1.616 2.005-2.56 1.06z" />
+                        </svg>
                     </div>
+                    <div>
+                        <h4 className="text-white font-bold text-sm">Free Coins</h4>
+                        <p className="text-gray-400 text-xs">Watch a short ad</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={handleWatchAd}
+                    disabled={isWatchingAd}
+                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold uppercase rounded-lg shadow-lg disabled:opacity-50 min-w-[100px] flex justify-center"
+                >
+                    {isWatchingAd ? <LoadingSpinner className="w-4 h-4" /> : '+15 Coins'}
+                </button>
+            </div>
 
-                    <button 
-                        disabled={!!processingId}
-                        className={`px-5 py-2 rounded-lg font-bold text-sm transition-all
-                            ${pkg.featured
-                                ? 'bg-yellow-500 hover:bg-yellow-400 text-black shadow-lg shadow-yellow-500/20'
-                                : 'bg-gray-700 hover:bg-white hover:text-black text-white'
+            {/* Packages */}
+            <div className="p-6 space-y-4">
+                {PACKAGES.map((pkg) => (
+                    <div 
+                        key={pkg.id}
+                        className={`relative flex items-center justify-between p-4 rounded-xl border transition-all duration-300 group cursor-pointer hover:scale-[1.02]
+                            ${pkg.featured 
+                                ? 'bg-gradient-to-r from-yellow-900/40 to-black border-yellow-500 shadow-lg shadow-yellow-900/20' 
+                                : 'bg-gray-800/50 border-gray-700 hover:border-yellow-500/50 hover:bg-gray-800'
                             }
                         `}
+                        onClick={() => !processingId && handlePurchase(pkg)}
                     >
-                        {processingId === pkg.id ? (
-                            <LoadingSpinner className="w-5 h-5" />
-                        ) : (
-                            `$${pkg.price}`
+                        {pkg.featured && (
+                            <div className="absolute -top-3 left-4 bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded shadow-md uppercase tracking-wider">
+                                Best Value
+                            </div>
                         )}
-                    </button>
-                </div>
-            ))}
+
+                        <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center border ${pkg.featured ? 'bg-yellow-500/20 border-yellow-500 text-yellow-500' : 'bg-gray-700 border-gray-600 text-gray-400 group-hover:text-yellow-400 group-hover:border-yellow-500/50'}`}>
+                                <CoinIcon className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className={`font-bold text-lg ${pkg.featured ? 'text-yellow-400' : 'text-white'}`}>
+                                    {pkg.coins} Coins
+                                </h3>
+                                {pkg.bonus > 0 && (
+                                    <p className="text-xs text-green-400 font-semibold">
+                                        +{pkg.bonus} Bonus
+                                    </p>
+                                )}
+                                <p className="text-xs text-gray-500">{pkg.label}</p>
+                            </div>
+                        </div>
+
+                        <button 
+                            disabled={!!processingId}
+                            className={`px-5 py-2 rounded-lg font-bold text-sm transition-all
+                                ${pkg.featured
+                                    ? 'bg-yellow-500 hover:bg-yellow-400 text-black shadow-lg shadow-yellow-500/20'
+                                    : 'bg-gray-700 hover:bg-white hover:text-black text-white'
+                                }
+                            `}
+                        >
+                            {processingId === pkg.id ? (
+                                <LoadingSpinner className="w-5 h-5" />
+                            ) : (
+                                `$${pkg.price}`
+                            )}
+                        </button>
+                    </div>
+                ))}
+            </div>
         </div>
 
         {/* Footer */}
