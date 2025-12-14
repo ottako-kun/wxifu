@@ -21,7 +21,7 @@ const Hero: React.FC = () => {
           className="text-5xl md:text-8xl font-black tracking-tighter uppercase mb-4"
           style={{ fontFamily: '"Orbitron", sans-serif', textShadow: '4px 4px 0px #ec4899' }}
         >
-          OTTAKO<span className="text-white">.</span>KUN
+          OTAKU<span className="text-white">.</span>KUN
         </h1>
 
         <div className="h-1 w-24 mx-auto bg-gradient-to-r from-pink-500 to-cyan-500 mb-8"></div>

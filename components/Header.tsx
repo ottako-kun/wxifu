@@ -18,7 +18,7 @@ const Header: React.FC = () => {
                 textShadow: '0 0 10px rgba(236, 72, 153, 0.5)',
               }}
             >
-              OTTAKO<span className="text-cyan-400">.</span>KUN
+              OTAKU<span className="text-cyan-400">.</span>KUN
             </h1>
             <span className="text-[0.6rem] text-gray-400 tracking-[0.2em] uppercase">
               Waifu Art Gallery
