@@ -121,6 +121,35 @@ export const updateMediaItem = async (id: string, updates: { description?: strin
   return await supabase.from('media').update(updates).eq('id', id);
 };
 
+// --- COMMENT FEATURES ---
+
+export const getComments = async (mediaId: string) => {
+  return await supabase
+    .from('comments')
+    .select('*')
+    .eq('media_id', mediaId)
+    .order('created_at', { ascending: true });
+};
+
+export const addComment = async (comment: {
+  media_id: string;
+  user_id: string;
+  content: string;
+  author_name: string;
+  author_avatar?: string;
+}) => {
+  return await supabase.from('comments').insert([comment]).select().single();
+};
+
+export const deleteComment = async (commentId: string) => {
+  return await supabase.from('comments').delete().eq('id', commentId);
+};
+
+export const updateComment = async (commentId: string, content: string) => {
+  return await supabase.from('comments').update({ content, updated_at: new Date().toISOString() }).eq('id', commentId);
+};
+
+
 // --- SOCIAL & MESSAGING FEATURES ---
 
 export const getFollowStatus = async (currentUserId: string, targetUserId: string) => {

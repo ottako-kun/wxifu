@@ -30,3 +30,14 @@ export interface UserProfileData {
     avatar: string;
     bio?: string;
 }
+
+export interface Comment {
+  id: string;
+  media_id: string;
+  user_id: string;
+  content: string;
+  author_name: string;
+  author_avatar?: string;
+  created_at: string;
+  updated_at?: string;
+}
