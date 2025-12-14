@@ -9,6 +9,7 @@ import { Session } from '@supabase/supabase-js';
 import { useGalleryFilters } from '../hooks/useGalleryFilters';
 import { signInWithGoogle } from '../lib/supabaseClient';
 import GalleryControls from './GalleryControls';
+import { fetchMangaList } from '../lib/mangadex';
 
 interface HomeViewProps {
   photoMedia: MediaItem[];
@@ -18,8 +19,8 @@ interface HomeViewProps {
   session: Session | null;
   onUserClick: (user: { id: string; name: string; avatar: string }) => void;
   onDataChange: () => void;
-  activeTab: 'photos' | 'videos' | 'following';
-  setActiveTab: (tab: 'photos' | 'videos' | 'following') => void;
+  activeTab: 'photos' | 'videos' | 'following' | 'manga';
+  setActiveTab: (tab: 'photos' | 'videos' | 'following' | 'manga') => void;
   searchInputRef: React.RefObject<HTMLInputElement>;
 }
 
@@ -35,9 +36,25 @@ const HomeView: React.FC<HomeViewProps> = ({
   setActiveTab,
   searchInputRef
 }) => {
+  // Local state for Manga
+  const [mangaMedia, setMangaMedia] = useState<MediaItem[]>([]);
+  const [isMangaLoading, setIsMangaLoading] = useState(false);
+
+  useEffect(() => {
+    // Lazy load manga only when tab is active
+    if (activeTab === 'manga' && mangaMedia.length === 0) {
+        setIsMangaLoading(true);
+        fetchMangaList().then(data => {
+            setMangaMedia(data);
+            setIsMangaLoading(false);
+        });
+    }
+  }, [activeTab, mangaMedia.length]);
+
   // Determine which dataset to use
   let itemsToDisplay: MediaItem[] = [];
   let galleryName = '';
+  let isCurrentLoading = isLoading;
 
   if (activeTab === 'photos') {
     itemsToDisplay = photoMedia;
@@ -45,6 +62,10 @@ const HomeView: React.FC<HomeViewProps> = ({
   } else if (activeTab === 'videos') {
     itemsToDisplay = videoMedia;
     galleryName = 'video';
+  } else if (activeTab === 'manga') {
+    itemsToDisplay = mangaMedia;
+    galleryName = 'manga';
+    isCurrentLoading = isMangaLoading;
   } else {
     itemsToDisplay = followedMedia;
     galleryName = 'following';
@@ -112,6 +133,12 @@ const HomeView: React.FC<HomeViewProps> = ({
             >
               Video Collection
             </button>
+            <button
+              onClick={() => setActiveTab('manga')}
+              className={`px-6 py-2.5 rounded-full text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${activeTab === 'manga' ? 'bg-gradient-to-r from-pink-600 to-pink-500 text-white shadow-lg shadow-pink-500/25' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            >
+              Manga & Doujin
+            </button>
              <button
               onClick={() => setActiveTab('following')}
               className={`px-6 py-2.5 rounded-full text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${activeTab === 'following' ? 'bg-gradient-to-r from-pink-600 to-pink-500 text-white shadow-lg shadow-pink-500/25' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
@@ -160,10 +187,11 @@ const HomeView: React.FC<HomeViewProps> = ({
                 />
 
                 {/* Grid Content */}
-                {isLoading ? (
+                {isCurrentLoading ? (
                 <div className="flex flex-col items-center justify-center h-[40vh] gap-4">
                     <LoadingSpinner className="w-12 h-12 text-pink-500" />
                     <p className="text-gray-500 animate-pulse">Loading {galleryName} gallery...</p>
+                    {activeTab === 'manga' && <p className="text-xs text-gray-600">Powered by MangaDex</p>}
                 </div>
                 ) : itemsToDisplay.length > 0 ? (
                 sortedItems.length > 0 ? (

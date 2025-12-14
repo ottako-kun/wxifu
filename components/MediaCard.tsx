@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { MediaItem, MediaType } from '../types';
 import MediaDetailModal from './MediaDetailModal';
+import MangaReaderModal from './MangaReaderModal';
 import PlayIcon from './icons/PlayIcon';
 import ShareIcon from './icons/ShareIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -24,6 +26,7 @@ interface MediaCardProps {
 
 const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, session, onDataChange }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMangaReaderOpen, setIsMangaReaderOpen] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -37,7 +40,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
 
   const isOwner = session?.user.id === item.user_id;
   const isUnlocked = isOwner || !item.is_premium; 
-  const isStatic = item.id.startsWith('static-');
+  const isStatic = item.id.startsWith('static-') || item.type === MediaType.Manga;
 
   // Fetch Likes on Mount
   useEffect(() => {
@@ -63,12 +66,17 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
     };
   }, [item.id, session, isStatic]);
 
-  const openModal = () => {
-      setIsModalOpen(true);
+  const handleCardClick = () => {
+      if (item.type === MediaType.Manga) {
+          setIsMangaReaderOpen(true);
+      } else {
+          setIsModalOpen(true);
+      }
   };
   
   const closeModal = () => {
     setIsModalOpen(false);
+    setIsMangaReaderOpen(false);
   };
 
   const handleShareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -148,7 +156,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
     <>
       <div 
         className={`group relative overflow-hidden rounded-xl shadow-lg cursor-pointer mb-3 md:mb-6 break-inside-avoid bg-gray-900 border border-gray-800 hover:border-pink-500/50 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:shadow-pink-500/10 ${!isImageLoaded ? 'min-h-[200px] animate-pulse-bg' : ''} ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
-        onClick={openModal}
+        onClick={handleCardClick}
       >
         <div className="relative overflow-hidden">
             <img 
@@ -181,6 +189,11 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
         {item.type === MediaType.Video && isImageLoaded && isUnlocked && (
             <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm rounded-md px-1.5 py-0.5 border border-white/10 z-10">
                 <VideoIcon className="w-3 h-3 text-white" />
+            </div>
+        )}
+        {item.type === MediaType.Manga && isImageLoaded && (
+            <div className="absolute top-2 left-2 bg-pink-600/80 backdrop-blur-sm rounded-md px-1.5 py-0.5 border border-white/10 z-10">
+                <span className="text-[10px] font-bold text-white uppercase">MANGA</span>
             </div>
         )}
 
@@ -218,7 +231,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
                   {item.author && (
                       <div 
                         className="flex items-center gap-2 group/user hover:bg-white/10 rounded-full pr-3 py-1 -ml-1 pl-1 transition-colors"
-                        onClick={handleUserClick}
+                        onClick={item.type !== MediaType.Manga ? handleUserClick : undefined}
                       >
                          {item.author_avatar ? (
                              <img src={item.author_avatar} alt={item.author} className="w-5 h-5 rounded-full border border-white/30" />
@@ -286,6 +299,13 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
             session={session}
             onDataChange={onDataChange}
         />
+      )}
+
+      {isMangaReaderOpen && (
+          <MangaReaderModal 
+            item={item}
+            onClose={closeModal}
+          />
       )}
       
       {shareAnchorEl && (
