@@ -9,6 +9,7 @@ import GridIcon from './icons/GridIcon';
 import ListIcon from './icons/ListIcon';
 import EditProfileModal from './EditProfileModal';
 import TipModal from './TipModal';
+import MediaDetailModal from './MediaDetailModal';
 import { useProfileStats } from '../hooks/useProfileStats';
 import { useWallet } from '../context/WalletContext';
 import { useFollow } from '../hooks/useFollow';
@@ -38,6 +39,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   const [isEditing, setIsEditing] = useState(false);
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'feed'>('grid');
+  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
 
   // Use Follow Hook
   const { isFollowing, isMutual, isLoading: loadingSocial, toggleFollow } = useFollow(session?.user.id, profileData.id);
@@ -139,6 +141,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
                 onUserClick={onUserClick}
                 session={session}
                 onDataChange={onDataChange} 
+                onItemClick={setSelectedItemIndex}
               />
           ) : (
               <FeedView
@@ -147,6 +150,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
                 onUserClick={onUserClick}
                 onDataChange={onDataChange}
                 isLoading={false}
+                onItemClick={setSelectedItemIndex}
               />
           )
         ) : (
@@ -161,6 +165,17 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
            </div>
         )}
       </div>
+
+      {selectedItemIndex !== null && (
+            <MediaDetailModal 
+                items={userMedia} 
+                initialIndex={selectedItemIndex} 
+                onClose={() => setSelectedItemIndex(null)} 
+                onUserClick={onUserClick}
+                session={session || null}
+                onDataChange={onDataChange}
+            />
+      )}
 
       {/* Edit Profile Modal */}
       {isEditing && isOwner && (

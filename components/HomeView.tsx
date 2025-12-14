@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Hero from './Hero';
 import MediaGrid from './MediaGrid';
 import FeedView from './FeedView';
@@ -13,6 +13,7 @@ import GalleryControls from './GalleryControls';
 import PullToRefresh from './PullToRefresh';
 import GalleryTabs from './GalleryTabs';
 import { useScrollDirection } from '../hooks/useScrollDirection';
+import MediaDetailModal from './MediaDetailModal';
 
 interface HomeViewProps {
   photoMedia: MediaItem[];
@@ -42,6 +43,7 @@ const HomeView: React.FC<HomeViewProps> = ({
   
   const scrollDirection = useScrollDirection();
   const [viewMode, setViewMode] = useState<'grid' | 'feed'>('grid');
+  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
 
   // Determine which dataset to use
   let itemsToDisplay: MediaItem[] = [];
@@ -76,6 +78,7 @@ const HomeView: React.FC<HomeViewProps> = ({
   // Reset filters when changing tabs (Optional, but good UX)
   useEffect(() => {
     clearFilters();
+    setSelectedItemIndex(null);
   }, [activeTab]);
 
   // Infinite Scroll Observer
@@ -108,6 +111,14 @@ const HomeView: React.FC<HomeViewProps> = ({
      // Slight artificial delay so the spinner shows for a satisfying moment
      await new Promise(r => setTimeout(r, 1000));
   };
+
+  const handleItemClick = useCallback((index: number) => {
+      setSelectedItemIndex(index);
+  }, []);
+
+  const handleModalClose = useCallback(() => {
+      setSelectedItemIndex(null);
+  }, []);
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
@@ -180,6 +191,7 @@ const HomeView: React.FC<HomeViewProps> = ({
                             session={session}
                             onDataChange={onDataChange}
                             isLoading={isCurrentLoading}
+                            onItemClick={handleItemClick}
                         />
                     ) : (
                         <FeedView 
@@ -188,6 +200,7 @@ const HomeView: React.FC<HomeViewProps> = ({
                             onUserClick={onUserClick}
                             onDataChange={onDataChange}
                             isLoading={isCurrentLoading}
+                            onItemClick={handleItemClick}
                         />
                     )}
 
@@ -240,6 +253,17 @@ const HomeView: React.FC<HomeViewProps> = ({
                 </div>
                 )}
             </>
+        )}
+        
+        {selectedItemIndex !== null && (
+            <MediaDetailModal 
+                items={visibleItems} 
+                initialIndex={selectedItemIndex} 
+                onClose={handleModalClose} 
+                onUserClick={onUserClick}
+                session={session || null}
+                onDataChange={onDataChange}
+            />
         )}
       </main>
     </PullToRefresh>
