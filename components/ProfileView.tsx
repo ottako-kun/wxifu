@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { MediaItem } from '../types';
 import MediaGrid from './MediaGrid';
+import FeedView from './FeedView';
 import UploadIcon from './icons/UploadIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
+import GridIcon from './icons/GridIcon';
+import ListIcon from './icons/ListIcon';
 import EditProfileModal from './EditProfileModal';
 import TipModal from './TipModal';
 import { useProfileStats } from '../hooks/useProfileStats';
@@ -34,6 +37,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   
   const [isEditing, setIsEditing] = useState(false);
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'feed'>('grid');
 
   // Use Follow Hook
   const { isFollowing, isMutual, isLoading: loadingSocial, toggleFollow } = useFollow(session?.user.id, profileData.id);
@@ -104,32 +108,47 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
           onMessageClick={openChat}
       />
 
-      {/* Profile Gallery */}
+      {/* Profile Gallery Controls */}
       <div className="space-y-8">
-        <div className="flex items-center justify-center gap-12 border-t border-gray-800 -mt-[1px]">
-           <button className="flex items-center gap-2 border-t-2 py-4 text-xs font-bold uppercase tracking-widest text-white border-pink-500 -mt-[2px]">
-             <span className="w-3 h-3 grid grid-cols-3 gap-[1px]">
-                <span className="bg-current col-span-1 row-span-1"></span>
-                <span className="bg-current col-span-1 row-span-1"></span>
-                <span className="bg-current col-span-1 row-span-1"></span>
-                <span className="bg-current col-span-1 row-span-1"></span>
-                <span className="bg-current col-span-1 row-span-1"></span>
-                <span className="bg-current col-span-1 row-span-1"></span>
-                <span className="bg-current col-span-1 row-span-1"></span>
-                <span className="bg-current col-span-1 row-span-1"></span>
-                <span className="bg-current col-span-1 row-span-1"></span>
-             </span>
-             Collection
-           </button>
+        <div className="flex items-center justify-between border-t border-gray-800 pt-4">
+             <button className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white border-b-2 border-pink-500 pb-2">
+                 Collection
+             </button>
+             
+             {/* View Toggle */}
+             <div className="flex bg-gray-900 border border-gray-800 rounded-full p-0.5">
+                 <button 
+                     onClick={() => setViewMode('grid')}
+                     className={`p-2 rounded-full transition-all ${viewMode === 'grid' ? 'bg-gray-800 text-white shadow' : 'text-gray-500 hover:text-white'}`}
+                 >
+                     <GridIcon className="w-4 h-4" />
+                 </button>
+                 <button 
+                     onClick={() => setViewMode('feed')}
+                     className={`p-2 rounded-full transition-all ${viewMode === 'feed' ? 'bg-gray-800 text-white shadow' : 'text-gray-500 hover:text-white'}`}
+                 >
+                     <ListIcon className="w-4 h-4" />
+                 </button>
+             </div>
         </div>
 
         {userMedia.length > 0 ? (
-          <MediaGrid 
-            items={userMedia} 
-            onUserClick={onUserClick}
-            session={session}
-            onDataChange={onDataChange} 
-          />
+          viewMode === 'grid' ? (
+              <MediaGrid 
+                items={userMedia} 
+                onUserClick={onUserClick}
+                session={session}
+                onDataChange={onDataChange} 
+              />
+          ) : (
+              <FeedView
+                items={userMedia}
+                session={session}
+                onUserClick={onUserClick}
+                onDataChange={onDataChange}
+                isLoading={false}
+              />
+          )
         ) : (
            <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-gray-800 rounded-3xl bg-gray-900/20">
              <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mb-4">

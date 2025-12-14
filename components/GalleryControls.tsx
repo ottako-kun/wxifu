@@ -4,6 +4,8 @@ import SearchIcon from './icons/SearchIcon';
 import SortAscendingIcon from './icons/SortAscendingIcon';
 import CloseIcon from './icons/CloseIcon';
 import FilterIcon from './icons/FilterIcon';
+import GridIcon from './icons/GridIcon';
+import ListIcon from './icons/ListIcon';
 
 interface GalleryControlsProps {
   galleryName: string;
@@ -19,6 +21,8 @@ interface GalleryControlsProps {
   toggleTag: (tag: string) => void;
   availableTags: string[];
   clearFilters: () => void;
+  viewMode?: 'grid' | 'feed';
+  onViewModeChange?: (mode: 'grid' | 'feed') => void;
 }
 
 const GalleryControls: React.FC<GalleryControlsProps> = ({
@@ -34,7 +38,9 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
   selectedTags,
   toggleTag,
   availableTags,
-  clearFilters
+  clearFilters,
+  viewMode = 'grid',
+  onViewModeChange
 }) => {
   const [showFilters, setShowFilters] = useState(false);
 
@@ -42,7 +48,7 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto mb-2 space-y-3">
-      {/* Top Row: Search | Sort Icon | Filter Icon */}
+      {/* Top Row: Search | View Toggle | Sort | Filter */}
       <div className="flex items-center gap-2 md:gap-3">
         {/* Search Bar - Compact Pill */}
         <div className="relative flex-grow">
@@ -62,6 +68,26 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
 
         {/* Action Buttons Group */}
         <div className="flex items-center gap-2">
+            {/* View Mode Toggle */}
+            {onViewModeChange && (
+                <div className="flex bg-gray-900/80 border border-gray-700 rounded-full p-0.5">
+                    <button
+                        onClick={() => onViewModeChange('grid')}
+                        className={`p-2 rounded-full transition-all duration-200 ${viewMode === 'grid' ? 'bg-gray-700 text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                        title="Grid View"
+                    >
+                        <GridIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={() => onViewModeChange('feed')}
+                        className={`p-2 rounded-full transition-all duration-200 ${viewMode === 'feed' ? 'bg-gray-700 text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                        title="Feed View"
+                    >
+                        <ListIcon className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
+
             <button
                 onClick={toggleSort}
                 className={`flex-shrink-0 p-2.5 rounded-full border transition-all duration-300 

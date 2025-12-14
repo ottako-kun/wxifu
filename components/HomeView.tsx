@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Hero from './Hero';
 import MediaGrid from './MediaGrid';
+import FeedView from './FeedView';
 import SearchIcon from './icons/SearchIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
 import { MediaItem } from '../types';
@@ -40,6 +41,7 @@ const HomeView: React.FC<HomeViewProps> = ({
 }) => {
   
   const scrollDirection = useScrollDirection();
+  const [viewMode, setViewMode] = useState<'grid' | 'feed'>('grid');
 
   // Determine which dataset to use
   let itemsToDisplay: MediaItem[] = [];
@@ -138,6 +140,8 @@ const HomeView: React.FC<HomeViewProps> = ({
                     toggleTag={toggleTag}
                     availableTags={availableTags}
                     clearFilters={clearFilters}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
                 />
              )}
         </div>
@@ -163,17 +167,29 @@ const HomeView: React.FC<HomeViewProps> = ({
             </div>
         ) : (
             <>
-                {/* Grid Content */}
+                {/* Content Area */}
                 {itemsToDisplay.length > 0 || isCurrentLoading ? (
                   sortedItems.length > 0 || isCurrentLoading ? (
                     <div className="animate-fade-in space-y-12 mt-4">
-                    <MediaGrid
-                        items={visibleItems}
-                        onUserClick={onUserClick}
-                        session={session}
-                        onDataChange={onDataChange}
-                        isLoading={isCurrentLoading}
-                    />
+                        
+                    {/* Render either Grid or Feed */}
+                    {viewMode === 'grid' ? (
+                        <MediaGrid
+                            items={visibleItems}
+                            onUserClick={onUserClick}
+                            session={session}
+                            onDataChange={onDataChange}
+                            isLoading={isCurrentLoading}
+                        />
+                    ) : (
+                        <FeedView 
+                            items={visibleItems}
+                            session={session}
+                            onUserClick={onUserClick}
+                            onDataChange={onDataChange}
+                            isLoading={isCurrentLoading}
+                        />
+                    )}
 
                     {/* Infinite Scroll Sentinel */}
                     {visibleCount < sortedItems.length && !isCurrentLoading && (
