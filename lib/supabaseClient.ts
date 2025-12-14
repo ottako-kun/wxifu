@@ -37,3 +37,13 @@ export const signOut = async () => {
     console.error('Error signing out:', error.message);
   }
 };
+
+export const insertMediaItem = async (item: {
+  type: string;
+  src: string;
+  description: string;
+  category: string;
+  tags: string[];
+}) => {
+  return await supabase.from('media').insert([item]);
+};

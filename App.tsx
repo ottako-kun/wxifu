@@ -4,13 +4,15 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import MediaGrid from './components/MediaGrid';
 import { fallbackPhotoMedia, fallbackVideoMedia, processMediaItem } from './gallery-data';
-import { supabase } from './lib/supabaseClient';
+import { supabase, insertMediaItem } from './lib/supabaseClient';
 import Footer from './components/Footer';
 import SearchIcon from './components/icons/SearchIcon';
 import SortAscendingIcon from './components/icons/SortAscendingIcon';
 import CloseIcon from './components/icons/CloseIcon';
 import ChevronRightIcon from './components/icons/ChevronRightIcon';
 import LoadingSpinner from './components/icons/LoadingSpinner';
+import UploadButton from './components/UploadButton';
+import UploadModal from './components/UploadModal';
 import { MediaItem, MediaType } from './types';
 
 const ITEMS_PER_PAGE = 24;
@@ -35,6 +37,10 @@ const App: React.FC = () => {
   // Pagination State
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
 
+  // Upload State
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
   // Handle Auth Session
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -50,9 +56,7 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch Data from Supabase
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async () => {
       setIsLoading(true);
       try {
         const { data, error } = await supabase
@@ -88,10 +92,47 @@ const App: React.FC = () => {
       } finally {
         setIsLoading(false);
       }
-    };
+  };
 
+  // Fetch Data from Supabase on mount
+  useEffect(() => {
     fetchData();
   }, []);
+
+  const handleUploadSubmit = async (data: { type: MediaType; src: string; description: string; category: string }) => {
+    if (!session) return;
+    setIsUploading(true);
+    try {
+        const { error } = await insertMediaItem({
+            type: data.type,
+            src: data.src,
+            description: data.description,
+            category: data.category,
+            tags: [], // Tags can be added later if UI supports it
+        });
+
+        if (error) {
+            throw error;
+        }
+
+        // Refresh data to show new item
+        await fetchData();
+        setIsUploadModalOpen(false);
+        
+        // Switch tab to the type uploaded so user sees it immediately
+        if (data.type === MediaType.Video) {
+            setActiveTab('videos');
+        } else {
+            setActiveTab('photos');
+        }
+
+    } catch (err: any) {
+        console.error("Upload error:", err);
+        alert(`Failed to add link: ${err.message}`);
+    } finally {
+        setIsUploading(false);
+    }
+  };
 
   const itemsToDisplay = activeTab === 'photos' ? photoMedia : videoMedia;
   const galleryName = activeTab === 'photos' ? 'photo' : 'video';
@@ -333,6 +374,20 @@ const App: React.FC = () => {
         </main>
       </div>
       <Footer />
+      
+      {/* Upload Button & Modal (Only for logged in users) */}
+      {session && (
+        <>
+            <UploadButton onClick={() => setIsUploadModalOpen(true)} isUploading={isUploading} />
+            {isUploadModalOpen && (
+                <UploadModal 
+                    onClose={() => setIsUploadModalOpen(false)} 
+                    onSubmit={handleUploadSubmit}
+                    isSubmitting={isUploading}
+                />
+            )}
+        </>
+      )}
     </div>
   );
 };
