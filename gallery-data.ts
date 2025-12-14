@@ -14,9 +14,9 @@ export const APP_CONFIG = {
   
   // Hero Section Content
   hero: {
-    badge: 'Private Gallery Collection',
+    badge: 'NSFW Gallery Collection',
     description: 'Browse a gallery of captivating visuals and sensual edits. Feel the pull of the spotlight… it’s ready for you to become our next featured waifu.',
-    tags: ['Illustrations', 'Cosplay', 'AMVs']
+    tags: ['Illustrations', 'Photos', 'Videos']
   },
   
   // Footer Content
