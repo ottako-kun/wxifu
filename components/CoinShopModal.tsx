@@ -97,7 +97,7 @@ const CoinShopModal: React.FC<CoinShopModalProps> = ({ onClose }) => {
         <div className="flex-grow overflow-y-auto">
             {activeTab === 'coins' ? (
                 <>
-                    {/* Free Coins Section */}
+                    {/* Free Coins Section - DISABLED FOR NOW
                     <div className="p-4 mx-6 mt-6 bg-gradient-to-r from-gray-800 to-gray-800/50 rounded-xl border border-gray-700 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-cyan-900/50 flex items-center justify-center border border-cyan-500/30 text-cyan-400">
@@ -118,6 +118,7 @@ const CoinShopModal: React.FC<CoinShopModalProps> = ({ onClose }) => {
                             {isWatchingAd ? <LoadingSpinner className="w-4 h-4" /> : '+15 Coins'}
                         </button>
                     </div>
+                    */}
 
                     <div className="p-6 space-y-4">
                         {PACKAGES.map((pkg) => (
