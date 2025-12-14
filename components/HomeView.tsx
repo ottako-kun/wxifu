@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import Hero from './Hero';
 import MediaGrid from './MediaGrid';
@@ -199,32 +200,30 @@ const HomeView: React.FC<HomeViewProps> = ({
                 />
 
                 {/* Grid Content */}
-                {isCurrentLoading ? (
-                <div className="flex flex-col items-center justify-center h-[40vh] gap-4">
-                    <LoadingSpinner className="w-12 h-12 text-pink-500" />
-                    <p className="text-gray-500 animate-pulse">Loading {galleryName} gallery...</p>
-                    {activeTab === 'manga' && <p className="text-xs text-gray-600">Powered by MangaDex</p>}
-                </div>
-                ) : itemsToDisplay.length > 0 ? (
-                sortedItems.length > 0 ? (
+                {/* Passed isLoading to MediaGrid for Skeleton rendering */}
+                {itemsToDisplay.length > 0 || isCurrentLoading ? (
+                  sortedItems.length > 0 || isCurrentLoading ? (
                     <div className="animate-fade-in space-y-12">
                     <MediaGrid
                         items={visibleItems}
                         onUserClick={onUserClick}
                         session={session}
                         onDataChange={onDataChange}
+                        isLoading={isCurrentLoading}
                     />
 
                     {/* Infinite Scroll Sentinel */}
-                    {visibleCount < sortedItems.length && (
+                    {visibleCount < sortedItems.length && !isCurrentLoading && (
                         <div ref={observerTarget} className="flex justify-center py-8 w-full">
                             <LoadingSpinner className="w-8 h-8 text-pink-500/50" />
                         </div>
                     )}
 
-                    <div className="text-center text-xs text-gray-600">
-                        Showing {Math.min(visibleCount, sortedItems.length)} of {sortedItems.length} results
-                    </div>
+                    {!isCurrentLoading && (
+                      <div className="text-center text-xs text-gray-600">
+                          Showing {Math.min(visibleCount, sortedItems.length)} of {sortedItems.length} results
+                      </div>
+                    )}
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-[40vh] text-center animate-fade-in border border-dashed border-gray-800 rounded-3xl bg-gray-900/20 m-4">
