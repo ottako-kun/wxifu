@@ -1,13 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { Session } from '@supabase/supabase-js';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import MediaGrid from './components/MediaGrid';
-import { photoMedia, videoMedia } from './gallery-data';
+import { fallbackPhotoMedia, fallbackVideoMedia, processMediaItem } from './gallery-data';
+import { supabase } from './lib/supabaseClient';
 import Footer from './components/Footer';
 import SearchIcon from './components/icons/SearchIcon';
 import SortAscendingIcon from './components/icons/SortAscendingIcon';
 import CloseIcon from './components/icons/CloseIcon';
 import ChevronRightIcon from './components/icons/ChevronRightIcon';
+import LoadingSpinner from './components/icons/LoadingSpinner';
+import { MediaItem, MediaType } from './types';
 
 const ITEMS_PER_PAGE = 24;
 
@@ -16,12 +20,78 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'default' | 'asc'>('default');
   
+  // Auth State
+  const [session, setSession] = useState<Session | null>(null);
+
+  // Data State
+  const [photoMedia, setPhotoMedia] = useState<MediaItem[]>([]);
+  const [videoMedia, setVideoMedia] = useState<MediaItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   // Filtering State
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // Pagination State
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+
+  // Handle Auth Session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Fetch Data from Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('media')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error || !data || data.length === 0) {
+          console.log("Using fallback data (Supabase empty or not configured)");
+          setPhotoMedia(fallbackPhotoMedia);
+          setVideoMedia(fallbackVideoMedia);
+        } else {
+          // Process fetched data
+          const fetchedPhotos: MediaItem[] = [];
+          const fetchedVideos: MediaItem[] = [];
+
+          data.forEach((item, index) => {
+             const processed = processMediaItem(item, index);
+             if (processed.type === MediaType.Video) {
+                 fetchedVideos.push(processed);
+             } else {
+                 fetchedPhotos.push(processed);
+             }
+          });
+          
+          setPhotoMedia(fetchedPhotos.length > 0 ? fetchedPhotos : fallbackPhotoMedia);
+          setVideoMedia(fetchedVideos.length > 0 ? fetchedVideos : fallbackVideoMedia);
+        }
+      } catch (err) {
+        console.error("Error fetching media:", err);
+        setPhotoMedia(fallbackPhotoMedia);
+        setVideoMedia(fallbackVideoMedia);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const itemsToDisplay = activeTab === 'photos' ? photoMedia : videoMedia;
   const galleryName = activeTab === 'photos' ? 'photo' : 'video';
@@ -102,7 +172,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white">
-      <Header />
+      <Header session={session} />
       <div className="flex-grow">
         <Hero />
         <main className="container mx-auto px-4 py-8">
@@ -209,7 +279,12 @@ const App: React.FC = () => {
           </div>
 
           {/* Grid Content */}
-          {itemsToDisplay.length > 0 ? (
+          {isLoading ? (
+             <div className="flex flex-col items-center justify-center h-[40vh] gap-4">
+                 <LoadingSpinner className="w-12 h-12 text-pink-500" />
+                 <p className="text-gray-500 animate-pulse">Loading {galleryName} gallery...</p>
+             </div>
+          ) : itemsToDisplay.length > 0 ? (
             sortedItems.length > 0 ? (
               <div className="animate-fade-in space-y-12">
                 <MediaGrid items={visibleItems} />
@@ -252,7 +327,7 @@ const App: React.FC = () => {
           ) : (
             <div className="flex flex-col items-center justify-center h-[50vh] text-center">
               <h2 className="text-3xl font-bold text-gray-400 mb-2">No {galleryName}s yet.</h2>
-              <p className="text-lg text-gray-500">Add {galleryName} data to gallery-data.ts to see them here.</p>
+              <p className="text-lg text-gray-500">Connect to Supabase or add items to your database to see them here.</p>
             </div>
           )}
         </main>

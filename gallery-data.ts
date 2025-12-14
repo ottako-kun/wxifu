@@ -1,13 +1,9 @@
 import { MediaItem, MediaType } from './types';
 
-// --- HOW TO UPDATE THE GALLERY ---
-// 1. Make sure your photos/videos in Google Drive are public ("Anyone with the link").
-// 2. Get the shareable link.
-// 3. Add to the lists below.
-// 4. To customize Category/Tags, update the mapping logic at the bottom or expand the data structure.
+// --- HELPERS ---
 
 // Helper to extract Google Drive ID from various URL formats
-const getDriveId = (input: string): string => {
+export const getDriveId = (input: string): string => {
   if (!input) return '';
   // Match /d/ID pattern (standard drive links)
   const matchSlash = input.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -21,12 +17,63 @@ const getDriveId = (input: string): string => {
   return input;
 };
 
-// PLACEHOLDERS FOR EDITING LATER
+// Default Thumbnail ID
+export const DEFAULT_VIDEO_THUMBNAIL_ID = '1GNRxrGz1BgE6Ra1OqKfaKiHSj-JmDqDx';
+export const DEFAULT_THUMB_URL = `https://lh3.googleusercontent.com/d/${DEFAULT_VIDEO_THUMBNAIL_ID}`;
+
+// Helper to process a raw DB item or static item into a MediaItem
+// This handles the Google Drive link conversion logic centrally
+export const processMediaItem = (item: any, index: number): MediaItem => {
+  const isVideo = item.type === MediaType.Video || item.type === 'VIDEO';
+  const type = isVideo ? MediaType.Video : MediaType.Photo;
+  
+  // Use existing ID or generate one
+  const id = item.id || (isVideo ? `vid-${index}` : `photo-${index}`);
+  
+  const driveId = getDriveId(item.src || item.url || '');
+  
+  let finalSrc = item.src;
+  let finalVideoSrc = item.videoSrc;
+
+  if (type === MediaType.Photo) {
+     // If it looks like a Drive ID, construct the proxy URL
+     // If it's a full URL that isn't drive, leave it (future proofing)
+     if (driveId && driveId === item.src) {
+        finalSrc = `https://lh3.googleusercontent.com/d/${driveId}`;
+     } else if (driveId && item.src.includes('drive.google.com')) {
+        finalSrc = `https://lh3.googleusercontent.com/d/${driveId}`;
+     }
+  } else {
+     // Video Logic
+     // Thumbnail: Use provided, or default
+     finalSrc = item.thumbnail || DEFAULT_THUMB_URL;
+     
+     // Video Source: If Drive link, convert to preview, else use direct
+     if (item.url && item.url.includes('drive.google.com')) {
+        const vidDriveId = getDriveId(item.url);
+        finalVideoSrc = `https://drive.google.com/file/d/${vidDriveId}/preview`;
+     } else {
+        finalVideoSrc = item.videoSrc || item.url;
+     }
+  }
+
+  return {
+    id: id.toString(),
+    type,
+    src: finalSrc,
+    videoSrc: finalVideoSrc,
+    description: item.description,
+    category: item.category || (type === MediaType.Photo ? 'Illustration' : 'Clip'),
+    tags: item.tags || [],
+  };
+};
+
+
+// --- FALLBACK STATIC DATA ---
 const PHOTO_CATEGORIES = ['Illustration', 'Cosplay', 'Render', 'Sketch'];
-const VIDEO_CATEGORIES = ['AMV', 'Animation', 'Clip', 'Edit'];
 const COMMON_TAGS = ['Waifu', 'High Res', 'SFW', 'NSFW', 'Fantasy', 'Cyberpunk', 'Beach', 'Uniform'];
 
-const GOOGLE_DRIVE_PHOTOS: { id: string; description: string; category?: string; tags?: string[] }[] = [
+const GOOGLE_DRIVE_PHOTOS = [
   { 
     id: '1VcZ2HwtbfXJddnszt9PoguYiRTNoZL0a', 
     description: '1 - Neon City Night', 
@@ -185,43 +232,40 @@ const GOOGLE_DRIVE_PHOTOS: { id: string; description: string; category?: string;
   },
 ];
 
-const GOOGLE_DRIVE_VIDEOS: { videoId: string; thumbnailId: string, description: string; category?: string; tags?: string[] }[] = [
+const GOOGLE_DRIVE_VIDEOS = [
   {
-    videoId: '1teEeldUk5k03VhhKVGAUag2vm2d7pvsa',
-    thumbnailId: '1G4sTXINHsOBwYDtcZle79qLo0OUsWDnj',
-    description: '1 - AMV Edit',
-    category: 'AMV',
-    tags: ['Action', 'Music', 'Edit']
+    description: '1 - Video Collection',
+    url: 'https://drive.google.com/file/d/194iRont8lJn2s7uwb-aC74mb0OZm8l9d/view?usp=drive_link',
+    category: 'Clip',
+    tags: ['Google Drive', 'Exclusive', 'HD']
   },
   {
-    videoId: '194iRont8lJn2s7uwb-aC74mb0OZm8l9d',
-    thumbnailId: '1_rzf1mCHifK_fR0cZYwPUpv31JKAsxZa',
-    description: '2 - Character Showcase',
+    description: '2 - Video Collection',
+    url: 'https://drive.google.com/file/d/1fC9_huC2XKh7eHm2p-FTH4Y7-PdmZn0o/view?usp=drive_link',
+    category: 'AMV',
+    tags: ['Google Drive', 'Edit', 'Anime']
+  },
+  {
+    description: '3 - Video Collection',
+    url: 'https://drive.google.com/file/d/10CXspjp3XT4zVOOPOLQZJbgviVJVnvOx/view?usp=drive_link',
+    category: 'Animation',
+    tags: ['Google Drive', 'Motion', 'Art']
+  },
+  {
+    description: '4 - Video Collection',
+    url: 'https://drive.google.com/file/d/1teEeldUk5k03VhhKVGAUag2vm2d7pvsa/view?usp=drive_link',
     category: 'Clip',
-    tags: ['Character', 'Showcase', 'HD']
+    tags: ['Google Drive', 'Scene', '4K']
   }
 ];
 
-const EXTERNAL_VIDEOS: { id: string; thumbnailUrl: string; videoUrl: string; description: string; category?: string; tags?: string[] }[] = [
-//   {
-//     id: 'ext-1',
-//     thumbnailUrl: '...',
-//     videoUrl: '...',
-//    description: 'External Anime Clip',
-//    category: 'Clip',
-//    tags: ['Action', 'External']
-//  },
-];
-
-
-// --- APP LOGIC ---
-
-export const photoMedia: MediaItem[] = GOOGLE_DRIVE_PHOTOS.map((photo, index) => {
+export const fallbackPhotoMedia: MediaItem[] = GOOGLE_DRIVE_PHOTOS.map((photo, index) => {
   const cleanId = getDriveId(photo.id);
-  // Assign placeholders if specific data isn't provided
   const category = photo.category || PHOTO_CATEGORIES[index % PHOTO_CATEGORIES.length];
   const tags = photo.tags || [COMMON_TAGS[index % COMMON_TAGS.length], COMMON_TAGS[(index + 1) % COMMON_TAGS.length]];
   
+  // Transform to match the generic processing structure to re-use logic if needed, 
+  // but keeping explicit map here for safety as per original file.
   return {
     id: cleanId,
     type: MediaType.Photo,
@@ -232,34 +276,10 @@ export const photoMedia: MediaItem[] = GOOGLE_DRIVE_PHOTOS.map((photo, index) =>
   };
 });
 
-export const videoMedia: MediaItem[] = [
-  // 1. Google Drive Videos
-  ...GOOGLE_DRIVE_VIDEOS.map((video, index) => {
-    const cleanVideoId = getDriveId(video.videoId);
-    const cleanThumbId = getDriveId(video.thumbnailId);
-    
-    // Placeholder logic for videos
-    const category = video.category || VIDEO_CATEGORIES[index % VIDEO_CATEGORIES.length];
-    const tags = video.tags || ['Video', 'HD', 'Edit'];
-
-    return {
-      id: cleanVideoId,
+export const fallbackVideoMedia: MediaItem[] = GOOGLE_DRIVE_VIDEOS.map((video, index) => {
+  return processMediaItem({
+      ...video,
       type: MediaType.Video,
-      src: `https://lh3.googleusercontent.com/d/${cleanThumbId}`,
-      videoSrc: `https://drive.google.com/file/d/${cleanVideoId}/preview`,
-      description: video.description,
-      category,
-      tags
-    };
-  }),
-  // 2. External Videos
-  ...EXTERNAL_VIDEOS.map(video => ({
-    id: video.id,
-    type: MediaType.Video,
-    src: video.thumbnailUrl,
-    videoSrc: video.videoUrl,
-    description: video.description,
-    category: video.category || 'External',
-    tags: video.tags || ['Imported']
-  }))
-];
+      id: `vid-fallback-${index}`
+  }, index);
+});
