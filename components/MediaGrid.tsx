@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MediaItem } from '../types';
 import MediaCard from './MediaCard';
@@ -9,21 +8,23 @@ interface MediaGridProps {
   onUserClick?: (user: { id: string; name: string; avatar: string }) => void;
   session?: Session | null;
   onDataChange?: () => void;
-  isLoading?: boolean; // New prop for skeleton state
+  isLoading?: boolean; 
 }
 
 const MediaGridSkeleton = () => {
     return (
-        <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-6 xl:columns-8 gap-2 md:gap-4 block w-full space-y-2 md:space-y-4">
+        <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 xl:columns-6 gap-3 md:gap-4 space-y-3 md:space-y-4 pb-20">
             {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="break-inside-avoid mb-3 md:mb-6 rounded-xl overflow-hidden bg-gray-900 border border-gray-800 relative">
+                <div key={i} className="break-inside-avoid mb-3 rounded-xl overflow-hidden bg-gray-900 border border-gray-800 relative">
                      {/* Random height simulation */}
-                     <div style={{ height: `${Math.floor(Math.random() * (350 - 200 + 1) + 200)}px` }} className="w-full bg-gray-800 animate-pulse relative">
+                     <div style={{ height: `${Math.floor(Math.random() * (300 - 150 + 1) + 150)}px` }} className="w-full bg-gray-800 animate-pulse relative">
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 animate-shimmer"></div>
                      </div>
                      <div className="p-3 space-y-2">
-                        <div className="h-3 w-1/3 bg-gray-700 rounded animate-pulse"></div>
-                        <div className="h-4 w-3/4 bg-gray-700 rounded animate-pulse"></div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-gray-800 animate-pulse"></div>
+                            <div className="h-3 w-20 bg-gray-800 rounded animate-pulse"></div>
+                        </div>
                      </div>
                 </div>
             ))}
@@ -37,7 +38,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ items, onUserClick, session, onDa
   }
 
   return (
-    <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-6 xl:columns-8 gap-2 md:gap-4 block w-full space-y-2 md:space-y-4">
+    <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 xl:columns-6 gap-3 md:gap-4 space-y-3 md:space-y-4 pb-20">
       {items.map((item, index) => (
         <MediaCard 
             key={item.id} 
