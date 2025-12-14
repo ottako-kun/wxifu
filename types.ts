@@ -12,4 +12,6 @@ export interface MediaItem {
   category?: string;
   tags?: string[];
   user_id?: string; // Links the media to a specific user
+  author?: string; // Username of the uploader
+  author_avatar?: string; // Avatar URL of the uploader
 }

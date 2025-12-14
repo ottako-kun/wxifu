@@ -11,9 +11,10 @@ interface MediaDetailModalProps {
   items: MediaItem[];
   initialIndex: number;
   onClose: () => void;
+  onUserClick?: (user: { id: string; name: string; avatar: string }) => void;
 }
 
-const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex, onClose }) => {
+const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex, onClose, onUserClick }) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isVisible, setIsVisible] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
@@ -48,6 +49,19 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
 
   const closeSharePopover = () => {
     setShareAnchorEl(null);
+  };
+  
+  const handleAuthorClick = () => {
+      if (item.author && item.user_id && onUserClick) {
+          handleClose();
+          setTimeout(() => {
+             onUserClick({
+                 id: item.user_id!,
+                 name: item.author!,
+                 avatar: item.author_avatar || ''
+             });
+          }, 300);
+      }
   };
 
   // Check if the video URL is a direct file (MP4, WEBM, etc.) or an embed (YouTube, Drive, etc.)
@@ -215,15 +229,27 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
         {/* Sidebar */}
         <div className="w-full md:w-[30%] lg:w-[25%] h-[40%] md:h-full flex flex-col bg-gray-900/95 backdrop-blur-xl border-l border-gray-800 relative z-10">
           <div className="p-6 md:p-8 flex-grow overflow-y-auto no-scrollbar">
+            
+            {/* Header: Brand or Author */}
             <div className="flex items-center gap-x-4 mb-8 border-b border-gray-800 pb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-pink-600 to-purple-600 rounded-xl shadow-lg flex items-center justify-center text-white font-bold text-base border border-white/10">
-                {APP_CONFIG.name.substring(0,2)}
+              <div className="cursor-pointer group" onClick={handleAuthorClick}>
+                 {item.author_avatar ? (
+                     <img src={item.author_avatar} alt={item.author} className="w-12 h-12 rounded-full border border-pink-500 shadow-lg object-cover" />
+                 ) : (
+                     <div className="w-12 h-12 bg-gradient-to-br from-pink-600 to-purple-600 rounded-full shadow-lg flex items-center justify-center text-white font-bold text-lg border border-white/10">
+                        {item.author?.charAt(0) || APP_CONFIG.name.charAt(0)}
+                     </div>
+                 )}
               </div>
-              <div>
-                  <h2 id="media-title" className="text-xl font-bold text-white tracking-widest uppercase leading-none mb-1.5 font-orbitron">
-                      {APP_CONFIG.name}
+              <div className="overflow-hidden">
+                  <h2 
+                    id="media-title" 
+                    className="text-lg font-bold text-white tracking-widest leading-none mb-1.5 font-orbitron truncate cursor-pointer hover:text-pink-400 transition-colors"
+                    onClick={handleAuthorClick}
+                  >
+                      {item.author || APP_CONFIG.name}
                   </h2>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em]">Gallery Viewer</p>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em]">{item.author ? 'Artist / Uploader' : 'Gallery Viewer'}</p>
               </div>
             </div>
             

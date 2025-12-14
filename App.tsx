@@ -3,7 +3,7 @@ import { Session } from '@supabase/supabase-js';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import MediaGrid from './components/MediaGrid';
-import ProfileView from './components/ProfileView';
+import ProfileView, { UserProfileData } from './components/ProfileView';
 import { fallbackPhotoMedia, fallbackVideoMedia, processMediaItem, APP_CONFIG } from './gallery-data';
 import { supabase, insertMediaItem } from './lib/supabaseClient';
 import Footer from './components/Footer';
@@ -20,6 +20,9 @@ type ViewState = 'home' | 'profile';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>('home');
+  // Target profile to view (could be current user or another user)
+  const [activeProfile, setActiveProfile] = useState<UserProfileData | null>(null);
+
   const [activeTab, setActiveTab] = useState<'photos' | 'videos'>('photos');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'default' | 'asc'>('default');
@@ -53,14 +56,14 @@ const App: React.FC = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      // If user logs out while on profile, go home
-      if (!session && currentView === 'profile') {
+      // If user logs out while on profile view and it was their profile, go home
+      if (!session && currentView === 'profile' && activeProfile?.id === session?.user.id) {
         setCurrentView('home');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [currentView]);
+  }, [currentView, activeProfile]);
 
   const fetchData = async () => {
       setIsLoading(true);
@@ -116,7 +119,9 @@ const App: React.FC = () => {
             description: data.description,
             category: data.category,
             tags: data.tags,
-            user_id: session.user.id
+            user_id: session.user.id,
+            author: session.user.user_metadata.full_name || session.user.email?.split('@')[0],
+            author_avatar: session.user.user_metadata.avatar_url
         });
 
         if (error) {
@@ -140,6 +145,31 @@ const App: React.FC = () => {
     } finally {
         setIsUploading(false);
     }
+  };
+
+  const handleNavigateToProfile = (view: 'home' | 'profile') => {
+      if (view === 'profile' && session) {
+          // Navigating to "My Profile"
+          setActiveProfile({
+              id: session.user.id,
+              name: session.user.user_metadata.full_name || session.user.email?.split('@')[0],
+              avatar: session.user.user_metadata.avatar_url,
+              bio: session.user.user_metadata.bio
+          });
+      }
+      setCurrentView(view);
+  };
+
+  const handleUserClick = (user: { id: string; name: string; avatar: string }) => {
+      setActiveProfile({
+          id: user.id,
+          name: user.name,
+          avatar: user.avatar,
+          // Bio is unknown for other users without a separate fetch/table, pass undefined or check session if it's me
+          bio: session?.user.id === user.id ? session.user.user_metadata.bio : undefined 
+      });
+      setCurrentView('profile');
+      window.scrollTo(0, 0);
   };
 
   const itemsToDisplay = activeTab === 'photos' ? photoMedia : videoMedia;
@@ -168,12 +198,13 @@ const App: React.FC = () => {
   const filteredItems = useMemo(() => {
     const query = searchQuery.toLowerCase();
     return itemsToDisplay.filter(item => {
-      // Improved Search: Checks description, category, and tags
+      // Improved Search: Checks description, category, tags, and AUTHOR
       const inDescription = item.description?.toLowerCase().includes(query) ?? false;
       const inCategory = item.category?.toLowerCase().includes(query) ?? false;
       const inTags = item.tags?.some(tag => tag.toLowerCase().includes(query)) ?? false;
+      const inAuthor = item.author?.toLowerCase().includes(query) ?? false;
       
-      const matchesSearch = query === '' || inDescription || inCategory || inTags;
+      const matchesSearch = query === '' || inDescription || inCategory || inTags || inAuthor;
       
       const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
       const matchesTags = selectedTags.length === 0 || selectedTags.every(tag => item.tags?.includes(tag));
@@ -219,18 +250,19 @@ const App: React.FC = () => {
     setVisibleCount(APP_CONFIG.itemsPerPage);
   };
 
-  // User Media for Profile (Combine both photo and video)
-  const userMedia = useMemo(() => {
-    if (!session) return [];
+  // Media for Profile (Combine both photo and video)
+  const profileMedia = useMemo(() => {
+    if (!activeProfile) return [];
     const all = [...photoMedia, ...videoMedia];
-    return all.filter(item => item.user_id === session.user.id);
-  }, [photoMedia, videoMedia, session]);
+    // Filter items belonging to the active profile ID
+    return all.filter(item => item.user_id === activeProfile.id);
+  }, [photoMedia, videoMedia, activeProfile]);
 
   return (
     <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white">
       <Header 
         session={session} 
-        onNavigate={(view) => setCurrentView(view)} 
+        onNavigate={handleNavigateToProfile} 
       />
       
       <div className="flex-grow">
@@ -267,7 +299,7 @@ const App: React.FC = () => {
                     </div>
                     <input
                       type="search"
-                      placeholder={`Search ${galleryName}s, tags, or categories...`}
+                      placeholder={`Search ${galleryName}s, authors, tags...`}
                       value={searchQuery}
                       onChange={(e) => { setSearchQuery(e.target.value); setVisibleCount(APP_CONFIG.itemsPerPage); }}
                       className="w-full bg-gray-900/50 border border-gray-700 rounded-xl py-3 pl-11 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500 transition-all shadow-inner"
@@ -349,7 +381,7 @@ const App: React.FC = () => {
               ) : itemsToDisplay.length > 0 ? (
                 sortedItems.length > 0 ? (
                   <div className="animate-fade-in space-y-12">
-                    <MediaGrid items={visibleItems} />
+                    <MediaGrid items={visibleItems} onUserClick={handleUserClick} />
                     
                     {/* Load More Button */}
                     {visibleCount < sortedItems.length && (
@@ -395,15 +427,17 @@ const App: React.FC = () => {
             </main>
           </>
         ) : (
-          session && (
-            <div className="pt-24">
-               <ProfileView 
-                  session={session} 
-                  userMedia={userMedia} 
-                  onBack={() => setCurrentView('home')} 
-               />
-            </div>
-          )
+           <div className="pt-24">
+               {activeProfile && (
+                   <ProfileView 
+                      session={session} 
+                      profileData={activeProfile}
+                      userMedia={profileMedia} 
+                      onBack={() => setCurrentView('home')} 
+                      onUserClick={handleUserClick} // Recursive nav if needed
+                   />
+               )}
+           </div>
         )}
       </div>
       

@@ -10,9 +10,10 @@ interface MediaCardProps {
   item: MediaItem;
   items: MediaItem[];
   index: number;
+  onUserClick?: (user: { id: string; name: string; avatar: string }) => void;
 }
 
-const MediaCard: React.FC<MediaCardProps> = ({ item, items, index }) => {
+const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
@@ -29,6 +30,17 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index }) => {
 
   const closeSharePopover = () => {
     setShareAnchorEl(null);
+  };
+
+  const handleUserClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (item.user_id && item.author && onUserClick) {
+        onUserClick({
+            id: item.user_id,
+            name: item.author,
+            avatar: item.author_avatar || ''
+        });
+    }
   };
 
   return (
@@ -68,27 +80,47 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index }) => {
 
             {/* Bottom Content */}
             <div className="p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-              <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                     {item.category && (
-                        <span className="inline-block text-[10px] font-bold text-cyan-400 uppercase tracking-wider mb-1">
-                            {item.category}
-                        </span>
-                     )}
-                     {item.description && (
-                        <p className="text-white text-sm font-medium line-clamp-2 leading-snug drop-shadow-md">
-                            {item.description}
-                        </p>
-                     )}
-                  </div>
-                  
+              {/* Category */}
+              {item.category && (
+                <span className="inline-block text-[10px] font-bold text-cyan-400 uppercase tracking-wider mb-1">
+                    {item.category}
+                </span>
+              )}
+              
+              {/* Description */}
+              {item.description && (
+                <p className="text-white text-sm font-medium line-clamp-2 leading-snug drop-shadow-md mb-3">
+                    {item.description}
+                </p>
+              )}
+
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
+                  {/* User Info - Clickable */}
+                  {item.author && (
+                      <div 
+                        className="flex items-center gap-2 group/user hover:bg-white/10 rounded-full pr-3 py-1 -ml-1 pl-1 transition-colors"
+                        onClick={handleUserClick}
+                      >
+                         {item.author_avatar ? (
+                             <img src={item.author_avatar} alt={item.author} className="w-5 h-5 rounded-full border border-white/30" />
+                         ) : (
+                             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center text-[8px] font-bold text-white border border-white/30">
+                                 {item.author.charAt(0)}
+                             </div>
+                         )}
+                         <span className="text-xs font-semibold text-gray-300 group-hover/user:text-pink-300 transition-colors truncate max-w-[80px]">
+                             {item.author}
+                         </span>
+                      </div>
+                  )}
+
                   <button
                     onClick={handleShareClick}
-                    className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition-colors border border-white/10 shrink-0"
+                    className="p-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition-colors border border-white/10 shrink-0 ml-auto"
                     aria-label="Share media"
                     title="Share"
                   >
-                    <ShareIcon className="w-4 h-4" />
+                    <ShareIcon className="w-3.5 h-3.5" />
                   </button>
               </div>
             </div>
@@ -96,7 +128,14 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index }) => {
         )}
       </div>
       
-      {isModalOpen && <MediaDetailModal items={items} initialIndex={index} onClose={closeModal} />}
+      {isModalOpen && (
+        <MediaDetailModal 
+            items={items} 
+            initialIndex={index} 
+            onClose={closeModal} 
+            onUserClick={onUserClick}
+        />
+      )}
       
       {shareAnchorEl && (
         <SharePopover

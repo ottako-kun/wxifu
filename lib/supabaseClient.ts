@@ -18,6 +18,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
  * - tags: text[] (array of strings, optional)
  * - video_src: text (optional, for direct video file links if different from src)
  * - user_id: uuid (foreign key to auth.users)
+ * - author: text (optional, denormalized username)
+ * - author_avatar: text (optional, denormalized avatar url)
  */
 
 export const signInWithGoogle = async () => {
@@ -52,6 +54,8 @@ export const insertMediaItem = async (item: {
   category: string;
   tags: string[];
   user_id?: string;
+  author?: string;
+  author_avatar?: string;
 }) => {
   // Attempt 1: Try inserting with all fields
   const { data, error } = await supabase.from('media').insert([item]).select();
@@ -63,13 +67,30 @@ export const insertMediaItem = async (item: {
     if (isColumnMissing) {
        console.warn("Database schema mismatch detected. Attempting fallback insert...");
 
-       // Fallback 1: If 'user_id' is missing
+       // Fallback 1: Remove 'author' fields if they don't exist
+       if (error.message.includes('author')) {
+           const { author, author_avatar, ...restWithoutAuthor } = item;
+           console.warn("Retrying upload without 'author' fields...");
+           
+           // Recursive retry without author fields
+           // We'll call a simplified insert directly here to avoid infinite loops if it still fails differently
+           const retry1 = await supabase.from('media').insert([restWithoutAuthor]).select();
+           
+           // If that failed due to something else (like user_id missing on table?), handle that
+           if (retry1.error && retry1.error.message.includes('user_id')) {
+               const { user_id, ...restNoUser } = restWithoutAuthor;
+               return await supabase.from('media').insert([restNoUser]).select();
+           }
+           return retry1;
+       }
+
+       // Fallback 2: If 'user_id' is missing
        if (error.message.includes('user_id')) {
            const { user_id, ...rest } = item;
            console.warn("Retrying upload without 'user_id'...");
            const retry1 = await supabase.from('media').insert([rest]).select();
            
-           // Fallback 2: If 'tags' is ALSO missing (nested retry)
+           // Fallback 2b: If 'tags' is ALSO missing
            if (retry1.error && retry1.error.message.includes('tags')) {
                console.warn("Retrying upload without 'tags'...");
                const { tags, ...rest2 } = rest;

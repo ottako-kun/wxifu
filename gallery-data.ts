@@ -192,6 +192,8 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
     category: item.category || (type === MediaType.Photo ? 'Illustration' : 'Clip'),
     tags: item.tags || [],
     user_id: item.user_id, // Safely pass user_id through
+    author: item.author || (item.user_id ? undefined : 'Ottako Admin'), // Default to Admin for static items
+    author_avatar: item.author_avatar
   };
 };
 
