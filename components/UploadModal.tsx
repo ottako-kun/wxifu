@@ -10,6 +10,7 @@ interface UploadFormData {
   src: string;
   description: string;
   category: string;
+  tags: string[];
 }
 
 interface UploadModalProps {
@@ -26,10 +27,30 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
     src: '',
     description: '',
     category: 'Illustration',
+    tags: [],
   });
+  
+  const [tagInput, setTagInput] = useState('');
 
   const handleChange = (field: keyof UploadFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const newTag = tagInput.trim().replace(/^#/, '');
+      if (newTag && !formData.tags.includes(newTag)) {
+        setFormData(prev => ({ ...prev, tags: [...prev.tags, newTag] }));
+        setTagInput('');
+      }
+    } else if (e.key === 'Backspace' && !tagInput && formData.tags.length > 0) {
+      setFormData(prev => ({ ...prev, tags: prev.tags.slice(0, -1) }));
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setFormData(prev => ({ ...prev, tags: prev.tags.filter(tag => tag !== tagToRemove) }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,10 +62,10 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-lg mx-auto flex flex-col relative overflow-hidden animate-fade-in"
+        className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-lg mx-auto flex flex-col relative overflow-hidden animate-fade-in max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-5 border-b border-gray-800 bg-gray-900/50">
+        <div className="flex items-center justify-between p-5 border-b border-gray-800 bg-gray-900/50 sticky top-0 z-10 backdrop-blur-md">
           <h2 className="text-xl font-bold text-white tracking-wide uppercase font-orbitron">Add to Gallery</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
             <CloseIcon className="w-6 h-6" />
@@ -124,6 +145,35 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
                         {cat}
                     </button>
                 ))}
+            </div>
+          </div>
+          
+          {/* Tags - Dynamic Input */}
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+              Tags
+            </label>
+            <div className="bg-gray-800 border border-gray-700 rounded-lg p-2 flex flex-wrap gap-2 focus-within:ring-2 focus-within:ring-cyan-500 focus-within:border-transparent transition-all">
+                {formData.tags.map(tag => (
+                   <span key={tag} className="bg-cyan-900/40 text-cyan-300 px-2 py-1 rounded text-xs font-medium flex items-center gap-1 border border-cyan-500/30">
+                      #{tag}
+                      <button 
+                        type="button" 
+                        onClick={() => removeTag(tag)}
+                        className="hover:text-white"
+                      >
+                         &times;
+                      </button>
+                   </span>
+                ))}
+                <input 
+                  type="text" 
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleTagKeyDown}
+                  placeholder={formData.tags.length === 0 ? "Add tags (press Enter)..." : ""}
+                  className="bg-transparent text-white placeholder-gray-500 focus:outline-none flex-grow min-w-[120px] text-sm py-1"
+                />
             </div>
           </div>
 

@@ -153,24 +153,24 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
 
   return (
     <div 
-      className={`fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center z-50 p-0 md:p-4 transition-opacity duration-300 ease-in-out ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      className={`fixed inset-0 bg-black/95 backdrop-blur-xl flex items-center justify-center z-50 p-0 md:p-6 transition-opacity duration-300 ease-in-out ${isVisible ? 'opacity-100' : 'opacity-0'}`}
       onClick={handleClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="media-title"
     >
       <div 
-        className={`bg-gray-900 border border-gray-800 rounded-none md:rounded-2xl shadow-2xl w-full max-w-[95vw] h-full md:h-[90vh] flex flex-col md:flex-row overflow-hidden transition-all duration-300 ease-in-out ${isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        className={`bg-gray-900/90 border border-gray-800 rounded-none md:rounded-3xl shadow-2xl w-full max-w-[95vw] h-full md:h-[90vh] flex flex-col md:flex-row overflow-hidden transition-all duration-300 ease-in-out ${isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Media Container - Handles Swipes */}
         <div 
-            className="relative w-full md:w-[75%] h-[60%] md:h-full flex items-center justify-center bg-black/50"
+            className="relative w-full md:w-[70%] lg:w-[75%] h-[60%] md:h-full flex items-center justify-center bg-black/40"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
         >
-          <div key={item.id} className="w-full h-full animate-fade-in flex items-center justify-center p-2 md:p-8">
+          <div key={item.id} className="w-full h-full animate-fade-in flex items-center justify-center p-0 md:p-4">
             {isPhoto ? (
               <div className="w-full h-full overflow-hidden flex items-center justify-center relative">
                 <img 
@@ -212,38 +212,38 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
         </div>
 
         {/* Sidebar */}
-        <div className="w-full md:w-[25%] h-[40%] md:h-full flex flex-col bg-gray-900 border-l border-gray-800 relative z-10">
-          <div className="p-6 flex-grow overflow-y-auto no-scrollbar">
-            <div className="flex items-center gap-x-3 mb-6 border-b border-gray-800 pb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-pink-600 to-purple-600 rounded-lg shadow-lg flex items-center justify-center text-white font-bold text-sm">
+        <div className="w-full md:w-[30%] lg:w-[25%] h-[40%] md:h-full flex flex-col bg-gray-900/95 backdrop-blur-xl border-l border-gray-800 relative z-10">
+          <div className="p-6 md:p-8 flex-grow overflow-y-auto no-scrollbar">
+            <div className="flex items-center gap-x-4 mb-8 border-b border-gray-800 pb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-pink-600 to-purple-600 rounded-xl shadow-lg flex items-center justify-center text-white font-bold text-base border border-white/10">
                 OK
               </div>
               <div>
-                  <h2 id="media-title" className="text-xl font-bold text-white tracking-widest uppercase leading-none mb-1">
-                      OTTAKO-KUN
+                  <h2 id="media-title" className="text-xl font-bold text-white tracking-widest uppercase leading-none mb-1.5 font-orbitron">
+                      OTTAKO
                   </h2>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest">Gallery Viewer</p>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em]">Gallery Viewer</p>
               </div>
             </div>
             
-            <div className="mb-3 flex items-center justify-between">
-               <span className="text-xs font-bold text-cyan-500 uppercase tracking-wider">Details</span>
+            <div className="mb-4 flex items-center justify-between">
+               <span className="text-xs font-bold text-cyan-500 uppercase tracking-wider">Info</span>
                {item.category && (
-                 <span className="text-[10px] font-bold px-2 py-0.5 rounded border border-pink-500/30 bg-pink-500/10 text-pink-400 uppercase">
+                 <span className="text-[10px] font-bold px-2.5 py-1 rounded-md border border-pink-500/30 bg-pink-500/10 text-pink-300 uppercase shadow-[0_0_10px_rgba(236,72,153,0.1)]">
                    {item.category}
                  </span>
                )}
             </div>
-             <div className="prose prose-invert prose-sm prose-p:text-gray-400 prose-p:font-light prose-p:leading-relaxed mb-8">
+             <div className="prose prose-invert prose-sm prose-p:text-gray-300 prose-p:font-light prose-p:leading-relaxed mb-8">
                <p>{item.description || 'No description available for this artwork.'}</p>
              </div>
 
              {item.tags && item.tags.length > 0 && (
                <div>
-                 <span className="text-[10px] font-semibold text-gray-600 uppercase tracking-wider block mb-3">Tags</span>
+                 <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-3">Tags</span>
                  <div className="flex flex-wrap gap-2">
                    {item.tags.map(tag => (
-                     <span key={tag} className="text-xs text-gray-400 bg-gray-800 hover:bg-gray-700 px-2.5 py-1 rounded transition-colors cursor-default">
+                     <span key={tag} className="text-xs text-gray-300 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg transition-colors cursor-default">
                        #{tag}
                      </span>
                    ))}
@@ -252,10 +252,10 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
              )}
           </div>
 
-          <div className="p-6 bg-gray-900 border-t border-gray-800">
+          <div className="p-6 bg-black/20 border-t border-gray-800 backdrop-blur-sm">
             <button
               onClick={handleShareClick}
-              className="w-full group flex items-center justify-center gap-x-2 px-4 py-3.5 rounded-xl bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-500 hover:to-pink-400 text-white transition-all duration-300 font-bold tracking-wide shadow-lg shadow-pink-900/20 hover:shadow-pink-500/30 transform hover:-translate-y-0.5"
+              className="w-full group flex items-center justify-center gap-x-2 px-4 py-4 rounded-xl bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-500 hover:to-pink-400 text-white transition-all duration-300 font-bold tracking-wide shadow-lg shadow-pink-900/20 hover:shadow-pink-500/30 transform hover:-translate-y-0.5 border border-white/10"
             >
               <ShareIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
               <span>SHARE THIS</span>
@@ -264,11 +264,11 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
         </div>
       </div>
       
-      {/* Desktop Navigation Buttons (Hidden on mobile to rely on swipe/layout) */}
+      {/* Desktop Navigation Buttons */}
       <button
         onClick={(e) => { e.stopPropagation(); goToPrevious(); }}
         disabled={currentIndex === 0}
-        className="hidden md:flex absolute left-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white bg-black/30 hover:bg-black/80 border border-transparent hover:border-gray-700 rounded-full p-4 transition-all z-50 disabled:opacity-0 disabled:cursor-not-allowed backdrop-blur-sm group"
+        className="hidden md:flex absolute left-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white bg-black/30 hover:bg-black/80 border border-transparent hover:border-gray-700 rounded-full p-4 transition-all z-50 disabled:opacity-0 disabled:cursor-not-allowed backdrop-blur-sm group shadow-2xl"
         aria-label="Previous item"
       >
         <ChevronLeftIcon className="w-8 h-8 group-hover:-translate-x-1 transition-transform"/>
@@ -277,7 +277,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       <button
         onClick={(e) => { e.stopPropagation(); goToNext(); }}
         disabled={currentIndex >= items.length - 1}
-        className="hidden md:flex absolute right-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white bg-black/30 hover:bg-black/80 border border-transparent hover:border-gray-700 rounded-full p-4 transition-all z-50 disabled:opacity-0 disabled:cursor-not-allowed backdrop-blur-sm group"
+        className="hidden md:flex absolute right-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white bg-black/30 hover:bg-black/80 border border-transparent hover:border-gray-700 rounded-full p-4 transition-all z-50 disabled:opacity-0 disabled:cursor-not-allowed backdrop-blur-sm group shadow-2xl"
         aria-label="Next item"
       >
         <ChevronRightIcon className="w-8 h-8 group-hover:translate-x-1 transition-transform"/>
@@ -286,7 +286,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       {/* Close Button */}
       <button 
         onClick={handleClose} 
-        className="absolute top-4 right-4 z-[60] text-white/70 hover:text-white bg-black/50 hover:bg-red-500/80 rounded-full p-2.5 transition-all backdrop-blur-md"
+        className="absolute top-4 right-4 z-[60] text-white/70 hover:text-white bg-black/50 hover:bg-red-500/80 rounded-full p-2.5 transition-all backdrop-blur-md shadow-lg"
         aria-label="Close"
       >
           <CloseIcon className="w-6 h-6"/>

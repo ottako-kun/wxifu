@@ -5,18 +5,29 @@ import GoogleIcon from './icons/GoogleIcon';
 
 interface HeaderProps {
   session: Session | null;
+  onNavigate?: (view: 'home' | 'profile') => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ session }) => {
+const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onNavigate) onNavigate('home');
+  };
+
+  const handleProfileClick = () => {
+    if (onNavigate) onNavigate('profile');
+    setIsMenuOpen(false);
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-black/80 backdrop-blur-md z-20 border-b border-pink-500/20">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         {/* Logo and Title */}
-        <a href="/" className="flex items-center gap-x-3 group cursor-pointer">
+        <a href="/" onClick={handleLogoClick} className="flex items-center gap-x-3 group cursor-pointer">
           <div className="relative w-10 h-10 flex items-center justify-center bg-gray-900 rounded border border-pink-500 overflow-hidden">
             <div className="absolute inset-0 bg-pink-500 opacity-20 group-hover:opacity-40 transition-opacity"></div>
             <span className="text-pink-500 font-black text-xl leading-none select-none relative z-10">O</span>
@@ -64,9 +75,16 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
                 </div>
               </div>
 
-              {/* Dropdown / Sign Out Button */}
+              {/* Dropdown */}
               {isMenuOpen && (
                  <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl py-1 animate-fade-in">
+                    <button
+                      onClick={handleProfileClick}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-800 hover:text-white transition-colors"
+                    >
+                      My Profile
+                    </button>
+                    <div className="h-px bg-gray-800 my-1"></div>
                     <button
                       onClick={() => {
                         signOut();
@@ -78,7 +96,6 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
                     </button>
                  </div>
               )}
-              {/* Desktop direct sign out if preferred, keeping menu for scalability */}
             </div>
           ) : (
             <button

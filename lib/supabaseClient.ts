@@ -17,6 +17,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
  * - category: text (optional)
  * - tags: text[] (array of strings, optional)
  * - video_src: text (optional, for direct video file links if different from src)
+ * - user_id: uuid (foreign key to auth.users)
  */
 
 export const signInWithGoogle = async () => {
@@ -38,12 +39,19 @@ export const signOut = async () => {
   }
 };
 
+export const updateUserProfile = async (updates: { full_name?: string; bio?: string }) => {
+  return await supabase.auth.updateUser({
+    data: updates
+  });
+};
+
 export const insertMediaItem = async (item: {
   type: string;
   src: string;
   description: string;
   category: string;
   tags: string[];
+  user_id?: string;
 }) => {
   return await supabase.from('media').insert([item]);
 };
