@@ -27,6 +27,9 @@ import { useToast } from './context/ToastContext';
 // Confirmation System
 import { ConfirmationProvider } from './context/ConfirmationContext';
 
+// Wallet System
+import { WalletProvider } from './context/WalletContext';
+
 type ViewState = 'home' | 'profile' | 'inbox';
 
 // Inner component to use hooks that require Context
@@ -301,9 +304,11 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ToastProvider>
-      <ConfirmationProvider>
-        <AppContent />
-      </ConfirmationProvider>
+      <WalletProvider>
+        <ConfirmationProvider>
+          <AppContent />
+        </ConfirmationProvider>
+      </WalletProvider>
     </ToastProvider>
   );
 };

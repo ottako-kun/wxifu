@@ -36,6 +36,7 @@ export interface UserProfileData {
     name: string;
     avatar: string;
     bio?: string;
+    coins?: number;
 }
 
 export interface Comment {

@@ -3,6 +3,7 @@ import React from 'react';
 import { MediaItem, MediaType } from '../types';
 import ZoomableImage from './ZoomableImage';
 import LockIcon from './icons/LockIcon';
+import LoadingSpinner from './icons/LoadingSpinner';
 
 interface MediaViewerProps {
   item: MediaItem;
@@ -12,6 +13,7 @@ interface MediaViewerProps {
   onTouchStart?: (e: React.TouchEvent) => void;
   onTouchMove?: (e: React.TouchEvent) => void;
   onTouchEnd?: () => void;
+  isUnlocking?: boolean;
 }
 
 const MediaViewer: React.FC<MediaViewerProps> = ({ 
@@ -20,7 +22,8 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
     onUnlockClick,
     onTouchStart,
     onTouchMove,
-    onTouchEnd
+    onTouchEnd,
+    isUnlocking = false
 }) => {
   const isPhoto = item.type === MediaType.Photo;
 
@@ -49,9 +52,10 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                     </p>
                     <button 
                         onClick={onUnlockClick}
-                        className="w-full py-3 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-black font-black uppercase tracking-wider rounded-lg shadow-lg transform transition-transform hover:-translate-y-0.5"
+                        disabled={isUnlocking}
+                        className="w-full py-3 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-black font-black uppercase tracking-wider rounded-lg shadow-lg transform transition-transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-2"
                     >
-                        Unlock for {item.price || 5} Coins
+                        {isUnlocking ? <LoadingSpinner className="w-5 h-5 text-black" /> : `Unlock for ${item.price || 5} Coins`}
                     </button>
                 </div>
             </div>

@@ -14,6 +14,7 @@ import { Session } from '@supabase/supabase-js';
 import { deleteMediaItem, getLikeCount, checkUserLiked, toggleLike } from '../lib/supabaseClient';
 import { useConfirm } from '../context/ConfirmationContext';
 import { useToast } from '../context/ToastContext';
+import { useWallet } from '../context/WalletContext';
 
 interface MediaCardProps {
   item: MediaItem;
@@ -37,9 +38,11 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
 
   const { confirm } = useConfirm();
   const toast = useToast();
+  const { isUnlocked: checkIsUnlocked } = useWallet();
 
   const isOwner = session?.user.id === item.user_id;
-  const isUnlocked = isOwner || !item.is_premium; 
+  // Unlock if: Owner, OR Not Premium, OR In user's unlock list
+  const isUnlocked = isOwner || !item.is_premium || checkIsUnlocked(item.id); 
   const isStatic = item.id.startsWith('static-') || item.type === MediaType.Manga;
 
   // Fetch Likes on Mount

@@ -12,6 +12,7 @@ import { useToast } from '../context/ToastContext';
 import MediaSidebar from './MediaSidebar';
 import MediaViewer from './MediaViewer';
 import { useRelatedMedia } from '../hooks/useRelatedMedia';
+import { useWallet } from '../context/WalletContext';
 
 interface MediaDetailModalProps {
   items: MediaItem[];
@@ -37,9 +38,10 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   // Hooks
   const toast = useToast();
   const relatedItems = useRelatedMedia(item, items);
+  const { unlockContent, isUnlocked: checkIsUnlocked, isLoading: isWalletLoading } = useWallet();
   
   // Premium Logic
-  const isUnlocked = isOwner || !item.is_premium;
+  const isUnlocked = isOwner || !item.is_premium || checkIsUnlocked(item.id);
 
   // Swipe logic vars
   const touchStartX = useRef<number | null>(null);
@@ -87,8 +89,12 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       }
   };
 
-  const handleUnlockClick = () => {
-      toast.info("Payment System Integration Coming Soon!");
+  const handleUnlockClick = async () => {
+      if (!session) {
+          toast.error("Please login to unlock content");
+          return;
+      }
+      await unlockContent(item.id, item.price || 0, item.user_id);
   };
 
   // --- REPORTING ---
@@ -182,6 +188,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
+                isUnlocking={isWalletLoading}
             />
           
            {/* Mobile Swipe Indicators (Hint) */}

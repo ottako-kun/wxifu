@@ -384,3 +384,79 @@ export const reportMediaItem = async (reportData: {
 }) => {
   return await supabase.from('reports').insert([reportData]);
 };
+
+
+// --- WALLET & ECONOMY SYSTEM ---
+
+export const getUserBalance = async (userId: string) => {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('coins')
+        .eq('id', userId)
+        .single();
+    return { coins: data?.coins ?? 100, error }; // Default to 100 coins for new users/if null
+};
+
+export const getUnlockedMedia = async (userId: string) => {
+    const { data, error } = await supabase
+        .from('unlocked_media')
+        .select('media_id')
+        .eq('user_id', userId);
+        
+    return { unlockedIds: data?.map((r: any) => r.media_id) || [], error };
+};
+
+export const unlockMedia = async (userId: string, mediaId: string, price: number, authorId?: string) => {
+    // This assumes a 'profiles' table with 'coins' and an 'unlocked_media' table exists.
+    // In a real production app, this should be a Postgres Function (RPC) to be atomic and secure.
+    
+    // 1. Get current balance
+    const { data: userProfile, error: balanceError } = await supabase
+        .from('profiles')
+        .select('coins')
+        .eq('id', userId)
+        .single();
+        
+    if (balanceError) throw new Error("Failed to fetch balance");
+    const currentCoins = userProfile?.coins ?? 100;
+
+    if (currentCoins < price) {
+        throw new Error("Insufficient coins");
+    }
+
+    // 2. Deduct coins from user
+    const { error: deductError } = await supabase
+        .from('profiles')
+        .update({ coins: currentCoins - price })
+        .eq('id', userId);
+
+    if (deductError) throw new Error("Transaction failed");
+
+    // 3. (Optional) Add coins to author
+    if (authorId && authorId !== userId) {
+        // We do this optimistically and don't fail the user if this fails
+        const { data: authorProfile } = await supabase
+            .from('profiles')
+            .select('coins')
+            .eq('id', authorId)
+            .single();
+            
+        if (authorProfile) {
+            await supabase.from('profiles').update({ coins: (authorProfile.coins || 0) + price }).eq('id', authorId);
+        }
+    }
+
+    // 4. Record unlock
+    const { error: unlockError } = await supabase
+        .from('unlocked_media')
+        .insert({ user_id: userId, media_id: mediaId });
+        
+    if (unlockError) {
+        // Critical error: User paid but didn't get content. 
+        // In prod, rollback via RPC. Here, we log.
+        console.error("Unlock record failed after payment:", unlockError);
+        throw new Error("Failed to unlock content");
+    }
+
+    return { success: true, newBalance: currentCoins - price };
+};

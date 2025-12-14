@@ -3,7 +3,9 @@ import { Session } from '@supabase/supabase-js';
 import { signInWithGoogle, signOut } from '../lib/supabaseClient';
 import GoogleIcon from './icons/GoogleIcon';
 import InboxIcon from './icons/InboxIcon';
+import CoinIcon from './icons/CoinIcon';
 import { APP_CONFIG } from '../gallery-data';
+import { useWallet } from '../context/WalletContext';
 
 interface HeaderProps {
   session: Session | null;
@@ -12,6 +14,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { balance } = useWallet();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -59,6 +62,12 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
         <div className="relative">
           {session ? (
             <div className="flex items-center gap-3">
+              {/* Coin Balance */}
+              <div className="flex items-center gap-1.5 bg-yellow-900/20 border border-yellow-500/30 px-3 py-1.5 rounded-full">
+                  <CoinIcon className="w-4 h-4 text-yellow-500" />
+                  <span className="text-xs font-bold text-yellow-400 font-orbitron">{balance}</span>
+              </div>
+
               {/* Inbox Icon (Visible on Desktop) */}
               <button 
                 onClick={handleInboxClick}
