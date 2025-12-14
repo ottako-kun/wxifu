@@ -5,6 +5,7 @@ import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import ChevronRightIcon from './icons/ChevronRightIcon';
 import ShareIcon from './icons/ShareIcon';
 import SharePopover from './SharePopover';
+import { APP_CONFIG } from '../gallery-data';
 
 interface MediaDetailModalProps {
   items: MediaItem[];
@@ -216,11 +217,11 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
           <div className="p-6 md:p-8 flex-grow overflow-y-auto no-scrollbar">
             <div className="flex items-center gap-x-4 mb-8 border-b border-gray-800 pb-6">
               <div className="w-12 h-12 bg-gradient-to-br from-pink-600 to-purple-600 rounded-xl shadow-lg flex items-center justify-center text-white font-bold text-base border border-white/10">
-                OK
+                {APP_CONFIG.name.substring(0,2)}
               </div>
               <div>
                   <h2 id="media-title" className="text-xl font-bold text-white tracking-widest uppercase leading-none mb-1.5 font-orbitron">
-                      OTTAKO
+                      {APP_CONFIG.name}
                   </h2>
                   <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em]">Gallery Viewer</p>
               </div>

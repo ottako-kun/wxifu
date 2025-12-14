@@ -1,5 +1,39 @@
 import { MediaItem, MediaType } from './types';
 
+// --- SITE CONFIGURATION ---
+// Manage your site-wide constants, text, and settings here.
+
+export const APP_CONFIG = {
+  // Branding
+  name: 'OTAKU',
+  nameSuffix: '-X', // Used for styling (cyan color usually)
+  subtitle: 'Waifu Art Gallery',
+  
+  // Settings
+  itemsPerPage: 24,
+  
+  // Hero Section Content
+  hero: {
+    badge: 'Private Gallery Collection',
+    description: 'Browse a gallery of captivating visuals and sensual edits. Feel the pull of the spotlight… it’s ready for you to become our next featured waifu.',
+    tags: ['Illustrations', 'Cosplay', 'AMVs']
+  },
+  
+  // Footer Content
+  footer: {
+    brand: 'OTTAKO-KUN',
+    tagline: 'Est. 2025',
+    disclaimer: 'For mature audiences only'
+  },
+
+  // Social Media Links
+  social: {
+    twitter: 'https://x.com/ottakokun',
+    reddit: 'https://www.reddit.com/r/OTTAKOKUN/',
+    telegram: 'https://t.me/OTTAKOKUN'
+  }
+};
+
 // --- CONFIGURATION: PASTE YOUR LINKS HERE ---
 
 // 1. Add your Google Drive links here.

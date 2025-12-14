@@ -4,7 +4,7 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import MediaGrid from './components/MediaGrid';
 import ProfileView from './components/ProfileView';
-import { fallbackPhotoMedia, fallbackVideoMedia, processMediaItem } from './gallery-data';
+import { fallbackPhotoMedia, fallbackVideoMedia, processMediaItem, APP_CONFIG } from './gallery-data';
 import { supabase, insertMediaItem } from './lib/supabaseClient';
 import Footer from './components/Footer';
 import SearchIcon from './components/icons/SearchIcon';
@@ -15,8 +15,6 @@ import LoadingSpinner from './components/icons/LoadingSpinner';
 import UploadButton from './components/UploadButton';
 import UploadModal from './components/UploadModal';
 import { MediaItem, MediaType } from './types';
-
-const ITEMS_PER_PAGE = 24;
 
 type ViewState = 'home' | 'profile';
 
@@ -39,7 +37,7 @@ const App: React.FC = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // Pagination State
-  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  const [visibleCount, setVisibleCount] = useState(APP_CONFIG.itemsPerPage);
 
   // Upload State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -164,7 +162,7 @@ const App: React.FC = () => {
     setSelectedTags([]);
     setSearchQuery('');
     setSortOrder('default');
-    setVisibleCount(ITEMS_PER_PAGE);
+    setVisibleCount(APP_CONFIG.itemsPerPage);
   }, [activeTab]);
 
   const filteredItems = useMemo(() => {
@@ -199,7 +197,7 @@ const App: React.FC = () => {
   }, [sortedItems, visibleCount]);
 
   const handleLoadMore = () => {
-    setVisibleCount(prev => prev + ITEMS_PER_PAGE);
+    setVisibleCount(prev => prev + APP_CONFIG.itemsPerPage);
   };
 
   const handleSortToggle = () => {
@@ -210,7 +208,7 @@ const App: React.FC = () => {
     setSelectedTags(prev => 
       prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
     );
-    setVisibleCount(ITEMS_PER_PAGE); // Reset pagination on filter change
+    setVisibleCount(APP_CONFIG.itemsPerPage); // Reset pagination on filter change
   };
 
   const clearFilters = () => {
@@ -218,7 +216,7 @@ const App: React.FC = () => {
     setSelectedCategory('All');
     setSelectedTags([]);
     setSortOrder('default');
-    setVisibleCount(ITEMS_PER_PAGE);
+    setVisibleCount(APP_CONFIG.itemsPerPage);
   };
 
   // User Media for Profile (Combine both photo and video)
@@ -271,7 +269,7 @@ const App: React.FC = () => {
                       type="search"
                       placeholder={`Search ${galleryName}s, tags, or categories...`}
                       value={searchQuery}
-                      onChange={(e) => { setSearchQuery(e.target.value); setVisibleCount(ITEMS_PER_PAGE); }}
+                      onChange={(e) => { setSearchQuery(e.target.value); setVisibleCount(APP_CONFIG.itemsPerPage); }}
                       className="w-full bg-gray-900/50 border border-gray-700 rounded-xl py-3 pl-11 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500 transition-all shadow-inner"
                       aria-label="Search media"
                     />
@@ -296,7 +294,7 @@ const App: React.FC = () => {
                     {availableCategories.map(category => (
                       <button
                         key={category}
-                        onClick={() => { setSelectedCategory(category); setVisibleCount(ITEMS_PER_PAGE); }}
+                        onClick={() => { setSelectedCategory(category); setVisibleCount(APP_CONFIG.itemsPerPage); }}
                         className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 border
                           ${selectedCategory === category
                             ? 'bg-pink-500 text-white border-pink-500 shadow-lg shadow-pink-500/20 transform scale-105'

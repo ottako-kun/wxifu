@@ -1,4 +1,5 @@
 import React from 'react';
+import { APP_CONFIG } from '../gallery-data';
 
 const Hero: React.FC = () => {
   return (
@@ -28,7 +29,7 @@ const Hero: React.FC = () => {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-500"></span>
           </span>
-          <span className="text-pink-400 text-[10px] md:text-xs font-bold tracking-[0.25em] uppercase">Private Gallery Collection</span>
+          <span className="text-pink-400 text-[10px] md:text-xs font-bold tracking-[0.25em] uppercase">{APP_CONFIG.hero.badge}</span>
         </div>
 
         <h1
@@ -37,25 +38,27 @@ const Hero: React.FC = () => {
             textShadow: '0 0 40px rgba(236, 72, 153, 0.4), 0 0 10px rgba(6, 182, 212, 0.3)' 
           }}
         >
-          OTAKU<span className="text-cyan-500 mx-1">-</span>X
+          {APP_CONFIG.name}<span className="text-cyan-500 mx-1">{APP_CONFIG.nameSuffix}</span>
         </h1>
 
         <div className="h-1 md:h-1.5 w-24 md:w-32 mx-auto bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 mb-10 rounded-full opacity-80 shadow-[0_0_15px_rgba(168,85,247,0.5)]"></div>
 
         <p className="text-lg md:text-2xl font-medium text-gray-200 tracking-wide mb-8 max-w-2xl mx-auto leading-relaxed drop-shadow-lg">
-          Are you a <span className="text-pink-400 font-bold border-b border-pink-500/30 pb-0.5">Nudist Waifu</span> who loves to share your Goddess body? Step into the <span className="text-cyan-400 font-bold">Spotlight</span>. Your Simps are <span className="text-purple-400 font-bold">Patiently Waiting</span>.
+           {/* Note: Complex HTML formatting is hardcoded here for the specific "highlight" effect, but main text matches vibe */}
+           Are you a <span className="text-pink-400 font-bold border-b border-pink-500/30 pb-0.5">Nudist Waifu</span> who loves to share your Goddess body? Step into the <span className="text-cyan-400 font-bold">Spotlight</span>. Your Simps are <span className="text-purple-400 font-bold">Patiently Waiting</span>.
         </p>
 
         <p className="max-w-xl mx-auto text-sm md:text-base text-gray-400 leading-relaxed font-light mb-8">
-         Browse a gallery of captivating visuals and sensual edits. Feel the pull of the spotlight… it’s ready for you to become our next featured waifu.
+         {APP_CONFIG.hero.description}
         </p>
         
         <div className="flex flex-wrap justify-center gap-6 text-xs font-semibold tracking-widest text-gray-500 uppercase">
-            <span className="hover:text-pink-400 transition-colors cursor-default">Illustrations</span>
-            <span className="text-gray-700">•</span>
-            <span className="hover:text-cyan-400 transition-colors cursor-default">Cosplay</span>
-            <span className="text-gray-700">•</span>
-            <span className="hover:text-purple-400 transition-colors cursor-default">AMVs</span>
+            {APP_CONFIG.hero.tags.map((tag, i) => (
+                <React.Fragment key={tag}>
+                    <span className="hover:text-pink-400 transition-colors cursor-default">{tag}</span>
+                    {i < APP_CONFIG.hero.tags.length - 1 && <span className="text-gray-700">•</span>}
+                </React.Fragment>
+            ))}
         </div>
       </div>
     </section>

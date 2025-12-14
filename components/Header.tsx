@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { signInWithGoogle, signOut } from '../lib/supabaseClient';
 import GoogleIcon from './icons/GoogleIcon';
+import { APP_CONFIG } from '../gallery-data';
 
 interface HeaderProps {
   session: Session | null;
@@ -30,7 +31,7 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
         <a href="/" onClick={handleLogoClick} className="flex items-center gap-x-3 group cursor-pointer">
           <div className="relative w-10 h-10 flex items-center justify-center bg-gray-900 rounded border border-pink-500 overflow-hidden">
             <div className="absolute inset-0 bg-pink-500 opacity-20 group-hover:opacity-40 transition-opacity"></div>
-            <span className="text-pink-500 font-black text-xl leading-none select-none relative z-10">O</span>
+            <span className="text-pink-500 font-black text-xl leading-none select-none relative z-10">{APP_CONFIG.name.charAt(0)}</span>
           </div>
           <div className="flex flex-col">
             <h1
@@ -40,10 +41,10 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
                 textShadow: '0 0 10px rgba(236, 72, 153, 0.5)',
               }}
             >
-              OTAKU<span className="text-cyan-400">-</span>X
+              {APP_CONFIG.name}<span className="text-cyan-400">{APP_CONFIG.nameSuffix}</span>
             </h1>
             <span className="text-[0.6rem] text-gray-400 tracking-[0.2em] uppercase">
-              Waifu Art Gallery
+              {APP_CONFIG.subtitle}
             </span>
           </div>
         </a>
