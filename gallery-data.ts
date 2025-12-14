@@ -7,23 +7,23 @@ export const APP_CONFIG = {
   // Branding
   name: 'OTAKU',
   nameSuffix: '-X', // Used for styling (cyan color usually)
-  subtitle: 'Waifu Art Gallery',
+  subtitle: 'The Premier Adult Social Stage',
   
   // Settings
   itemsPerPage: 24,
   
   // Hero Section Content
   hero: {
-    badge: 'NSFW Gallery Collection',
-    description: 'Browse a gallery of captivating visuals and sensual edits. Feel the pull of the spotlight… it’s ready for you to become our next featured waifu.',
-    tags: ['Illustrations', 'Photos', 'Videos']
+    badge: 'Liberated Creative Sanctuary',
+    description: 'The definitive social playground for adult models, digital artists, and the otaku elite. Share your assets freely in a space designed for uncensored expression. Connect with a community that worships the art of the body.',
+    tags: ['Uncensored Art', 'Cosplay Models', 'Exclusive Assets']
   },
   
   // Footer Content
   footer: {
     brand: 'OTTAKO-KUN',
-    tagline: 'Est. 2025',
-    disclaimer: 'For mature audiences only'
+    tagline: 'Liberating Otaku Culture',
+    disclaimer: 'Strictly for adults (18+). All models appearing on this site are 18 years or older.'
   },
 
   // Social Media Links

@@ -17,6 +17,7 @@ import LoadingSpinner from './components/icons/LoadingSpinner';
 import UploadButton from './components/UploadButton';
 import UploadModal from './components/UploadModal';
 import BottomNav from './components/BottomNav';
+import AgeVerificationModal from './components/AgeVerificationModal';
 import { MediaItem, MediaType } from './types';
 
 type ViewState = 'home' | 'profile' | 'inbox';
@@ -52,8 +53,24 @@ const App: React.FC = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   
+  // Age Verification State
+  const [isAgeVerified, setIsAgeVerified] = useState(false);
+
   // Search Focus Ref for Bottom Nav integration
   const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Handle Age Verification
+  useEffect(() => {
+    const verified = localStorage.getItem('age-verified');
+    if (verified === 'true') {
+        setIsAgeVerified(true);
+    }
+  }, []);
+
+  const handleVerifyAge = () => {
+      localStorage.setItem('age-verified', 'true');
+      setIsAgeVerified(true);
+  };
 
   // Handle Auth Session
   useEffect(() => {
@@ -349,6 +366,10 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative pb-16 md:pb-0">
+      
+      {/* Age Gate Overlay */}
+      {!isAgeVerified && <AgeVerificationModal onVerify={handleVerifyAge} />}
+
       <Header 
         session={session} 
         onNavigate={handleNavigate} 

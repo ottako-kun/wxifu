@@ -43,20 +43,18 @@ const Hero: React.FC = () => {
 
         <div className="h-1 md:h-1.5 w-24 md:w-32 mx-auto bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 mb-10 rounded-full opacity-80 shadow-[0_0_15px_rgba(168,85,247,0.5)]"></div>
 
-        <p className="text-lg md:text-2xl font-medium text-gray-200 tracking-wide mb-8 max-w-2xl mx-auto leading-relaxed drop-shadow-lg">
-           {/* Note: Complex HTML formatting is hardcoded here for the specific "highlight" effect, but main text matches vibe */}
-           Are you a <span className="text-pink-400 font-bold border-b border-pink-500/30 pb-0.5">Nudist Waifu</span> who loves to share your Goddess body? Step into the <span className="text-cyan-400 font-bold">Spotlight</span>. Your Simps are <span className="text-purple-400 font-bold">Patiently Waiting</span>.
+        <p className="text-lg md:text-2xl font-medium text-gray-200 tracking-wide mb-8 max-w-3xl mx-auto leading-relaxed drop-shadow-lg">
+           THE UNCENSORED <span className="text-pink-400 font-bold border-b border-pink-500/30 pb-0.5">CANVAS</span> FOR FREEDOM.
         </p>
 
-        <p className="max-w-xl mx-auto text-sm md:text-base text-gray-400 leading-relaxed font-light mb-8">
+        <p className="max-w-2xl mx-auto text-sm md:text-base text-gray-400 leading-relaxed font-light mb-8">
          {APP_CONFIG.hero.description}
         </p>
         
         <div className="flex flex-wrap justify-center gap-6 text-xs font-semibold tracking-widest text-gray-500 uppercase">
             {APP_CONFIG.hero.tags.map((tag, i) => (
                 <React.Fragment key={tag}>
-                    <span className="hover:text-pink-400 transition-colors cursor-default">{tag}</span>
-                    {i < APP_CONFIG.hero.tags.length - 1 && <span className="text-gray-700">•</span>}
+                    <span className="hover:text-pink-400 transition-colors cursor-default border border-gray-800 bg-gray-900/50 px-3 py-1 rounded-md">{tag}</span>
                 </React.Fragment>
             ))}
         </div>
