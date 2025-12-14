@@ -19,8 +19,6 @@ interface UploadModalProps {
   isSubmitting: boolean;
 }
 
-const CATEGORIES = ['Illustration', 'Cosplay', 'Render', 'Sketch', 'Clip', 'AMV', 'Animation'];
-
 const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitting }) => {
   const [formData, setFormData] = useState<UploadFormData>({
     type: MediaType.Photo,
@@ -136,24 +134,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
               value={formData.category}
               onChange={(e) => handleChange('category', e.target.value)}
               placeholder="e.g. Illustration, Fanart, 3D Render..."
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
             />
-            <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map(cat => (
-                    <button
-                        key={cat}
-                        type="button"
-                        onClick={() => handleChange('category', cat)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
-                            formData.category === cat 
-                            ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-900/20' 
-                            : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-200'
-                        }`}
-                    >
-                        {cat}
-                    </button>
-                ))}
-            </div>
           </div>
           
           {/* Tags - Dynamic Input */}

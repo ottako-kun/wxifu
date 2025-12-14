@@ -13,70 +13,70 @@ const CUSTOM_MEDIA_COLLECTION = [
     link: 'https://media.giphy.com/media/LpdlqTkgO2Lwwixwv7/giphy.gif',
     description: 'Neo Tokyo Rain',
     category: 'Scenery',
-    tags: ['Cyberpunk', 'City', 'Gif', 'Neon']
+    tags: []
   },
   {
     type: 'PHOTO',
     link: 'https://media.giphy.com/media/h4fzD3yY2qGbe/giphy.gif',
     description: 'Midnight Drive',
     category: 'Vibe',
-    tags: ['Retro', 'Outrun', 'Gif', 'Driving']
+    tags: []
   },
   {
     type: 'PHOTO',
     link: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop',
     description: 'Shinjuku Nights',
     category: 'Photography',
-    tags: ['Tokyo', 'Street', 'Realism']
+    tags: []
   },
   {
     type: 'PHOTO',
     link: 'https://media.giphy.com/media/j2pWZpr5RlpwpGVtG1/giphy.gif',
     description: 'Pixel Cityscape',
     category: 'Animation',
-    tags: ['Pixel Art', 'City', 'Gif', 'Night']
+    tags: []
   },
   {
     type: 'PHOTO',
     link: 'https://media.giphy.com/media/i2tLw5ZyizMNy/giphy.gif',
     description: 'Cherry Blossom Fall',
     category: 'Scenery',
-    tags: ['Anime', 'Sakura', 'Emotional', 'Gif']
+    tags: []
   },
   {
     type: 'PHOTO',
     link: 'https://images.unsplash.com/photo-1615751072497-5f5169febe17?q=80&w=1200&auto=format&fit=crop',
     description: 'Cyber Geisha',
     category: 'Cosplay',
-    tags: ['Cyberpunk', 'Portrait', 'Neon']
+    tags: []
   },
   {
     type: 'PHOTO',
     link: 'https://media.giphy.com/media/3o6Zt481isNVuQI1l6/giphy.gif',
     description: 'Lofi Study Session',
     category: 'Vibe',
-    tags: ['Lofi', 'Chill', 'Gif', 'Study']
+    tags: []
   },
   {
     type: 'PHOTO',
     link: 'https://media.giphy.com/media/12NUbkX6p4xOO4/giphy.gif',
     description: 'Space Cowboy',
     category: 'Classic',
-    tags: ['Retro', 'Anime', '90s', 'Gif']
+    tags: []
   },
   {
     type: 'PHOTO',
     link: 'https://images.unsplash.com/photo-1516726817505-f5ed825624d8?q=80&w=1200&auto=format&fit=crop',
     description: 'Urban Ninja',
     category: 'Cosplay',
-    tags: ['Streetwear', 'Mask', 'Dark']
+    tags: []
   },
   {
     type: 'PHOTO',
     link: 'https://media.giphy.com/media/fCda953g1W6fC/giphy.gif',
     description: 'System Glitch',
     category: 'Aesthetic',
-    tags: ['Glitch', 'Retro', 'Tech', 'Gif']
+    tags: []
   },
   
   // --- VIDEOS ---
@@ -86,7 +86,7 @@ const CUSTOM_MEDIA_COLLECTION = [
     thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Big_buck_bunny_poster_big.jpg/800px-Big_buck_bunny_poster_big.jpg',
     description: 'Featured Animation',
     category: 'Clip',
-    tags: ['Demo', '3D', 'Animation']
+    tags: []
   }
 ];
 
