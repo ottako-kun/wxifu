@@ -1,7 +1,6 @@
 
 import React, { useState, useRef } from 'react';
 import { MediaItem, MediaType } from '../types';
-import MediaDetailModal from './MediaDetailModal';
 import PlayIcon from './icons/PlayIcon';
 import ShareIcon from './icons/ShareIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -18,15 +17,13 @@ import { useMediaLikes } from '../hooks/useMediaLikes';
 
 interface MediaCardProps {
   item: MediaItem;
-  items: MediaItem[];
-  index: number;
+  onClick: () => void;
   onUserClick?: (user: { id: string; name: string; avatar: string }) => void;
   session: Session | null;
   onDataChange?: () => void;
 }
 
-const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, session, onDataChange }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, session, onDataChange }) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -48,7 +45,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   const lastTapRef = useRef<number>(0);
 
   const handleCardClick = () => {
-      setIsModalOpen(true);
+      onClick();
   };
   
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -57,14 +54,10 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
       const DOUBLE_TAP_DELAY = 300;
       
       if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-          e.preventDefault(); // Prevent zoom
+          e.preventDefault(); // Prevent zoom and prevent click propagation to open modal
           handleLikeAction();
       }
       lastTapRef.current = now;
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
   };
 
   const handleShareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -73,8 +66,6 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   };
   
   const handleLikeAction = async () => {
-    if (isStatic) return;
-
     // Trigger Animation immediately for feedback
     setShowHeartAnimation(true);
     setTimeout(() => setShowHeartAnimation(false), 1000);
@@ -196,15 +187,13 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
              </div>
 
              {/* Like Button (Mobile) */}
-             {!isStatic && (
-                 <button 
-                    onClick={handleLikeClick}
-                    className="flex flex-col items-center justify-center text-white"
-                 >
-                     <HeartIcon filled={isLiked} className={`w-5 h-5 ${isLiked ? 'text-pink-500' : 'text-white'}`} />
-                     {likeCount > 0 && <span className="text-[9px] font-bold mt-0.5">{likeCount}</span>}
-                 </button>
-             )}
+             <button 
+                onClick={handleLikeClick}
+                className="flex flex-col items-center justify-center text-white"
+             >
+                 <HeartIcon filled={isLiked} className={`w-5 h-5 ${isLiked ? 'text-pink-500' : 'text-white'}`} />
+                 {likeCount > 0 && <span className="text-[9px] font-bold mt-0.5">{likeCount}</span>}
+             </button>
         </div>
 
         {/* --- DESKTOP: Hover Overlay (Updated for better visibility) --- */}
@@ -249,14 +238,13 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
                      </div>
 
                      <div className="flex items-center gap-2">
-                        {!isStatic && (
-                            <button
-                                onClick={handleLikeClick}
-                                className={`p-1.5 rounded-full transition-colors ${isLiked ? 'text-pink-500 bg-pink-500/10' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
-                            >
-                                <HeartIcon filled={isLiked} className="w-4 h-4" />
-                            </button>
-                        )}
+                        <button
+                            onClick={handleLikeClick}
+                            className={`p-1.5 rounded-full transition-colors ${isLiked ? 'text-pink-500 bg-pink-500/10' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
+                        >
+                            <HeartIcon filled={isLiked} className="w-4 h-4" />
+                        </button>
+                        
                         {isOwner && (
                             <button onClick={handleQuickDelete} className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-full transition-colors">
                                 <TrashIcon className="w-4 h-4" />
@@ -270,17 +258,6 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
             </div>
         </div>
       </div>
-      
-      {isModalOpen && (
-        <MediaDetailModal 
-            items={items} 
-            initialIndex={index} 
-            onClose={closeModal} 
-            onUserClick={onUserClick}
-            session={session}
-            onDataChange={onDataChange}
-        />
-      )}
       
       {shareAnchorEl && (
         <SharePopover

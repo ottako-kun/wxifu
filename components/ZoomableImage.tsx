@@ -1,5 +1,6 @@
 
 import React, { useState, useRef } from 'react';
+import LoadingSpinner from './icons/LoadingSpinner';
 
 interface ZoomableImageProps {
   src: string;
@@ -11,10 +12,12 @@ interface ZoomableImageProps {
 const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, isUnlocked }) => {
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const pinchStartRef = useRef<{ dist: number; scale: number } | null>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // --- ZOOM & PAN HANDLERS ---
   const handleWheel = (e: React.WheelEvent) => {
@@ -129,10 +132,20 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, isUnlocked }) =
     }
   };
 
+  if (hasError) {
+      return (
+          <div className="flex flex-col items-center justify-center h-full w-full text-gray-500 bg-gray-900/50 rounded-lg border border-gray-800 border-dashed p-8 text-center">
+              <span className="text-4xl mb-4">⚠️</span>
+              <span className="text-sm uppercase font-bold text-gray-400">Image Failed to Load</span>
+              <span className="text-xs text-gray-600 mt-2">The link might be broken or private.</span>
+          </div>
+      );
+  }
+
   return (
     <div 
-        ref={imageRef}
-        className="w-full h-full flex items-center justify-center relative touch-none"
+        ref={containerRef}
+        className="w-full h-full flex items-center justify-center relative touch-none overflow-hidden"
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -142,10 +155,15 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, isUnlocked }) =
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
     >
+      {isLoading && (
+         <div className="absolute inset-0 flex items-center justify-center z-0">
+             <LoadingSpinner className="w-8 h-8 text-pink-500" />
+         </div>
+      )}
       <img 
         src={src} 
         alt={alt} 
-        className={`max-h-full max-w-full object-contain select-none transition-transform duration-75 ease-out
+        className={`max-h-full max-w-full object-contain select-none transition-transform duration-75 ease-out relative z-10
             ${!isUnlocked ? 'blur-2xl opacity-50' : ''}
             ${isDragging ? 'cursor-grabbing' : transform.scale > 1 ? 'cursor-grab' : 'cursor-zoom-in'}
         `}
@@ -154,6 +172,11 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, isUnlocked }) =
             transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
         }}
         draggable={false}
+        onError={() => {
+            setHasError(true);
+            setIsLoading(false);
+        }}
+        onLoad={() => setIsLoading(false)}
       />
     </div>
   );

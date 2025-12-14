@@ -30,28 +30,28 @@ export const APP_CONFIG = {
 // 1. Upload your image or video to Google Drive.
 // 2. Right-click the file -> Share -> Copy Link (Ensure access is "Anyone with the link").
 // 3. Paste the link into the 'link' field below.
+// 4. For Videos: You can optionally provide a 'thumbnail' URL (e.g. from an image hosting site or another Drive file)
 
 const CUSTOM_MEDIA_COLLECTION = [
   // --- TEMPLATE: GOOGLE DRIVE PHOTO ---
   // {
   //   type: 'PHOTO',
-  //   link: 'https://drive.google.com/file/d/1234567890abcdefg/view?usp=sharing', 
-  //   description: 'Character Concept Art',
+  //   link: 'https://drive.google.com/file/d/YOUR_FILE_ID/view?usp=sharing', 
+  //   description: 'My Awesome Artwork',
   //   category: 'Illustration',
-  //   tags: ['oc', 'sketch', 'drive'],
-  //   author: 'ArtistName'
+  //   tags: ['oc', 'digital', 'drive'],
+  //   author: 'MyArtistName'
   // },
 
   // --- TEMPLATE: GOOGLE DRIVE VIDEO ---
   // {
   //   type: 'VIDEO',
-  //   link: 'https://drive.google.com/file/d/1234567890abcdefg/view?usp=sharing',
-  //   // For Drive videos, you might want a custom thumbnail, otherwise it uses a default
-  //   thumbnail: 'https://via.placeholder.com/600x400', 
-  //   description: 'Animation Test',
+  //   link: 'https://drive.google.com/file/d/YOUR_VIDEO_FILE_ID/view?usp=sharing',
+  //   thumbnail: 'https://drive.google.com/file/d/YOUR_THUMBNAIL_FILE_ID/view?usp=sharing', // Optional
+  //   description: 'My Animation',
   //   category: 'Clip',
   //   tags: ['animation', '3d'],
-  //   author: 'AnimatorName'
+  //   author: 'MyAnimatorName'
   // },
 
   {
@@ -123,8 +123,13 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
      }
   } else {
      // Video Handling
-     // If a thumbnail is explicitly provided, use it. Otherwise, use default.
-     finalSrc = item.thumbnail || DEFAULT_THUMB_URL;
+     // Check if thumbnail is also a Drive link
+     const thumbDriveId = getDriveId(item.thumbnail);
+     if (thumbDriveId) {
+         finalSrc = getGoogleDriveImageUrl(thumbDriveId);
+     } else {
+         finalSrc = item.thumbnail || DEFAULT_THUMB_URL;
+     }
      
      if (driveId) {
         // If it's a Drive ID, construct the preview URL
