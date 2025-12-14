@@ -2,7 +2,6 @@
 import React, { useState, useRef } from 'react';
 import { MediaItem, MediaType } from '../types';
 import MediaDetailModal from './MediaDetailModal';
-import MangaReaderModal from './MangaReaderModal';
 import PlayIcon from './icons/PlayIcon';
 import ShareIcon from './icons/ShareIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -28,7 +27,6 @@ interface MediaCardProps {
 
 const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, session, onDataChange }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isMangaReaderOpen, setIsMangaReaderOpen] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -41,7 +39,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   const isOwner = session?.user.id === item.user_id;
   // Unlock if: Owner, OR Not Premium, OR In user's unlock list
   const isUnlocked = isOwner || !item.is_premium || checkIsUnlocked(item.id); 
-  const isStatic = item.id.startsWith('static-') || item.type === MediaType.Manga;
+  const isStatic = item.id.startsWith('static-');
   
   // Use Custom Hook for Likes
   const { likeCount, isLiked, toggleLike } = useMediaLikes(item.id, session?.user.id, isStatic);
@@ -50,11 +48,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   const lastTapRef = useRef<number>(0);
 
   const handleCardClick = () => {
-      if (item.type === MediaType.Manga) {
-          setIsMangaReaderOpen(true);
-      } else {
-          setIsModalOpen(true);
-      }
+      setIsModalOpen(true);
   };
   
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -71,7 +65,6 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setIsMangaReaderOpen(false);
   };
 
   const handleShareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -180,11 +173,6 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
                         <span className="text-[10px] font-bold text-white uppercase">Video</span>
                     </div>
                 )}
-                {item.type === MediaType.Manga && (
-                     <div className="bg-pink-600/90 backdrop-blur-md rounded-lg px-2 py-1 border border-white/10">
-                        <span className="text-[10px] font-bold text-white uppercase">Manga</span>
-                    </div>
-                )}
             </div>
         </div>
         
@@ -246,7 +234,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
                 <div className="flex items-center justify-between border-t border-white/10 pt-3">
                      <div 
                         className="flex items-center gap-2 cursor-pointer hover:bg-white/10 p-1 -ml-1 rounded-lg transition-colors"
-                        onClick={item.type !== MediaType.Manga ? handleUserClick : undefined}
+                        onClick={handleUserClick}
                      >
                         <div className="w-6 h-6 rounded-full overflow-hidden border border-white/30">
                             {item.author_avatar ? (
@@ -292,13 +280,6 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
             session={session}
             onDataChange={onDataChange}
         />
-      )}
-
-      {isMangaReaderOpen && (
-          <MangaReaderModal 
-            item={item}
-            onClose={closeModal}
-          />
       )}
       
       {shareAnchorEl && (

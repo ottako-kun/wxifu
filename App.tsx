@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
 import Header from './components/Header';
@@ -35,7 +36,7 @@ const AppContent: React.FC = () => {
   // Navigation State
   const [currentView, setCurrentView] = useState<ViewState>('home');
   const [activeProfile, setActiveProfile] = useState<UserProfileData | null>(null);
-  const [activeTab, setActiveTab] = useState<'photos' | 'videos' | 'following' | 'manga'>('photos');
+  const [activeTab, setActiveTab] = useState<'photos' | 'videos' | 'following'>('photos');
 
   // Auth State
   const [session, setSession] = useState<Session | null>(null);

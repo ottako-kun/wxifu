@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MediaItem, MediaType } from '../types';
 import { reportMediaItem } from '../lib/supabaseClient';
@@ -45,7 +46,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   const toast = useToast();
   const relatedItems = useRelatedMedia(item, items);
   const { unlockContent, isUnlocked: checkIsUnlocked, isLoading: isWalletLoading } = useWallet();
-  const { isLiked, likeCount, toggleLike } = useMediaLikes(item.id, session?.user.id, item.type === MediaType.Manga || item.id.startsWith('static'));
+  const { isLiked, likeCount, toggleLike } = useMediaLikes(item.id, session?.user.id, item.id.startsWith('static'));
   const { isFollowing, toggleFollow } = useFollow(session?.user.id, item.user_id || '');
   
   // Premium Logic

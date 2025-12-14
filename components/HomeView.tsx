@@ -9,7 +9,6 @@ import { Session } from '@supabase/supabase-js';
 import { useGalleryFilters } from '../hooks/useGalleryFilters';
 import { signInWithGoogle } from '../lib/supabaseClient';
 import GalleryControls from './GalleryControls';
-import { fetchMangaList } from '../lib/mangadex';
 import PullToRefresh from './PullToRefresh';
 import GalleryTabs from './GalleryTabs';
 
@@ -21,8 +20,8 @@ interface HomeViewProps {
   session: Session | null;
   onUserClick: (user: { id: string; name: string; avatar: string }) => void;
   onDataChange: () => void;
-  activeTab: 'photos' | 'videos' | 'following' | 'manga';
-  setActiveTab: (tab: 'photos' | 'videos' | 'following' | 'manga') => void;
+  activeTab: 'photos' | 'videos' | 'following';
+  setActiveTab: (tab: 'photos' | 'videos' | 'following') => void;
   searchInputRef: React.RefObject<HTMLInputElement>;
 }
 
@@ -38,21 +37,7 @@ const HomeView: React.FC<HomeViewProps> = ({
   setActiveTab,
   searchInputRef
 }) => {
-  // Local state for Manga
-  const [mangaMedia, setMangaMedia] = useState<MediaItem[]>([]);
-  const [isMangaLoading, setIsMangaLoading] = useState(false);
-
-  useEffect(() => {
-    // Lazy load manga only when tab is active
-    if (activeTab === 'manga' && mangaMedia.length === 0) {
-        setIsMangaLoading(true);
-        fetchMangaList().then(data => {
-            setMangaMedia(data);
-            setIsMangaLoading(false);
-        });
-    }
-  }, [activeTab, mangaMedia.length]);
-
+  
   // Determine which dataset to use
   let itemsToDisplay: MediaItem[] = [];
   let galleryName = '';
@@ -64,10 +49,6 @@ const HomeView: React.FC<HomeViewProps> = ({
   } else if (activeTab === 'videos') {
     itemsToDisplay = videoMedia;
     galleryName = 'video';
-  } else if (activeTab === 'manga') {
-    itemsToDisplay = mangaMedia;
-    galleryName = 'manga';
-    isCurrentLoading = isMangaLoading;
   } else {
     itemsToDisplay = followedMedia;
     galleryName = 'following';
@@ -119,11 +100,6 @@ const HomeView: React.FC<HomeViewProps> = ({
   // Wrap the refresh in a promise for PullToRefresh
   const handleRefresh = async () => {
      onDataChange();
-     // If manga tab, refetch manga too
-     if (activeTab === 'manga') {
-         const data = await fetchMangaList();
-         setMangaMedia(data);
-     }
      // Slight artificial delay so the spinner shows for a satisfying moment
      await new Promise(r => setTimeout(r, 1000));
   };

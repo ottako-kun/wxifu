@@ -2,7 +2,6 @@
 export enum MediaType {
   Photo = 'PHOTO',
   Video = 'VIDEO',
-  Manga = 'MANGA',
 }
 
 export interface MediaItem {
@@ -18,9 +17,6 @@ export interface MediaItem {
   author_avatar?: string; // Avatar URL of the uploader
   is_premium?: boolean; // Is this content locked?
   price?: number; // Cost to unlock (in coins/dollars)
-  
-  // Manga Specific
-  externalId?: string; // MangaDex ID
 }
 
 export interface Message {

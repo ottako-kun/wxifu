@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-type TabType = 'photos' | 'videos' | 'following' | 'manga';
+type TabType = 'photos' | 'videos' | 'following';
 
 interface GalleryTabsProps {
   activeTab: TabType;
@@ -12,7 +12,6 @@ const GalleryTabs: React.FC<GalleryTabsProps> = ({ activeTab, setActiveTab }) =>
   const tabs: { id: TabType; label: string }[] = [
     { id: 'photos', label: 'Featured Waifu' },
     { id: 'videos', label: 'Video Collection' },
-    { id: 'manga', label: 'Manga & Doujin' },
     { id: 'following', label: 'Following' },
   ];
 
