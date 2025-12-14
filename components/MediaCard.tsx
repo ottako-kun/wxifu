@@ -144,9 +144,9 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
             <img 
                 src={item.src} 
                 alt={item.description || "Gallery content"} 
-                className={`w-full h-auto object-cover block transition-all duration-700 
-                    ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
-                    ${!isUnlocked ? 'blur-md scale-105 brightness-50' : ''}
+                className={`w-full h-auto object-cover block transition-all duration-700 ease-in-out
+                    ${isImageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}
+                    ${!isUnlocked ? 'blur-md brightness-50' : ''}
                 `}
                 loading="lazy"
                 decoding="async"

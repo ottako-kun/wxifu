@@ -26,19 +26,32 @@ export const APP_CONFIG = {
 };
 
 // --- YOUR GALLERY DATA ---
-// Instructions:
-// 1. Paste Google Drive links (make sure they are set to "Anyone with the link") or direct image URLs.
-// 2. Set the type to 'PHOTO' or 'VIDEO'.
-// 3. Add tags and descriptions.
+// INSTRUCTIONS FOR GOOGLE DRIVE:
+// 1. Upload your image or video to Google Drive.
+// 2. Right-click the file -> Share -> Copy Link (Ensure access is "Anyone with the link").
+// 3. Paste the link into the 'link' field below.
 
 const CUSTOM_MEDIA_COLLECTION = [
-  // Example: Google Drive Photo
+  // --- TEMPLATE: GOOGLE DRIVE PHOTO ---
   // {
   //   type: 'PHOTO',
-  //   link: 'https://drive.google.com/file/d/YOUR_FILE_ID/view?usp=sharing', 
-  //   description: 'My Google Drive Artwork',
+  //   link: 'https://drive.google.com/file/d/1234567890abcdefg/view?usp=sharing', 
+  //   description: 'Character Concept Art',
   //   category: 'Illustration',
-  //   tags: ['drive', 'oc']
+  //   tags: ['oc', 'sketch', 'drive'],
+  //   author: 'ArtistName'
+  // },
+
+  // --- TEMPLATE: GOOGLE DRIVE VIDEO ---
+  // {
+  //   type: 'VIDEO',
+  //   link: 'https://drive.google.com/file/d/1234567890abcdefg/view?usp=sharing',
+  //   // For Drive videos, you might want a custom thumbnail, otherwise it uses a default
+  //   thumbnail: 'https://via.placeholder.com/600x400', 
+  //   description: 'Animation Test',
+  //   category: 'Clip',
+  //   tags: ['animation', '3d'],
+  //   author: 'AnimatorName'
   // },
 
   {
@@ -110,11 +123,14 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
      }
   } else {
      // Video Handling
+     // If a thumbnail is explicitly provided, use it. Otherwise, use default.
      finalSrc = item.thumbnail || DEFAULT_THUMB_URL;
      
      if (driveId) {
+        // If it's a Drive ID, construct the preview URL
         finalVideoSrc = getGoogleDriveVideoPreviewUrl(driveId);
      } else {
+        // Otherwise use the direct link
         finalVideoSrc = item.videoSrc || sourceString;
      }
   }
