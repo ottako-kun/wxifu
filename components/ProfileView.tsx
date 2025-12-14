@@ -7,7 +7,9 @@ import { getFollowStatus, followUser, unfollowUser } from '../lib/supabaseClient
 import UploadIcon from './icons/UploadIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import ChatIcon from './icons/ChatIcon';
+import GiftIcon from './icons/GiftIcon';
 import EditProfileModal from './EditProfileModal';
+import TipModal from './TipModal';
 import { useProfileStats } from '../hooks/useProfileStats';
 
 export interface UserProfileData {
@@ -31,6 +33,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   const isOwner = session?.user.id === profileData.id;
   
   const [isEditing, setIsEditing] = useState(false);
+  const [isTipModalOpen, setIsTipModalOpen] = useState(false);
 
   // Social State
   const [isFollowing, setIsFollowing] = useState(false);
@@ -151,6 +154,15 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
                             {loadingSocial ? '...' : isFollowing ? 'Following' : 'Follow'}
                         </button>
                         
+                        <button
+                             onClick={() => setIsTipModalOpen(true)}
+                             className="px-4 py-2 bg-yellow-900/30 border border-yellow-500 text-yellow-400 rounded-full hover:bg-yellow-800/50 transition-all shadow-[0_0_10px_rgba(234,179,8,0.2)]"
+                             aria-label="Send Tip"
+                             title="Send Gift"
+                        >
+                             <GiftIcon className="w-4 h-4" />
+                        </button>
+
                         {isMutual && onMessageClick && (
                             <button
                                 onClick={() => onMessageClick(profileData)}
@@ -247,6 +259,15 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
                 window.location.reload();
             }}
         />
+      )}
+      
+      {/* Tip Modal */}
+      {isTipModalOpen && (
+          <TipModal 
+            recipientId={profileData.id}
+            recipientName={profileData.name}
+            onClose={() => setIsTipModalOpen(false)}
+          />
       )}
     </div>
   );

@@ -8,10 +8,12 @@ import TrashIcon from './icons/TrashIcon';
 import ShareIcon from './icons/ShareIcon';
 import FlagIcon from './icons/FlagIcon';
 import LockIcon from './icons/LockIcon';
+import GiftIcon from './icons/GiftIcon';
 import CommentSection from './CommentSection';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmationContext';
 import EditMediaForm from './EditMediaForm';
+import TipModal from './TipModal';
 
 interface MediaSidebarProps {
   item: MediaItem;
@@ -39,6 +41,7 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
   onDeleteSuccess
 }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   
   // Follow State
   const [isFollowing, setIsFollowing] = useState(false);
@@ -158,7 +161,7 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
             </div>
             
             {/* Owner Controls */}
-            {isOwner && (
+            {isOwner ? (
                 <div className="flex gap-2">
                     <button 
                         onClick={() => setIsEditing(!isEditing)} 
@@ -175,6 +178,16 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
                         <TrashIcon className="w-4 h-4" />
                     </button>
                 </div>
+            ) : (
+                session && item.user_id && !item.user_id.startsWith('static') && (
+                    <button 
+                        onClick={() => setIsTipModalOpen(true)}
+                        className="p-2 rounded-lg bg-yellow-900/30 text-yellow-500 border border-yellow-500/50 hover:bg-yellow-800/50 transition-colors"
+                        title="Send Gift"
+                    >
+                        <GiftIcon className="w-5 h-5" />
+                    </button>
+                )
             )}
             </div>
             
@@ -262,6 +275,14 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
             <FlagIcon className="w-5 h-5" />
         </button>
       </div>
+
+      {isTipModalOpen && item.user_id && (
+          <TipModal 
+            recipientId={item.user_id}
+            recipientName={item.author || 'Artist'}
+            onClose={() => setIsTipModalOpen(false)}
+          />
+      )}
     </div>
   );
 };

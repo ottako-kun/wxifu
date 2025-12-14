@@ -9,11 +9,12 @@ interface WalletContextType {
   refreshWallet: () => Promise<void>;
   unlockContent: (mediaId: string, price: number, authorId?: string) => Promise<boolean>;
   purchasePackage: (packageId: string) => Promise<void>;
-  addCoins: (amount: number) => Promise<boolean>; // Exposed for rewards
+  addCoins: (amount: number) => Promise<boolean>;
+  tipUser: (recipientId: string, amount: number) => Promise<boolean>;
   isUnlocked: (mediaId: string) => boolean;
   isLoading: boolean;
-  claimDailyReward: () => Promise<boolean>; // New method
-  checkIfRewardAvailable: () => boolean; // New method
+  claimDailyReward: () => Promise<boolean>;
+  checkIfRewardAvailable: () => boolean;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -78,14 +79,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
   };
 
-  // Helper to add coins directly (for rewards, ads, or manual topups)
   const addCoins = async (amount: number) => {
       if (!session) return false;
       try {
-          // Note: In production, do this via RPC to avoid race conditions. 
-          // For prototype, we update the profile directly.
           const newBalance = balance + amount;
-          
           const { error } = await supabase
               .from('profiles')
               .update({ coins: newBalance })
@@ -101,6 +98,52 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
   };
 
+  // Logic for Tipping a User
+  const tipUser = async (recipientId: string, amount: number) => {
+      if (!session) {
+          toast.error("Please sign in to tip.");
+          return false;
+      }
+      if (balance < amount) {
+          toast.error("Insufficient coins. Please recharge.");
+          return false;
+      }
+
+      setIsLoading(true);
+      try {
+          // 1. Deduct from Sender
+          const newSenderBalance = balance - amount;
+          const { error: senderError } = await supabase
+              .from('profiles')
+              .update({ coins: newSenderBalance })
+              .eq('id', session.user.id);
+          
+          if (senderError) throw senderError;
+
+          // 2. Add to Recipient (Optimistic / Fire & Forget for prototype)
+          if (recipientId && !recipientId.startsWith('static')) {
+              // Get recipient current balance first to be safe, or use RPC in prod
+              const { data: recipientData } = await supabase.from('profiles').select('coins').eq('id', recipientId).single();
+              if (recipientData) {
+                   await supabase
+                  .from('profiles')
+                  .update({ coins: (recipientData.coins || 0) + amount })
+                  .eq('id', recipientId);
+              }
+          }
+
+          setBalance(newSenderBalance);
+          toast.success(`Sent ${amount} coins!`);
+          return true;
+      } catch (error) {
+          console.error("Tip failed:", error);
+          toast.error("Failed to send tip.");
+          return false;
+      } finally {
+          setIsLoading(false);
+      }
+  };
+
   const purchasePackage = async (packageId: string) => {
       if (!session) {
           toast.error("Please sign in to purchase coins.");
@@ -109,7 +152,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       setIsLoading(true);
       try {
-          // Try to call the Stripe function
           const { data, error } = await supabase.functions.invoke('create-checkout-session', {
               body: { 
                   packageId, 
@@ -126,14 +168,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           
       } catch (error: any) {
           console.error("Purchase failed:", error);
-          
-          // --- FALLBACK FOR PROTOTYPE WITHOUT BACKEND ---
-          // Since user explicitly said "I will configure stripe later", 
-          // we treat this error as a signal to use "Simulated Payment"
           toast.info("Backend not configured. Simulating purchase...");
           
           setTimeout(async () => {
-               // Map package ID to coins (rough estimate based on Shop Modal)
                let amount = 100;
                if (packageId === 'fan') amount = 550;
                if (packageId === 'collector') amount = 1400;
@@ -150,8 +187,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return unlockedIds.includes(mediaId);
   };
 
-  // --- DAILY REWARD LOGIC ---
-  
   const checkIfRewardAvailable = () => {
       if (!session) return false;
       const lastClaim = localStorage.getItem(`daily_claim_${session.user.id}`);
@@ -165,7 +200,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (!session) return false;
       if (!checkIfRewardAvailable()) return false;
 
-      const success = await addCoins(50); // Daily reward amount
+      const success = await addCoins(50);
       if (success) {
           const today = new Date().toDateString();
           localStorage.setItem(`daily_claim_${session.user.id}`, today);
@@ -182,6 +217,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         unlockContent, 
         purchasePackage, 
         addCoins,
+        tipUser,
         isUnlocked, 
         isLoading,
         claimDailyReward,
