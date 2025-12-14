@@ -1,11 +1,15 @@
 import React from 'react';
-import InstagramIcon from './icons/InstagramIcon';
 import TwitterIcon from './icons/TwitterIcon';
 import { APP_CONFIG } from '../gallery-data';
 
-const Footer: React.FC = () => {
+interface FooterProps {
+  onOpenPrivacy: () => void;
+  onOpenTerms: () => void;
+}
+
+const Footer: React.FC<FooterProps> = ({ onOpenPrivacy, onOpenTerms }) => {
   return (
-    <footer className="bg-black border-t border-gray-900 mt-16 pb-8">
+    <footer className="bg-black border-t border-gray-900 mt-16 pb-24 md:pb-8">
       <div className="container mx-auto px-4 py-12">
         <div className="flex flex-col items-center justify-center">
           <h3 className="text-3xl font-black text-white mb-2 tracking-widest uppercase" style={{ fontFamily: '"Orbitron", sans-serif' }}>
@@ -54,7 +58,13 @@ const Footer: React.FC = () => {
           
           <div className="w-full max-w-xs h-px bg-gradient-to-r from-transparent via-gray-800 to-transparent mb-8"></div>
 
-          <div className="flex flex-col md:flex-row items-center gap-4 text-xs text-gray-700 uppercase tracking-wider">
+          <div className="flex flex-col md:flex-row items-center gap-4 text-xs text-gray-600 uppercase tracking-wider mb-4">
+            <button onClick={onOpenTerms} className="hover:text-pink-500 transition-colors">Terms of Service</button>
+            <span className="hidden md:inline text-gray-800">•</span>
+            <button onClick={onOpenPrivacy} className="hover:text-pink-500 transition-colors">Privacy Policy</button>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center gap-4 text-xs text-gray-700 uppercase tracking-wider text-center">
             <span>&copy; {new Date().getFullYear()} {APP_CONFIG.name}{APP_CONFIG.nameSuffix}.</span>
             <span className="hidden md:inline text-gray-800">|</span>
             <span>{APP_CONFIG.footer.disclaimer}</span>
