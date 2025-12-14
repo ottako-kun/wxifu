@@ -83,16 +83,7 @@ const App: React.FC = () => {
 
           data.forEach((item, index) => {
              const processed = processMediaItem(item, index);
-             // Manually inject the user_id if available in raw data for profile filtering
-             // processMediaItem strictly returns MediaItem, so we might need to handle this
-             // if we want to filter by user on the client side accurately.
-             // For now, assuming processMediaItem returns clean objects, we might need to 
-             // extend MediaItem or handling it here.
              
-             // Attaching raw user_id to the object for filtering in ProfileView
-             // This assumes MediaItem type definition is loose enough or we cast it
-             (processed as any).user_id = item.user_id;
-
              if (processed.type === MediaType.Video) {
                  fetchedVideos.push(processed);
              } else {
@@ -234,9 +225,7 @@ const App: React.FC = () => {
   const userMedia = useMemo(() => {
     if (!session) return [];
     const all = [...photoMedia, ...videoMedia];
-    // Filter by user_id. Note: We need to ensure user_id is passed through processMediaItem or attached.
-    // In this basic implementation, we might not have user_id on fallback data.
-    return all.filter(item => (item as any).user_id === session.user.id);
+    return all.filter(item => item.user_id === session.user.id);
   }, [photoMedia, videoMedia, session]);
 
   return (

@@ -11,4 +11,5 @@ export interface MediaItem {
   description?: string;
   category?: string;
   tags?: string[];
+  user_id?: string; // Links the media to a specific user
 }

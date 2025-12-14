@@ -114,6 +114,7 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
     description: item.description,
     category: item.category || (type === MediaType.Photo ? 'Illustration' : 'Clip'),
     tags: item.tags || [],
+    user_id: item.user_id, // Safely pass user_id through
   };
 };
 
