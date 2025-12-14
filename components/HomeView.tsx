@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import Hero from './Hero';
 import MediaGrid from './MediaGrid';
@@ -242,7 +241,7 @@ const HomeView: React.FC<HomeViewProps> = ({
                     ) : (
                         <>
                             <h2 className="text-3xl font-bold text-gray-400 mb-2">No {galleryName}s yet.</h2>
-                            <p className="text-lg text-gray-500">Connect to Supabase or add items to your database to see them here.</p>
+                            <p className="text-lg text-gray-500">Under Development: Connect to Supabase or add items to your database to see them here.</p>
                         </>
                     )}
                 </div>
