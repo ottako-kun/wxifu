@@ -128,9 +128,11 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       }
   };
 
-  // Keyboard Navigation
+  // Keyboard Navigation & Scroll Lock
   useEffect(() => {
     setIsVisible(true);
+    // Lock body scroll
+    document.body.style.overflow = 'hidden';
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
@@ -148,6 +150,8 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      // Restore body scroll
+      document.body.style.overflow = '';
     };
   }, [goToNext, goToPrevious, handleClose, isDrawerOpen]);
 
@@ -187,14 +191,14 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
 
   return (
     <div 
-      className={`fixed inset-0 bg-black z-50 flex flex-col transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      className={`fixed inset-0 bg-black z-[80] flex flex-col transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
       role="dialog"
       aria-modal="true"
     >
         {/* Close Button (Absolute Top Right) */}
         <button 
             onClick={handleClose} 
-            className="absolute top-4 right-4 z-[70] text-white/70 hover:text-white bg-black/20 hover:bg-red-500/80 rounded-full p-2.5 transition-all backdrop-blur-md"
+            className="absolute top-4 right-4 z-[90] text-white/70 hover:text-white bg-black/20 hover:bg-red-500/80 rounded-full p-2.5 transition-all backdrop-blur-md"
         >
             <CloseIcon className="w-6 h-6"/>
         </button>
@@ -308,7 +312,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
         {/* --- SLIDING DRAWER (Comments & Details) --- */}
         {isDrawerOpen && (
             <div 
-                className="absolute inset-0 z-40 bg-black/50 backdrop-blur-sm"
+                className="absolute inset-0 z-[85] bg-black/50 backdrop-blur-sm"
                 onClick={() => setIsDrawerOpen(false)}
             >
                 {/* Mobile: Bottom Sheet | Desktop: Right Panel */}
