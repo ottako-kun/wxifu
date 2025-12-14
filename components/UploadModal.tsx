@@ -26,7 +26,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
     type: MediaType.Photo,
     src: '',
     description: '',
-    category: 'Illustration',
+    category: '',
     tags: [],
   });
   
@@ -55,7 +55,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.src || !formData.description) return;
+    if (!formData.src || !formData.description || !formData.category) return;
     await onSubmit(formData);
   };
 
@@ -130,6 +130,14 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
               Category
             </label>
+            <input
+              type="text"
+              required
+              value={formData.category}
+              onChange={(e) => handleChange('category', e.target.value)}
+              placeholder="e.g. Illustration, Fanart, 3D Render..."
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+            />
             <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map(cat => (
                     <button
