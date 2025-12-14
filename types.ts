@@ -14,6 +14,8 @@ export interface MediaItem {
   user_id?: string; // Links the media to a specific user
   author?: string; // Username of the uploader
   author_avatar?: string; // Avatar URL of the uploader
+  is_premium?: boolean; // Is this content locked?
+  price?: number; // Cost to unlock (in coins/dollars)
 }
 
 export interface Message {

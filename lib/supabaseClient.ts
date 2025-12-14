@@ -20,6 +20,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
  * - user_id: uuid (foreign key to auth.users)
  * - author: text (optional, denormalized username)
  * - author_avatar: text (optional, denormalized avatar url)
+ * - is_premium: boolean (optional)
+ * - price: integer (optional)
  */
 
 export const signInWithGoogle = async () => {
@@ -83,6 +85,8 @@ export const insertMediaItem = async (item: {
   user_id?: string;
   author?: string;
   author_avatar?: string;
+  is_premium?: boolean;
+  price?: number;
 }) => {
   // Attempt 1: Try inserting with all fields
   const { data, error } = await supabase.from('media').insert([item]).select();

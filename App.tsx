@@ -178,7 +178,7 @@ const App: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleUploadSubmit = async (data: { type: MediaType; src: string; description: string; category: string; tags: string[] }) => {
+  const handleUploadSubmit = async (data: { type: MediaType; src: string; description: string; category: string; tags: string[]; is_premium: boolean; price: number }) => {
     if (!session) return;
     setIsUploading(true);
     try {
@@ -190,7 +190,9 @@ const App: React.FC = () => {
             tags: data.tags,
             user_id: session.user.id,
             author: session.user.user_metadata.full_name || session.user.email?.split('@')[0],
-            author_avatar: session.user.user_metadata.avatar_url
+            author_avatar: session.user.user_metadata.avatar_url,
+            is_premium: data.is_premium,
+            price: data.price
         });
 
         if (error) {

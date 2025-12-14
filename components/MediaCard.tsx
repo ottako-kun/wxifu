@@ -6,6 +6,7 @@ import ShareIcon from './icons/ShareIcon';
 import TrashIcon from './icons/TrashIcon';
 import SharePopover from './SharePopover';
 import VideoIcon from './icons/VideoIcon';
+import LockIcon from './icons/LockIcon';
 import { Session } from '@supabase/supabase-js';
 import { deleteMediaItem } from '../lib/supabaseClient';
 
@@ -25,8 +26,16 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
   const [isDeleting, setIsDeleting] = useState(false);
 
   const isOwner = session?.user.id === item.user_id;
+  // NOTE: Real implementation would check a 'purchased_posts' table. 
+  // For now, only the owner can see it unblurred.
+  const isUnlocked = isOwner || !item.is_premium; 
 
-  const openModal = () => setIsModalOpen(true);
+  const openModal = () => {
+      // Prevent opening modal for locked content unless we implement unlocking logic there too
+      // For now, we allow opening but the detail view will handle the lock as well
+      setIsModalOpen(true);
+  };
+  
   const closeModal = () => {
     setIsModalOpen(false);
   };
@@ -72,17 +81,35 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
         className={`group relative overflow-hidden rounded-xl shadow-lg cursor-pointer mb-3 md:mb-6 break-inside-avoid bg-gray-900 border border-gray-800 hover:border-pink-500/50 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl hover:shadow-pink-500/10 ${!isImageLoaded ? 'min-h-[200px] animate-pulse-bg' : ''} ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
         onClick={openModal}
       >
-        <img 
-          src={item.src} 
-          alt={item.description || "Gallery content"} 
-          className={`w-full h-auto object-cover block transition-opacity duration-700 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-          loading="lazy"
-          decoding="async"
-          onLoad={() => setIsImageLoaded(true)}
-        />
+        <div className="relative overflow-hidden">
+            <img 
+            src={item.src} 
+            alt={item.description || "Gallery content"} 
+            className={`w-full h-auto object-cover block transition-all duration-700 
+                ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
+                ${!isUnlocked ? 'blur-xl scale-110 brightness-50' : ''}
+            `}
+            loading="lazy"
+            decoding="async"
+            onLoad={() => setIsImageLoaded(true)}
+            />
+
+            {/* Premium Lock Overlay */}
+            {!isUnlocked && isImageLoaded && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-10 p-4">
+                    <div className="bg-black/60 backdrop-blur-md p-3 rounded-full mb-2 border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]">
+                        <LockIcon className="w-6 h-6 text-yellow-500" />
+                    </div>
+                    <span className="text-yellow-500 font-bold text-sm tracking-wider uppercase drop-shadow-md">Premium</span>
+                    <span className="text-white font-bold text-xs mt-1 bg-black/50 px-2 py-0.5 rounded-full border border-gray-700">
+                        {item.price ? `${item.price} Coins` : 'Locked'}
+                    </span>
+                </div>
+            )}
+        </div>
         
-        {/* Type Badge (Always visible if video) */}
-        {item.type === MediaType.Video && isImageLoaded && (
+        {/* Type Badge */}
+        {item.type === MediaType.Video && isImageLoaded && isUnlocked && (
             <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm rounded-md px-1.5 py-0.5 border border-white/10 z-10">
                 <VideoIcon className="w-3 h-3 text-white" />
             </div>
@@ -92,8 +119,8 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
         {isImageLoaded && (
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end">
             
-            {/* Center Play Button for Videos */}
-            {item.type === MediaType.Video && (
+            {/* Center Play Button for Videos (Only if unlocked) */}
+            {item.type === MediaType.Video && isUnlocked && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.2)] group-hover:scale-110 transition-transform duration-300">
                     <PlayIcon className="w-8 h-8 text-white ml-1" />
@@ -112,7 +139,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, items, index, onUserClick, 
               
               {/* Description */}
               {item.description && (
-                <p className="text-white text-sm font-medium line-clamp-2 leading-snug drop-shadow-md mb-3">
+                <p className={`text-white text-sm font-medium line-clamp-2 leading-snug drop-shadow-md mb-3 ${!isUnlocked ? 'blur-sm select-none' : ''}`}>
                     {item.description}
                 </p>
               )}

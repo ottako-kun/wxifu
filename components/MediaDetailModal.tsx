@@ -7,6 +7,7 @@ import ChevronRightIcon from './icons/ChevronRightIcon';
 import ShareIcon from './icons/ShareIcon';
 import TrashIcon from './icons/TrashIcon';
 import PencilIcon from './icons/PencilIcon';
+import LockIcon from './icons/LockIcon';
 import SharePopover from './SharePopover';
 import { APP_CONFIG } from '../gallery-data';
 import { Session } from '@supabase/supabase-js';
@@ -43,6 +44,9 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   const item = items[currentIndex];
   const isPhoto = item.type === MediaType.Photo;
   const isOwner = session?.user.id === item.user_id;
+  
+  // Premium Logic (Placeholder for future purchase logic)
+  const isUnlocked = isOwner || !item.is_premium;
 
   // Initialize edit state when item changes
   useEffect(() => {
@@ -87,6 +91,10 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       }
   };
 
+  const handleUnlockClick = () => {
+      alert("Payment System Integration Coming Soon!\n\nThis will allow users to purchase 'Otaku Coins' to unlock premium content.");
+  };
+
   // Check if the video URL is a direct file (MP4, WEBM, etc.) or an embed (YouTube, Drive, etc.)
   const isDirectVideo = (url?: string) => {
     if (!url) return false;
@@ -104,6 +112,8 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
 
   const handleZoomClick = (e: React.MouseEvent<HTMLImageElement>) => {
     e.stopPropagation();
+    if (!isUnlocked) return; // Disable zoom on locked content
+
     if (isZoomed) {
       setIsZoomed(false);
       setZoomStyle({
@@ -230,12 +240,37 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
             onTouchEnd={onTouchEnd}
         >
           <div key={item.id} className="w-full h-full animate-fade-in flex items-center justify-center p-0 md:p-4">
+            
+            {/* Locked Content Overlay */}
+            {!isUnlocked && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md">
+                    <div className="bg-gray-900 border border-yellow-500/50 rounded-2xl p-8 text-center shadow-[0_0_30px_rgba(234,179,8,0.2)] max-w-sm mx-4">
+                        <div className="w-16 h-16 bg-black/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-yellow-500/50">
+                            <LockIcon className="w-8 h-8 text-yellow-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2 uppercase tracking-wider font-orbitron">Premium Content</h3>
+                        <p className="text-gray-400 text-sm mb-6">
+                            Unlock this exclusive post from <span className="text-pink-400 font-bold">{item.author}</span>.
+                        </p>
+                        <button 
+                            onClick={handleUnlockClick}
+                            className="w-full py-3 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-black font-black uppercase tracking-wider rounded-lg shadow-lg transform transition-transform hover:-translate-y-0.5"
+                        >
+                            Unlock for {item.price || 5} Coins
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {isPhoto ? (
               <div className="w-full h-full overflow-hidden flex items-center justify-center relative">
                 <img 
                   src={item.src} 
                   alt={item.description || 'Full screen view'} 
-                  className={`max-h-full max-w-full object-contain select-none transition-transform duration-200 ${isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
+                  className={`max-h-full max-w-full object-contain select-none transition-transform duration-200 
+                      ${isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}
+                      ${!isUnlocked ? 'blur-2xl opacity-50' : ''}
+                  `}
                   onClick={handleZoomClick}
                   style={zoomStyle}
                   draggable={false}
@@ -243,21 +278,28 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
               </div>
             ) : (
               <div className="w-full h-full relative flex items-center justify-center bg-black rounded-lg overflow-hidden shadow-2xl border border-gray-800">
-                {isDirectVideo(item.videoSrc) ? (
-                  <video 
-                    src={item.videoSrc}
-                    controls
-                    autoPlay
-                    playsInline
-                    className="max-w-full max-h-full outline-none"
-                  />
+                {isUnlocked ? (
+                    isDirectVideo(item.videoSrc) ? (
+                    <video 
+                        src={item.videoSrc}
+                        controls
+                        autoPlay
+                        playsInline
+                        className="max-w-full max-h-full outline-none"
+                    />
+                    ) : (
+                    <iframe 
+                        src={item.videoSrc}
+                        allow="autoplay; encrypted-media; picture-in-picture"
+                        allowFullScreen
+                        className="absolute inset-0 w-full h-full border-0"
+                    />
+                    )
                 ) : (
-                  <iframe 
-                    src={item.videoSrc}
-                    allow="autoplay; encrypted-media; picture-in-picture"
-                    allowFullScreen
-                    className="absolute inset-0 w-full h-full border-0"
-                  />
+                    <img 
+                        src={item.src} 
+                        className="w-full h-full object-cover blur-xl opacity-30" 
+                    />
                 )}
               </div>
             )}
