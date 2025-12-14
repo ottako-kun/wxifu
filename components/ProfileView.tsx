@@ -3,6 +3,7 @@ import { Session } from '@supabase/supabase-js';
 import { MediaItem } from '../types';
 import MediaGrid from './MediaGrid';
 import { updateUserProfile } from '../lib/supabaseClient';
+import { getDriveId } from '../gallery-data';
 import LoadingSpinner from './icons/LoadingSpinner';
 import CloseIcon from './icons/CloseIcon';
 import UploadIcon from './icons/UploadIcon';
@@ -17,6 +18,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, userMedia, onBack })
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState(session.user.user_metadata.full_name || '');
   const [bio, setBio] = useState(session.user.user_metadata.bio || '');
+  const [avatarUrl, setAvatarUrl] = useState(session.user.user_metadata.avatar_url || '');
   const [isSaving, setIsSaving] = useState(false);
 
   // Stats
@@ -25,10 +27,25 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, userMedia, onBack })
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+    
+    // Process Avatar URL for Google Drive links
+    let finalAvatarUrl = avatarUrl;
+    if (avatarUrl) {
+        const driveId = getDriveId(avatarUrl);
+        // Basic check if it looks like a drive link or just an ID
+        if (driveId && (avatarUrl.includes('drive.google.com') || avatarUrl.includes('/d/') || avatarUrl.length < 50)) {
+            // If it's a drive ID, use the direct display link
+             if (driveId.length > 10) { // arbitrary length check for ID
+                 finalAvatarUrl = `https://lh3.googleusercontent.com/d/${driveId}`;
+             }
+        }
+    }
+
     try {
       const { error } = await updateUserProfile({
         full_name: displayName,
-        bio: bio
+        bio: bio,
+        avatar_url: finalAvatarUrl
       });
       if (error) throw error;
       setIsEditing(false);
@@ -155,6 +172,30 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, userMedia, onBack })
               </div>
               
               <form onSubmit={handleSaveProfile} className="p-6 space-y-6">
+                 {/* Avatar Input */}
+                 <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Avatar Image Link</label>
+                    <div className="flex gap-4 items-center">
+                        <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-800 flex-shrink-0 border border-gray-700">
+                            {avatarUrl ? (
+                                <img src={avatarUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => {e.currentTarget.style.display='none'}} />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs font-bold">?</div>
+                            )}
+                        </div>
+                        <div className="flex-grow">
+                            <input 
+                            type="text" 
+                            value={avatarUrl}
+                            onChange={(e) => setAvatarUrl(e.target.value)}
+                            placeholder="https://drive.google.com/..."
+                            className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white focus:border-pink-500 focus:outline-none text-sm"
+                            />
+                        </div>
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-2">Paste a direct link or a Google Drive link.</p>
+                 </div>
+
                  <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Display Name</label>
                     <input 

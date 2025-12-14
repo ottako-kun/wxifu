@@ -39,7 +39,7 @@ export const signOut = async () => {
   }
 };
 
-export const updateUserProfile = async (updates: { full_name?: string; bio?: string }) => {
+export const updateUserProfile = async (updates: { full_name?: string; bio?: string; avatar_url?: string }) => {
   return await supabase.auth.updateUser({
     data: updates
   });
@@ -53,5 +53,39 @@ export const insertMediaItem = async (item: {
   tags: string[];
   user_id?: string;
 }) => {
-  return await supabase.from('media').insert([item]);
+  // Attempt 1: Try inserting with all fields
+  const { data, error } = await supabase.from('media').insert([item]).select();
+
+  if (error) {
+    // Check if the error is due to missing columns (common if schema isn't updated)
+    const isColumnMissing = error.message.includes('column') || error.code === 'PGRST204';
+    
+    if (isColumnMissing) {
+       console.warn("Database schema mismatch detected. Attempting fallback insert...");
+
+       // Fallback 1: If 'user_id' is missing
+       if (error.message.includes('user_id')) {
+           const { user_id, ...rest } = item;
+           console.warn("Retrying upload without 'user_id'...");
+           const retry1 = await supabase.from('media').insert([rest]).select();
+           
+           // Fallback 2: If 'tags' is ALSO missing (nested retry)
+           if (retry1.error && retry1.error.message.includes('tags')) {
+               console.warn("Retrying upload without 'tags'...");
+               const { tags, ...rest2 } = rest;
+               return await supabase.from('media').insert([rest2]).select();
+           }
+           return retry1;
+       }
+
+       // Fallback 3: If 'tags' is missing (but user_id was fine)
+       if (error.message.includes('tags')) {
+           console.warn("Retrying upload without 'tags'...");
+           const { tags, ...rest } = item;
+           return await supabase.from('media').insert([rest]).select();
+       }
+    }
+  }
+
+  return { data, error };
 };
