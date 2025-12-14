@@ -17,7 +17,7 @@ const GalleryTabs: React.FC<GalleryTabsProps> = ({ activeTab, setActiveTab }) =>
   ];
 
   return (
-    <div className="flex justify-center items-center mb-12">
+    <div className="flex justify-center items-center mb-6">
       <div className="flex bg-gray-900/80 backdrop-blur-md p-1.5 rounded-full border border-gray-800 shadow-xl overflow-x-auto no-scrollbar max-w-full">
         {tabs.map((tab) => (
           <button

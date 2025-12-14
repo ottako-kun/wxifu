@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import SearchIcon from './icons/SearchIcon';
 import SortAscendingIcon from './icons/SortAscendingIcon';
 import CloseIcon from './icons/CloseIcon';
@@ -35,8 +35,10 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
   availableTags,
   clearFilters
 }) => {
+  const [showTags, setShowTags] = useState(false);
+
   return (
-    <div className="max-w-4xl mx-auto mb-10 space-y-6">
+    <div className="max-w-4xl mx-auto mb-4 space-y-4">
       {/* Search and Sort */}
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="relative flex-grow w-full">
@@ -86,28 +88,67 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
         </div>
       </div>
 
-      {/* Tag Filter */}
+      {/* Collapsible Tag Filter */}
       {availableTags.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-2 px-4">
-          {availableTags.map(tag => (
-            <button
-              key={tag}
-              onClick={() => toggleTag(tag)}
-              className={`px-3 py-1 rounded text-xs transition-colors duration-200 border border-transparent
-                    ${selectedTags.includes(tag)
-                  ? 'bg-cyan-900/30 text-cyan-300 border-cyan-500/30'
-                  : 'bg-gray-800/50 text-gray-500 hover:text-gray-300 hover:bg-gray-800'
-                }`}
+        <div className="flex flex-col items-center animate-fade-in">
+           <button 
+              onClick={() => setShowTags(!showTags)}
+              className="group flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors py-2"
             >
-              #{tag}
+               <span>{showTags ? 'Hide Tags' : 'Filter by Tags'}</span>
+               <svg 
+                 xmlns="http://www.w3.org/2000/svg" 
+                 fill="none" 
+                 viewBox="0 0 24 24" 
+                 strokeWidth={2} 
+                 stroke="currentColor" 
+                 className={`w-4 h-4 transition-transform duration-300 ${showTags ? 'rotate-180' : ''}`}
+               >
+                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+               </svg>
             </button>
-          ))}
+
+            {/* Selected Tags Summary (Visible when collapsed) */}
+            {!showTags && selectedTags.length > 0 && (
+               <div className="flex flex-wrap justify-center gap-2 mt-1 mb-2">
+                  {selectedTags.map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className="px-2 py-0.5 rounded text-[10px] bg-cyan-900/30 text-cyan-300 border border-cyan-500/30 flex items-center gap-1 hover:bg-red-900/30 hover:text-red-300 hover:border-red-500/30 transition-colors"
+                    >
+                      #{tag} &times;
+                    </button>
+                  ))}
+               </div>
+            )}
+
+            {/* Expanded Tag Cloud */}
+            {showTags && (
+                <div className="w-full bg-gray-900/40 border border-gray-800 rounded-xl p-4 mt-2 animate-fade-in shadow-inner">
+                    <div className="flex flex-wrap justify-center gap-2">
+                        {availableTags.map(tag => (
+                            <button
+                            key={tag}
+                            onClick={() => toggleTag(tag)}
+                            className={`px-3 py-1.5 rounded text-xs transition-colors duration-200 border
+                                    ${selectedTags.includes(tag)
+                                ? 'bg-cyan-900/30 text-cyan-300 border-cyan-500/50 shadow-[0_0_10px_rgba(6,182,212,0.1)]'
+                                : 'bg-gray-800/50 border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-800 hover:border-gray-700'
+                                }`}
+                            >
+                            #{tag}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
       )}
 
-      {/* Active Filters Summary */}
+      {/* Clear Filters Button */}
       {(selectedCategory !== 'All' || selectedTags.length > 0 || searchQuery) && (
-        <div className="flex justify-center animate-fade-in">
+        <div className="flex justify-center animate-fade-in pt-2">
           <button
             onClick={clearFilters}
             className="text-xs font-medium text-red-400 hover:text-red-300 flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-red-500/10 transition-colors"
