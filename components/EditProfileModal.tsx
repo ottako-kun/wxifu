@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { updateUserProfile } from '../lib/supabaseClient';
-import { getDriveId } from '../gallery-data';
+import { getDriveId, getGoogleDriveImageUrl } from '../lib/googleDrive';
 import CloseIcon from './icons/CloseIcon';
 
 interface EditProfileModalProps {
@@ -27,14 +28,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     e.preventDefault();
     setIsSaving(true);
     
-    // Process Avatar URL for Google Drive links
+    // Process Avatar URL for Google Drive links using utility
     let finalAvatarUrl = avatarUrl;
     if (avatarUrl) {
         const driveId = getDriveId(avatarUrl);
-        if (driveId && (avatarUrl.includes('drive.google.com') || avatarUrl.includes('/d/') || avatarUrl.length < 50)) {
-             if (driveId.length > 10) {
-                 finalAvatarUrl = `https://lh3.googleusercontent.com/d/${driveId}`;
-             }
+        if (driveId) {
+             finalAvatarUrl = getGoogleDriveImageUrl(driveId);
         }
     }
 

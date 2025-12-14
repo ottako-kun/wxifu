@@ -1,4 +1,6 @@
+
 import { MediaItem, MediaType } from './types';
+import { getDriveId, getGoogleDriveImageUrl, getGoogleDriveVideoPreviewUrl } from './lib/googleDrive';
 
 // --- SITE CONFIGURATION ---
 // Manage your site-wide constants, text, and settings here.
@@ -50,17 +52,6 @@ const CUSTOM_MEDIA_COLLECTION = [
   //   description: 'My Awesome Artwork',
   //   category: 'Illustration',
   //   tags: ['oc', 'digital'],
-  //   author: 'MyName'
-  // },
-
-  // --- EXAMPLE: GOOGLE DRIVE VIDEO ---
-  // {
-  //   type: 'VIDEO',
-  //   link: 'https://drive.google.com/file/d/0987654321zyxwvu/view?usp=sharing',
-  //   thumbnail: 'https://link.to.your/thumbnail.jpg', // Optional, but recommended for videos
-  //   description: 'My Cool Animation',
-  //   category: 'Animation',
-  //   tags: ['3d', 'motion'],
   //   author: 'MyName'
   // },
 
@@ -126,21 +117,6 @@ const CUSTOM_MEDIA_COLLECTION = [
 
 // --- HELPERS ---
 
-// Helper to extract Google Drive ID from various URL formats
-export const getDriveId = (input: string): string => {
-  if (!input) return '';
-  // Match /d/ID pattern (standard drive links)
-  const matchSlash = input.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (matchSlash && matchSlash[1]) return matchSlash[1];
-
-  // Match id=ID pattern (some export links)
-  const matchId = input.match(/id=([a-zA-Z0-9_-]+)/);
-  if (matchId && matchId[1]) return matchId[1];
-
-  // If no pattern matches, assume it's already the ID
-  return input;
-};
-
 // Default Thumbnail ID (Used if no thumbnail is provided for videos)
 export const DEFAULT_VIDEO_THUMBNAIL_ID = '1sILwvb70QBKknRuhk0fJLwnO7kmdEywQ';
 export const DEFAULT_THUMB_URL = `https://lh3.googleusercontent.com/d/${DEFAULT_VIDEO_THUMBNAIL_ID}`;
@@ -164,10 +140,9 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
   let finalVideoSrc = item.videoSrc;
 
   if (type === MediaType.Photo) {
-     // If it looks like a Drive ID, construct the proxy URL for faster loading
-     // We check if it contains drive.google.com OR if it was just an ID string (length check is a rough heuristic)
-     if (driveId && (sourceString.includes('drive.google.com') || sourceString.length < 50)) {
-        finalSrc = `https://lh3.googleusercontent.com/d/${driveId}`;
+     // If it is a Drive link, convert to LH3 proxy for display
+     if (driveId) {
+        finalSrc = getGoogleDriveImageUrl(driveId);
      }
   } else {
      // Video Logic
@@ -175,9 +150,8 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
      finalSrc = item.thumbnail || DEFAULT_THUMB_URL;
      
      // Video Source: If Drive link, convert to preview, else use direct
-     if (sourceString && sourceString.includes('drive.google.com')) {
-        const vidDriveId = getDriveId(sourceString);
-        finalVideoSrc = `https://drive.google.com/file/d/${vidDriveId}/preview`;
+     if (driveId) {
+        finalVideoSrc = getGoogleDriveVideoPreviewUrl(driveId);
      } else {
         finalVideoSrc = item.videoSrc || sourceString;
      }
