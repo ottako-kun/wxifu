@@ -76,13 +76,53 @@ const App: React.FC = () => {
   const fetchData = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        let fetchedData: any[] = [];
+
+        // Attempt 1: Efficient Join (Requires Foreign Key)
+        const { data: joinData, error: joinError } = await supabase
           .from('media')
-          .select('*')
+          .select('*, profiles(name, avatar)')
           .order('created_at', { ascending: false });
 
-        if (error || !data || data.length === 0) {
-          console.log("Using fallback data (Supabase empty or not configured)");
+        if (!joinError && joinData) {
+          fetchedData = joinData;
+        } else {
+          // Attempt 2: Fallback Manual Fetch (Works if Foreign Key is broken/missing)
+          console.warn("Database join failed, falling back to manual fetch...", joinError?.message);
+          
+          const { data: mediaData, error: mediaError } = await supabase
+            .from('media')
+            .select('*')
+            .order('created_at', { ascending: false });
+            
+          if (mediaError) throw mediaError;
+
+          if (mediaData && mediaData.length > 0) {
+             // Extract user IDs to fetch
+             const userIds = Array.from(new Set(
+                 mediaData
+                    .map(m => m.user_id)
+                    .filter(id => id && id.length > 20 && !id.startsWith('static'))
+             ));
+             
+             // Fetch profiles manually
+             const { data: profilesData } = await supabase
+                .from('profiles')
+                .select('id, name, avatar')
+                .in('id', userIds);
+                
+             const profileMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+             
+             // Stitch data together
+             fetchedData = mediaData.map(m => ({
+                 ...m,
+                 profiles: profileMap.get(m.user_id) || null
+             }));
+          }
+        }
+
+        if (fetchedData.length === 0) {
+          console.log("No DB data found (or empty), using fallback.");
           setPhotoMedia(fallbackPhotoMedia);
           setVideoMedia(fallbackVideoMedia);
         } else {
@@ -90,7 +130,7 @@ const App: React.FC = () => {
           const fetchedPhotos: MediaItem[] = [];
           const fetchedVideos: MediaItem[] = [];
 
-          data.forEach((item, index) => {
+          fetchedData.forEach((item, index) => {
              const processed = processMediaItem(item, index);
              
              if (processed.type === MediaType.Video) {
@@ -103,8 +143,8 @@ const App: React.FC = () => {
           setPhotoMedia(fetchedPhotos.length > 0 ? fetchedPhotos : fallbackPhotoMedia);
           setVideoMedia(fetchedVideos.length > 0 ? fetchedVideos : fallbackVideoMedia);
         }
-      } catch (err) {
-        console.error("Error fetching media:", err);
+      } catch (err: any) {
+        console.error("Error fetching media:", err.message);
         setPhotoMedia(fallbackPhotoMedia);
         setVideoMedia(fallbackVideoMedia);
       } finally {
@@ -158,6 +198,7 @@ const App: React.FC = () => {
   const handleNavigate = (view: 'home' | 'profile' | 'inbox') => {
       if (view === 'profile' && session) {
           // Navigating to "My Profile"
+          // We should ideally fetch the latest profile data here, but session metadata is a decent fallback
           setActiveProfile({
               id: session.user.id,
               name: session.user.user_metadata.full_name || session.user.email?.split('@')[0],

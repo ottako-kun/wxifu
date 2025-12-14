@@ -41,10 +41,37 @@ export const signOut = async () => {
   }
 };
 
+// Updated: This now updates the Public Profiles table as well as auth metadata
 export const updateUserProfile = async (updates: { full_name?: string; bio?: string; avatar_url?: string }) => {
-  return await supabase.auth.updateUser({
+  // 1. Update Auth User Metadata (for session consistency)
+  const authUpdate = await supabase.auth.updateUser({
     data: updates
   });
+  
+  if (authUpdate.error) return authUpdate;
+
+  // 2. Update Public Profiles Table (for other users to see)
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+      const { error } = await supabase
+          .from('profiles')
+          .upsert({
+              id: user.id,
+              name: updates.full_name,
+              avatar: updates.avatar_url,
+              bio: updates.bio,
+              updated_at: new Date().toISOString()
+          });
+      
+      if (error) {
+          console.error("Failed to update public profile:", error);
+          // Return this error so the UI knows something went wrong, 
+          // even if auth update succeeded
+          return { data: authUpdate.data, error };
+      }
+  }
+
+  return authUpdate;
 };
 
 export const insertMediaItem = async (item: {

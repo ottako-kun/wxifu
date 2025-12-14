@@ -192,8 +192,12 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
   }
 
   // Determine Author
-  // If user_id is missing (static item), allow 'author' field or default to 'Ottako Admin'
-  const authorName = item.author || (item.user_id ? 'Unknown' : 'Ottako Admin');
+  // Priority: 1. Joined Profile Data (if available), 2. Denormalized Column, 3. 'Unknown' or Default
+  // 'item.profiles' comes from the join in Supabase
+  const profileName = item.profiles?.name;
+  const profileAvatar = item.profiles?.avatar;
+
+  const authorName = profileName || item.author || (item.user_id ? 'Unknown' : 'Ottako Admin');
 
   // Generate a consistent user_id for static items with an author so they are clickable
   let userId = item.user_id;
@@ -212,7 +216,7 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
     tags: item.tags || [],
     user_id: userId, 
     author: authorName,
-    author_avatar: item.author_avatar
+    author_avatar: profileAvatar || item.author_avatar
   };
 };
 
