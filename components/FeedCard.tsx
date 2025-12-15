@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+
+import React, { useState } from 'react';
 import { MediaItem, MediaType } from '../types';
 import { Session } from '@supabase/supabase-js';
 import HeartIcon from './icons/HeartIcon';
@@ -13,6 +14,7 @@ import { useMediaLikes } from '../hooks/useMediaLikes';
 import { useWallet } from '../context/WalletContext';
 import { useFollow } from '../hooks/useFollow';
 import LoadingSpinner from './icons/LoadingSpinner';
+import { useDoubleTap } from '../hooks/useDoubleTap';
 
 interface FeedCardProps {
   item: MediaItem;
@@ -26,7 +28,6 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
-  const lastTapRef = useRef<number>(0);
 
   // Hooks
   const { isLiked, likeCount, toggleLike } = useMediaLikes(item.id, session?.user.id, item.id.startsWith('static'));
@@ -42,15 +43,8 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
     await toggleLike();
   };
 
-  const handleDoubleTap = (e: React.MouseEvent | React.TouchEvent) => {
-    const now = Date.now();
-    const DOUBLE_TAP_DELAY = 300;
-    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-       e.preventDefault();
-       handleLikeAction();
-    }
-    lastTapRef.current = now;
-  };
+  // Use custom double tap hook
+  const handleDoubleTap = useDoubleTap(handleLikeAction);
 
   const handleShareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();

@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { MediaItem, MediaType } from '../types';
 import PlayIcon from './icons/PlayIcon';
 import ShareIcon from './icons/ShareIcon';
@@ -14,6 +14,7 @@ import { useConfirm } from '../context/ConfirmationContext';
 import { useToast } from '../context/ToastContext';
 import { useWallet } from '../context/WalletContext';
 import { useMediaLikes } from '../hooks/useMediaLikes';
+import { useDoubleTap } from '../hooks/useDoubleTap';
 
 interface MediaCardProps {
   item: MediaItem;
@@ -41,39 +42,24 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
   // Use Custom Hook for Likes
   const { likeCount, isLiked, toggleLike } = useMediaLikes(item.id, session?.user.id, isStatic);
   
-  // Double tap logic
-  const lastTapRef = useRef<number>(0);
-
-  const handleCardClick = () => {
-      onClick();
-  };
-  
-  const handleTouchEnd = (e: React.TouchEvent) => {
-      // Allow default behavior (scroll) but detect double tap
-      const now = Date.now();
-      const DOUBLE_TAP_DELAY = 300;
-      
-      if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-          // Only prevent default if it's cancelable to avoid console errors
-          if (e.cancelable) {
-              e.preventDefault(); 
-          }
-          handleLikeAction();
-      }
-      lastTapRef.current = now;
-  };
-
-  const handleShareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    setShareAnchorEl(e.currentTarget);
-  };
-  
   const handleLikeAction = async () => {
     // Trigger Animation immediately for feedback
     setShowHeartAnimation(true);
     setTimeout(() => setShowHeartAnimation(false), 1000);
 
     await toggleLike();
+  };
+
+  // Use custom double tap hook
+  const handleTouchEnd = useDoubleTap(handleLikeAction);
+
+  const handleCardClick = () => {
+      onClick();
+  };
+  
+  const handleShareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    setShareAnchorEl(e.currentTarget);
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {

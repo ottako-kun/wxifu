@@ -13,6 +13,7 @@ import { useRelatedMedia } from '../hooks/useRelatedMedia';
 import { useWallet } from '../context/WalletContext';
 import { useMediaLikes } from '../hooks/useMediaLikes';
 import { useFollow } from '../hooks/useFollow';
+import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import HeartIcon from './icons/HeartIcon';
 import ChatIcon from './icons/ChatIcon';
 import ShareIcon from './icons/ShareIcon';
@@ -152,34 +153,25 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       }
   };
 
-  // Keyboard Navigation & Scroll Lock
+  // Use Custom Keyboard Nav Hook
+  useKeyboardNav({
+    onNext: goToNext,
+    onPrev: goToPrevious,
+    onEscape: () => {
+      if (isDrawerOpen) setIsDrawerOpen(false);
+      else handleClose();
+    },
+    disabled: !item
+  });
+
+  // Lock Body Scroll
   useEffect(() => {
-    if (!item) return; // Don't setup listeners if item is missing
-
     setIsVisible(true);
-    // Lock body scroll
     document.body.style.overflow = 'hidden';
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
-
-      if (e.key === 'ArrowDown') {
-        goToNext();
-      } else if (e.key === 'ArrowUp') {
-        goToPrevious();
-      } else if (e.key === 'Escape') {
-        if (isDrawerOpen) setIsDrawerOpen(false);
-        else handleClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      // Restore body scroll
       document.body.style.overflow = '';
     };
-  }, [goToNext, goToPrevious, handleClose, isDrawerOpen, item]);
+  }, []);
 
   // Vertical Swipe Logic
   const handleTouchStart = (e: React.TouchEvent) => {

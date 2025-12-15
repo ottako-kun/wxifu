@@ -1,6 +1,8 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, getFollowedMedia } from '../lib/supabaseClient';
-import { fallbackPhotoMedia, fallbackVideoMedia, processMediaItem } from '../gallery-data';
+import { fallbackPhotoMedia, fallbackVideoMedia } from '../gallery-data';
+import { processMediaItem } from '../lib/utils';
 import { MediaItem, MediaType } from '../types';
 import { Session } from '@supabase/supabase-js';
 
@@ -25,7 +27,6 @@ export const useMediaLibrary = (session: Session | null) => {
         fetchedData = joinData;
       } else {
         // Attempt 2: Fallback Manual Fetch (Only runs if join fails, e.g., missing relation)
-        // We log quietly to not spam console if Supabase isn't set up yet
         if (joinError?.code !== 'PGRST116') { 
              // console.warn("Database join failed, falling back to manual fetch...", joinError?.message);
         }
