@@ -14,13 +14,14 @@ Ottako-X has evolved from a simple gallery into a fully-featured **Social Media 
 *   **Video Support**: Native playback for AMVs and clips.
 *   **Smart Filtering**: Filter by tags, categories, or search authors.
 
-### 📁 **Google Drive Integration**
-To add content from Google Drive to `gallery-data.ts`:
-1.  Upload your file to Google Drive.
-2.  Right-click the file > **Share** > **Share**.
-3.  Under "General Access", change "Restricted" to **"Anyone with the link"**.
-4.  Click **Copy Link**.
-5.  Paste this link into the `link` property in `gallery-data.ts`.
+### 📁 **Google Drive Integration (via Supabase)**
+The platform supports Google Drive links for both images and videos. 
+1.  **Sign In** to the app.
+2.  Click the **Upload Button** (Plus icon).
+3.  Paste a **Google Drive Link** (ensure it is shared as "Anyone with the link").
+    *   *Images*: Converted to high-performance CDN links.
+    *   *Videos*: Embedded via Google Drive preview player.
+4.  The content is stored in the Supabase database and served dynamically.
 
 ### 👥 **Social & Community**
 *   **User Profiles**: Customizable profiles with avatars, bios, and stat counters.
