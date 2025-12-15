@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MediaItem, MediaType } from '../types';
 import { reportMediaItem } from '../lib/supabaseClient';
 import CloseIcon from './icons/CloseIcon';
@@ -14,6 +13,7 @@ import { useWallet } from '../context/WalletContext';
 import { useMediaLikes } from '../hooks/useMediaLikes';
 import { useFollow } from '../hooks/useFollow';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
+import { useSwipe } from '../hooks/useSwipe';
 import HeartIcon from './icons/HeartIcon';
 import ChatIcon from './icons/ChatIcon';
 import ShareIcon from './icons/ShareIcon';
@@ -44,7 +44,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   const item = items[currentIndex];
 
   // Create a safe fallback item to prevent hooks from crashing if 'item' is undefined
-  // This can happen if the items list changes or index is out of bounds
   const safeItem: MediaItem = item || {
       id: 'fallback',
       type: MediaType.Photo,
@@ -60,7 +59,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
 
   const isOwner = session?.user.id === safeItem.user_id;
   
-  // Hooks must be called unconditionally
+  // Hooks
   const toast = useToast();
   const relatedItems = useRelatedMedia(safeItem, items);
   const { unlockContent, isUnlocked: checkIsUnlocked, isLoading: isWalletLoading } = useWallet();
@@ -69,11 +68,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   
   // Premium Logic
   const isUnlocked = isOwner || !safeItem.is_premium || checkIsUnlocked(safeItem.id);
-
-  // Swipe logic vars (Vertical)
-  const touchStartY = useRef<number | null>(null);
-  const touchEndY = useRef<number | null>(null);
-  const minSwipeDistance = 50;
 
   // Close if item is missing (e.g. data refresh filtered it out)
   useEffect(() => {
@@ -100,6 +94,16 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     setIsVisible(false);
     setTimeout(onClose, 300);
   }, [onClose]);
+  
+  // Swipe Logic abstracted via Hook
+  const { onTouchStart, onTouchMove, onTouchEnd } = useSwipe({
+    onSwipeUp: () => {
+        if (currentIndex < items.length - 1) goToNext();
+    },
+    onSwipeDown: () => {
+        if (currentIndex > 0) goToPrevious();
+    }
+  });
   
   const handleShareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -173,30 +177,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     };
   }, []);
 
-  // Vertical Swipe Logic
-  const handleTouchStart = (e: React.TouchEvent) => {
-      touchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-      touchEndY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchEnd = () => {
-      if (!touchStartY.current || !touchEndY.current) return;
-      const distance = touchStartY.current - touchEndY.current;
-      const isSwipeUp = distance > minSwipeDistance;
-      const isSwipeDown = distance < -minSwipeDistance;
-
-      if (isSwipeUp && currentIndex < items.length - 1) {
-          goToNext();
-      } else if (isSwipeDown && currentIndex > 0) {
-          goToPrevious();
-      }
-      touchStartY.current = null;
-      touchEndY.current = null;
-  };
-
   const handleLikeClick = (e: React.MouseEvent) => {
       e.stopPropagation();
       toggleLike();
@@ -232,9 +212,9 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                 item={item}
                 isUnlocked={isUnlocked}
                 onUnlockClick={handleUnlockClick}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
                 isUnlocking={isWalletLoading}
             />
 

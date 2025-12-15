@@ -1,16 +1,12 @@
-
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Session } from '@supabase/supabase-js';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
-import ProfileView, { UserProfileData } from './components/ProfileView';
+import ProfileView from './components/ProfileView';
 import InboxView from './components/InboxView';
-import { supabase } from './lib/supabaseClient';
 import Footer from './components/Footer';
 import BottomNav from './components/BottomNav';
 import AgeVerificationModal from './components/AgeVerificationModal';
 import GlobalModalLayer from './components/GlobalModalLayer';
 import { MediaType } from './types';
-import { useMediaLibrary } from './hooks/useMediaLibrary';
 import { useMediaUpload } from './hooks/useMediaUpload';
 import HomeView from './components/HomeView';
 
@@ -29,23 +25,32 @@ import { WalletProvider, useWallet } from './context/WalletContext';
 // UI State System
 import { UIProvider, useUI } from './context/UIContext';
 
-type ViewState = 'home' | 'profile' | 'inbox';
+// App Logic Hooks
+import { useAppNavigation } from './hooks/useAppNavigation';
 
 // Inner component to use hooks that require Context
 const AppContent: React.FC = () => {
-  // Navigation State
-  const [currentView, setCurrentView] = useState<ViewState>('home');
-  const [activeProfile, setActiveProfile] = useState<UserProfileData | null>(null);
-  const [activeTab, setActiveTab] = useState<'photos' | 'videos' | 'following'>('photos');
-
-  // Auth State
-  const [session, setSession] = useState<Session | null>(null);
-
-  // Data State (via Custom Hook)
-  const { photoMedia, videoMedia, followedMedia, isLoading, refresh } = useMediaLibrary(session);
+  // Use Navigation Logic Hook
+  const {
+      currentView,
+      setCurrentView,
+      activeProfile,
+      activeTab,
+      setActiveTab,
+      session,
+      searchInputRef,
+      handleNavigate,
+      handleUserClick,
+      handleSearchClick,
+      photoMedia,
+      videoMedia,
+      followedMedia,
+      isLoading,
+      refresh
+  } = useAppNavigation();
 
   // UI Context Access
-  const { closeChat, openDailyReward } = useUI();
+  const { openDailyReward } = useUI();
   const { checkIfRewardAvailable } = useWallet();
 
   // Upload State (via Custom Hook) - Kept here to trigger 'refresh'
@@ -62,12 +67,6 @@ const AppContent: React.FC = () => {
   
   // Age Verification State
   const [isAgeVerified, setIsAgeVerified] = useState(false);
-
-  // Search Focus Ref for Bottom Nav integration
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  
-  // Toast Hook
-  const toast = useToast();
   
   // Initialize Global Notifications
   useNotifications(session);
@@ -84,28 +83,6 @@ const AppContent: React.FC = () => {
       localStorage.setItem('age-verified', 'true');
       setIsAgeVerified(true);
   };
-
-  // Handle Auth Session
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      // If user logs out while on protected views
-      if (!session) {
-          if (currentView === 'inbox' || (currentView === 'profile' && activeProfile?.id === session?.user.id)) {
-              setCurrentView('home');
-          }
-          closeChat();
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [currentView, activeProfile, closeChat]);
 
   // Check Daily Reward on Session Load
   useEffect(() => {
@@ -132,51 +109,7 @@ const AppContent: React.FC = () => {
             setActiveTab('photos');
         }
       }
-  }, [handleUploadSubmit]);
-
-  const handleNavigate = useCallback((view: 'home' | 'profile' | 'inbox') => {
-      if (view === 'profile' && session) {
-          // Navigating to "My Profile"
-          setActiveProfile({
-              id: session.user.id,
-              name: session.user.user_metadata.full_name || session.user.email?.split('@')[0],
-              avatar: session.user.user_metadata.avatar_url,
-              bio: session.user.user_metadata.bio
-          });
-      } else if (view === 'profile' && !session) {
-          toast.error("Please sign in to view your profile.");
-          return;
-      } else if (view === 'inbox' && !session) {
-          toast.error("Please sign in to view messages.");
-          return;
-      }
-      
-      setCurrentView(view);
-      window.scrollTo(0,0);
-  }, [session, toast]);
-  
-  const handleSearchClick = useCallback(() => {
-      if (currentView !== 'home') {
-          handleNavigate('home');
-          // Add a small timeout to allow view transition before focusing
-          setTimeout(() => {
-              searchInputRef.current?.focus();
-          }, 100);
-      } else {
-          searchInputRef.current?.focus();
-      }
-  }, [currentView, handleNavigate]);
-
-  const handleUserClick = useCallback((user: { id: string; name: string; avatar: string }) => {
-      setActiveProfile({
-          id: user.id,
-          name: user.name,
-          avatar: user.avatar,
-          bio: session?.user.id === user.id ? session.user.user_metadata.bio : undefined 
-      });
-      setCurrentView('profile');
-      window.scrollTo(0, 0);
-  }, [session]);
+  }, [handleUploadSubmit, setActiveTab]);
 
   // Media for Profile (Combine both photo and video)
   const profileMedia = React.useMemo(() => {

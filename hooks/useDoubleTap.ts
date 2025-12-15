@@ -1,5 +1,4 @@
-
-import { useRef, useCallback } from 'react';
+import React, { useRef, useCallback } from 'react';
 
 export const useDoubleTap = (callback: () => void, delay = 300) => {
   const lastTapRef = useRef<number>(0);
