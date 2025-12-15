@@ -39,23 +39,47 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   const [isReporting, setIsReporting] = useState(false);
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
 
+  // Retrieve current item safely
   const item = items[currentIndex];
-  const isOwner = session?.user.id === item.user_id;
+
+  // Create a safe fallback item to prevent hooks from crashing if 'item' is undefined
+  // This can happen if the items list changes or index is out of bounds
+  const safeItem: MediaItem = item || {
+      id: 'fallback',
+      type: MediaType.Photo,
+      src: '',
+      user_id: '',
+      author: '',
+      description: '',
+      category: '',
+      tags: [],
+      is_premium: false,
+      price: 0
+  };
+
+  const isOwner = session?.user.id === safeItem.user_id;
   
-  // Hooks
+  // Hooks must be called unconditionally
   const toast = useToast();
-  const relatedItems = useRelatedMedia(item, items);
+  const relatedItems = useRelatedMedia(safeItem, items);
   const { unlockContent, isUnlocked: checkIsUnlocked, isLoading: isWalletLoading } = useWallet();
-  const { isLiked, likeCount, toggleLike } = useMediaLikes(item.id, session?.user.id, item.id.startsWith('static'));
-  const { isFollowing, toggleFollow } = useFollow(session?.user.id, item.user_id || '');
+  const { isLiked, likeCount, toggleLike } = useMediaLikes(safeItem.id, session?.user.id, (safeItem.id || '').startsWith('static'));
+  const { isFollowing, toggleFollow } = useFollow(session?.user.id, safeItem.user_id || '');
   
   // Premium Logic
-  const isUnlocked = isOwner || !item.is_premium || checkIsUnlocked(item.id);
+  const isUnlocked = isOwner || !safeItem.is_premium || checkIsUnlocked(safeItem.id);
 
   // Swipe logic vars (Vertical)
   const touchStartY = useRef<number | null>(null);
   const touchEndY = useRef<number | null>(null);
   const minSwipeDistance = 50;
+
+  // Close if item is missing (e.g. data refresh filtered it out)
+  useEffect(() => {
+      if (!item) {
+          onClose();
+      }
+  }, [item, onClose]);
 
   const goToPrevious = useCallback(() => {
     setCurrentIndex(prevIndex => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
@@ -86,13 +110,13 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   };
   
   const handleAuthorClick = () => {
-      if (item.author && item.user_id && onUserClick) {
+      if (safeItem.author && safeItem.user_id && onUserClick) {
           handleClose();
           setTimeout(() => {
              onUserClick({
-                 id: item.user_id!,
-                 name: item.author!,
-                 avatar: item.author_avatar || ''
+                 id: safeItem.user_id!,
+                 name: safeItem.author!,
+                 avatar: safeItem.author_avatar || ''
              });
           }, 300);
       }
@@ -103,7 +127,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
           toast.error("Please login to unlock content");
           return;
       }
-      await unlockContent(item.id, item.price || 0, item.user_id);
+      await unlockContent(safeItem.id, safeItem.price || 0, safeItem.user_id);
   };
 
   // --- REPORTING ---
@@ -114,7 +138,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       }
       setIsReporting(true);
       const { error } = await reportMediaItem({
-          media_id: item.id,
+          media_id: safeItem.id,
           reporter_id: session.user.id,
           reason,
           details
@@ -130,6 +154,8 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
 
   // Keyboard Navigation & Scroll Lock
   useEffect(() => {
+    if (!item) return; // Don't setup listeners if item is missing
+
     setIsVisible(true);
     // Lock body scroll
     document.body.style.overflow = 'hidden';
@@ -153,7 +179,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       // Restore body scroll
       document.body.style.overflow = '';
     };
-  }, [goToNext, goToPrevious, handleClose, isDrawerOpen]);
+  }, [goToNext, goToPrevious, handleClose, isDrawerOpen, item]);
 
   // Vertical Swipe Logic
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -188,6 +214,9 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       e.stopPropagation();
       setIsDrawerOpen(!isDrawerOpen);
   };
+
+  // If item is really missing, don't render content (useEffect will close it)
+  if (!item) return null;
 
   return (
     <div 
