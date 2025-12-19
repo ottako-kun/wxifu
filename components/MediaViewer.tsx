@@ -9,10 +9,6 @@ interface MediaViewerProps {
   item: MediaItem;
   isUnlocked: boolean;
   onUnlockClick: () => void;
-  // Pass throughs for zoomable image touch events if needed
-  onTouchStart?: (e: React.TouchEvent) => void;
-  onTouchMove?: (e: React.TouchEvent) => void;
-  onTouchEnd?: () => void;
   isUnlocking?: boolean;
 }
 
@@ -20,9 +16,6 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
     item, 
     isUnlocked, 
     onUnlockClick,
-    onTouchStart,
-    onTouchMove,
-    onTouchEnd,
     isUnlocking = false
 }) => {
   const isPhoto = item.type === MediaType.Photo;
@@ -33,29 +26,29 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
   };
 
   return (
-    <div 
-        className="w-full h-full animate-fade-in flex items-center justify-center p-0 md:p-4 relative"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-    >
+    <div className="w-full h-full animate-fade-in flex items-center justify-center relative bg-black">
         {/* Locked Content Overlay */}
         {!isUnlocked && (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-                <div className="bg-gray-900 border border-yellow-500/50 rounded-2xl p-8 text-center shadow-[0_0_30px_rgba(234,179,8,0.2)] max-w-sm mx-4">
-                    <div className="w-16 h-16 bg-black/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-yellow-500/50">
-                        <LockIcon className="w-8 h-8 text-yellow-500" />
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-xl pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+                <div className="bg-gray-900/80 border border-yellow-500/40 rounded-3xl p-8 text-center shadow-[0_0_50px_rgba(234,179,8,0.2)] max-w-sm mx-4 backdrop-blur-md">
+                    <div className="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-yellow-500/30">
+                        <LockIcon className="w-10 h-10 text-yellow-500" />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2 uppercase tracking-wider font-orbitron">Premium Content</h3>
-                    <p className="text-gray-400 text-sm mb-6">
-                        Unlock this exclusive post from <span className="text-pink-400 font-bold">{item.author}</span>.
+                    <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-widest font-orbitron">Premium</h3>
+                    <p className="text-gray-400 text-sm mb-8 leading-relaxed">
+                        This creation is part of <span className="text-pink-400 font-bold">{item.author}</span>'s exclusive collection.
                     </p>
                     <button 
                         onClick={onUnlockClick}
                         disabled={isUnlocking}
-                        className="w-full py-3 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-black font-black uppercase tracking-wider rounded-lg shadow-lg transform transition-transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-2"
+                        className="w-full py-4 bg-gradient-to-r from-yellow-600 to-yellow-400 hover:from-yellow-500 hover:to-yellow-300 text-black font-black uppercase tracking-widest rounded-xl shadow-xl transform transition-all active:scale-95 disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-3"
                     >
-                        {isUnlocking ? <LoadingSpinner className="w-5 h-5 text-black" /> : `Unlock for ${item.price || 5} Coins`}
+                        {isUnlocking ? <LoadingSpinner className="w-6 h-6 text-black" /> : (
+                            <>
+                                <span className="text-lg">{item.price || 5}</span>
+                                <span>Coins to Unlock</span>
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
@@ -68,7 +61,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                 isUnlocked={isUnlocked} 
             />
         ) : (
-            <div className="w-full h-full relative flex items-center justify-center bg-black rounded-lg overflow-hidden shadow-2xl border border-gray-800">
+            <div className="w-full h-full relative flex items-center justify-center bg-black">
                 {isUnlocked ? (
                     isDirectVideo(item.videoSrc) ? (
                     <video 
@@ -78,22 +71,28 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                         loop
                         muted
                         playsInline
-                        className="max-w-full max-h-full outline-none"
+                        className="max-w-full max-h-full w-auto h-auto outline-none shadow-2xl"
                     />
                     ) : (
-                    <iframe 
-                        src={item.videoSrc}
-                        allow="autoplay; encrypted-media; picture-in-picture"
-                        allowFullScreen
-                        className="absolute inset-0 w-full h-full border-0"
-                    />
+                    <div className="w-full h-full relative">
+                        <iframe 
+                            src={item.videoSrc}
+                            allow="autoplay; encrypted-media; picture-in-picture"
+                            allowFullScreen
+                            className="absolute inset-0 w-full h-full border-0"
+                            title={item.description || 'Video content'}
+                        />
+                    </div>
                     )
                 ) : (
-                    <img 
-                        src={item.src} 
-                        className="w-full h-full object-cover blur-xl opacity-30" 
-                        alt="Locked Video Preview"
-                    />
+                    <div className="relative w-full h-full">
+                        <img 
+                            src={item.src} 
+                            className="w-full h-full object-cover blur-3xl opacity-20" 
+                            alt="Locked Preview"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-60"></div>
+                    </div>
                 )}
             </div>
         )}
