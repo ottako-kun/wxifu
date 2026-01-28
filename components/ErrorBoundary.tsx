@@ -1,8 +1,9 @@
 
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 
+// Added optional children to fix "Property 'children' is missing" error in index.tsx
 interface Props {
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 interface State {
@@ -10,14 +11,16 @@ interface State {
   error: Error | null;
 }
 
-// Use React.Component explicitly to ensure props and state are correctly inherited and typed
-class ErrorBoundary extends React.Component<Props, State> {
+// Inheriting from Component directly and declaring state as a property to fix "Property 'state' does not exist" errors
+class ErrorBoundary extends Component<Props, State> {
+  // Explicitly define state property to help TypeScript resolve it correctly
+  public state: State = {
+    hasError: false,
+    error: null
+  };
+
   constructor(props: Props) {
     super(props);
-    this.state = {
-      hasError: false,
-      error: null
-    };
   }
 
   public static getDerivedStateFromError(error: Error): State {
@@ -72,7 +75,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    // Directly return children from props to avoid destructing errors if props are not inferred correctly
+    // Return children from props. Optional children in interface fixes error in usage file.
     return this.props.children;
   }
 }

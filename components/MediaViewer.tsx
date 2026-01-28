@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { MediaItem, MediaType } from '../types';
 import ZoomableImage from './ZoomableImage';
 import LockIcon from './icons/LockIcon';
@@ -10,15 +10,18 @@ interface MediaViewerProps {
   isUnlocked: boolean;
   onUnlockClick: () => void;
   isUnlocking?: boolean;
+  onMediaEnded?: () => void;
 }
 
 const MediaViewer: React.FC<MediaViewerProps> = ({ 
     item, 
     isUnlocked, 
     onUnlockClick,
-    isUnlocking = false
+    isUnlocking = false,
+    onMediaEnded
 }) => {
   const isPhoto = item.type === MediaType.Photo;
+  const [videoError, setVideoError] = useState(false);
 
   const isDirectVideo = (url?: string) => {
     if (!url) return false;
@@ -64,26 +67,40 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
         ) : (
             <div className="w-full h-full relative flex items-center justify-center bg-black">
                 {isUnlocked ? (
-                    isDirectVideo(item.videoSrc) ? (
-                    <video 
-                        src={item.videoSrc}
-                        controls
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        className="max-w-full max-h-full w-auto h-auto outline-none shadow-2xl"
-                    />
+                    videoError ? (
+                        <div className="flex flex-col items-center text-center p-8">
+                            <p className="text-gray-400 mb-4">Preview unavailable for this link.</p>
+                            <a 
+                                href={item.videoSrc} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="px-6 py-2 bg-pink-600 text-white font-bold rounded-lg"
+                            >
+                                View Externally
+                            </a>
+                        </div>
                     ) : (
-                    <div className="w-full h-full relative overflow-hidden">
-                        <iframe 
-                            src={item.videoSrc}
-                            allow="autoplay; encrypted-media; picture-in-picture"
-                            allowFullScreen
-                            className="absolute inset-0 w-full h-full border-0 scale-100 md:scale-105"
-                            title={item.description || 'Video content'}
-                        />
-                    </div>
+                        isDirectVideo(item.videoSrc) ? (
+                            <video 
+                                src={item.videoSrc}
+                                controls
+                                autoPlay
+                                onEnded={onMediaEnded}
+                                className="max-w-full max-h-full w-auto h-auto outline-none shadow-2xl"
+                                onError={() => setVideoError(true)}
+                            />
+                        ) : (
+                            <div className="w-full h-full relative overflow-hidden">
+                                <iframe 
+                                    src={item.videoSrc}
+                                    allow="autoplay; encrypted-media; picture-in-picture"
+                                    allowFullScreen
+                                    className="absolute inset-0 w-full h-full border-0 scale-100 md:scale-105"
+                                    title={item.description || 'Video content'}
+                                    onError={() => setVideoError(true)}
+                                />
+                            </div>
+                        )
                     )
                 ) : (
                     <div className="relative w-full h-full">

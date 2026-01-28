@@ -17,6 +17,7 @@ import { useMediaLikes } from '../hooks/useMediaLikes';
 import { useFollow } from '../hooks/useFollow';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import { useSwipe } from '../hooks/useSwipe';
+import { useDoubleTap } from '../hooks/useDoubleTap';
 import HeartIcon from './icons/HeartIcon';
 import ChatIcon from './icons/ChatIcon';
 import ShareIcon from './icons/ShareIcon';
@@ -36,11 +37,11 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isVisible, setIsVisible] = useState(false);
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   
   // Immersive States
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isAutoplay, setIsAutoplay] = useState(false);
-  // FIX: Use ReturnType<typeof setTimeout> instead of NodeJS.Timeout to avoid namespace errors
   const autoplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Drawer / UI State
@@ -92,15 +93,26 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
         setCurrentIndex(prev => prev + 1);
         setIsDrawerOpen(false);
     } else {
-        setIsAutoplay(false); // Stop autoplay at end
+        setIsAutoplay(false);
     }
   }, [currentIndex, items.length]);
 
-  // Autoplay Effect
+  const handleLikeAction = useCallback(async () => {
+    setShowHeartAnimation(true);
+    setTimeout(() => setShowHeartAnimation(false), 1000);
+    await toggleLike();
+  }, [toggleLike]);
+
+  const handleMediaEnded = useCallback(() => {
+    if (isAutoplay) {
+        goToNext();
+    }
+  }, [isAutoplay, goToNext]);
+
+  // Autoplay Effect (Photos only, Videos wait for handleMediaEnded)
   useEffect(() => {
-    if (isAutoplay && isVisible && isUnlocked) {
-        const duration = item?.type === MediaType.Video ? 15000 : 5000;
-        autoplayTimerRef.current = setTimeout(goToNext, duration);
+    if (isAutoplay && isVisible && isUnlocked && item?.type === MediaType.Photo) {
+        autoplayTimerRef.current = setTimeout(goToNext, 6000);
     }
     return () => {
         if (autoplayTimerRef.current) clearTimeout(autoplayTimerRef.current);
@@ -118,6 +130,8 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     onSwipeLeft: goToNext,
     onSwipeRight: goToPrevious
   });
+
+  const handleDoubleTap = useDoubleTap(handleLikeAction);
   
   const handleShareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -141,7 +155,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       }
   };
 
-  // FIX: Added missing handleRelatedClick function to switch between items in the modal
   const handleRelatedClick = useCallback((id: string) => {
     const index = items.findIndex(i => i.id === id);
     if (index !== -1) {
@@ -158,6 +171,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       await unlockContent(safeItem.id, safeItem.price || 0, safeItem.user_id);
   };
 
+  // Enhanced Keyboard Nav
   useKeyboardNav({
     onNext: goToNext,
     onPrev: goToPrevious,
@@ -167,6 +181,17 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     },
     disabled: !item
   });
+
+  // Hotkeys for modal
+  useEffect(() => {
+      const handleHotkeys = (e: KeyboardEvent) => {
+        if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+        if (e.key.toLowerCase() === 'l') handleLikeAction();
+        if (e.key.toLowerCase() === 'f') setIsFocusMode(prev => !prev);
+      };
+      window.addEventListener('keydown', handleHotkeys);
+      return () => window.removeEventListener('keydown', handleHotkeys);
+  }, [handleLikeAction]);
 
   useEffect(() => {
     setIsVisible(true);
@@ -178,7 +203,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
 
   const handleLikeClick = (e: React.MouseEvent) => {
       e.stopPropagation();
-      toggleLike();
+      handleLikeAction();
   };
 
   const toggleDrawer = (e: React.MouseEvent) => {
@@ -194,19 +219,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       role="dialog"
       aria-modal="true"
     >
-        {/* Autoplay Progress Bar */}
-        {isAutoplay && isUnlocked && (
-            <div className="absolute top-0 left-0 right-0 h-1 z-[100] bg-white/10 overflow-hidden">
-                <div 
-                    className="h-full bg-pink-500 transition-all ease-linear"
-                    style={{ 
-                        width: '100%', 
-                        animation: `progress-width ${item.type === MediaType.Video ? '15s' : '5s'} linear forwards`
-                    }}
-                />
-            </div>
-        )}
-
         {/* Top Header Bar */}
         <div className={`absolute top-0 inset-x-0 z-[90] flex items-center justify-between p-4 pointer-events-none transition-all duration-500 ${isFocusMode ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
             <div className="flex items-center gap-2 pointer-events-auto">
@@ -214,7 +226,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                     <span className="text-white/60 text-xs font-bold uppercase tracking-widest">{currentIndex + 1} / {items.length}</span>
                 </div>
                 
-                {/* Autoplay Toggle */}
                 <button 
                     onClick={() => setIsAutoplay(!isAutoplay)}
                     className={`flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full px-4 py-1.5 border transition-all ${isAutoplay ? 'border-pink-500 text-pink-400' : 'border-white/10 text-white/60'}`}
@@ -230,18 +241,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                 <CloseIcon className="w-6 h-6"/>
             </button>
         </div>
-
-        {/* Floating Focus Toggle (Always visible but subtle) */}
-        <button 
-            onClick={() => setIsFocusMode(!isFocusMode)}
-            className={`fixed top-1/2 -translate-y-1/2 right-4 z-[95] p-3 rounded-full bg-black/20 backdrop-blur-md border border-white/10 transition-all hover:bg-white/10 ${isFocusMode ? 'opacity-30 hover:opacity-100' : 'opacity-100'}`}
-            title={isFocusMode ? 'Exit Focus Mode' : 'Enter Focus Mode'}
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 ${isFocusMode ? 'text-pink-500' : 'text-white'}`}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-        </button>
 
         {/* Desktop Navigation Arrows */}
         <div className={`hidden md:flex absolute inset-y-0 left-0 w-24 items-center justify-center z-[85] pointer-events-none transition-opacity duration-500 ${isFocusMode ? 'opacity-0' : 'opacity-100'}`}>
@@ -271,13 +270,22 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
+            onClick={handleDoubleTap}
         >
             <MediaViewer 
                 item={item}
                 isUnlocked={isUnlocked}
                 onUnlockClick={handleUnlockClick}
                 isUnlocking={isWalletLoading}
+                onMediaEnded={handleMediaEnded}
             />
+
+            {/* Heart Animation Overlay */}
+            {showHeartAnimation && (
+                <div className="absolute inset-0 flex items-center justify-center z-[100] pointer-events-none animate-bounce-in">
+                    <HeartIcon filled className="w-32 h-32 text-white drop-shadow-2xl opacity-90" />
+                </div>
+            )}
 
             {/* OVERLAY: Bottom Actions */}
             <div className={`absolute inset-0 pointer-events-none flex flex-col justify-end pb-safe transition-all duration-500 ${isDrawerOpen || isFocusMode ? 'opacity-0 translate-y-8' : 'opacity-100 translate-y-0'}`}>
@@ -423,13 +431,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                 onClose={() => setIsTipModalOpen(false)}
             />
         )}
-
-        <style>{`
-            @keyframes progress-width {
-                from { width: 0%; }
-                to { width: 100%; }
-            }
-        `}</style>
     </div>
   );
 };
