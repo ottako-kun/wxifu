@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MediaItem, MediaType } from '../types';
 import { reportMediaItem } from '../lib/supabaseClient';
 import CloseIcon from './icons/CloseIcon';
@@ -37,6 +37,12 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   const [isVisible, setIsVisible] = useState(false);
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   
+  // Immersive States
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [isAutoplay, setIsAutoplay] = useState(false);
+  // FIX: Use ReturnType<typeof setTimeout> instead of NodeJS.Timeout to avoid namespace errors
+  const autoplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Drawer / UI State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -85,14 +91,21 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     if (currentIndex < items.length - 1) {
         setCurrentIndex(prev => prev + 1);
         setIsDrawerOpen(false);
+    } else {
+        setIsAutoplay(false); // Stop autoplay at end
     }
   }, [currentIndex, items.length]);
 
-  const handleRelatedClick = (relatedId: string) => {
-      const index = items.findIndex(i => i.id === relatedId);
-      if (index !== -1) setCurrentIndex(index);
-      setIsDrawerOpen(false);
-  };
+  // Autoplay Effect
+  useEffect(() => {
+    if (isAutoplay && isVisible && isUnlocked) {
+        const duration = item?.type === MediaType.Video ? 15000 : 5000;
+        autoplayTimerRef.current = setTimeout(goToNext, duration);
+    }
+    return () => {
+        if (autoplayTimerRef.current) clearTimeout(autoplayTimerRef.current);
+    };
+  }, [isAutoplay, currentIndex, isVisible, isUnlocked, item?.type, goToNext]);
 
   const handleClose = useCallback(() => {
     setIsVisible(false);
@@ -128,33 +141,21 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       }
   };
 
+  // FIX: Added missing handleRelatedClick function to switch between items in the modal
+  const handleRelatedClick = useCallback((id: string) => {
+    const index = items.findIndex(i => i.id === id);
+    if (index !== -1) {
+      setCurrentIndex(index);
+      setIsDrawerOpen(false);
+    }
+  }, [items]);
+
   const handleUnlockClick = async () => {
       if (!session) {
           toast.error("Please login to unlock content");
           return;
       }
       await unlockContent(safeItem.id, safeItem.price || 0, safeItem.user_id);
-  };
-
-  const handleReportSubmit = async (reason: string, details: string) => {
-      if (!session) {
-          toast.error("You must be logged in to report.");
-          return;
-      }
-      setIsReporting(true);
-      const { error } = await reportMediaItem({
-          media_id: safeItem.id,
-          reporter_id: session.user.id,
-          reason,
-          details
-      });
-      setIsReporting(false);
-      setIsReportModalOpen(false);
-      if (error) {
-          toast.error("Failed to submit report.");
-      } else {
-          toast.success("Report submitted.");
-      }
   };
 
   useKeyboardNav({
@@ -193,10 +194,33 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       role="dialog"
       aria-modal="true"
     >
+        {/* Autoplay Progress Bar */}
+        {isAutoplay && isUnlocked && (
+            <div className="absolute top-0 left-0 right-0 h-1 z-[100] bg-white/10 overflow-hidden">
+                <div 
+                    className="h-full bg-pink-500 transition-all ease-linear"
+                    style={{ 
+                        width: '100%', 
+                        animation: `progress-width ${item.type === MediaType.Video ? '15s' : '5s'} linear forwards`
+                    }}
+                />
+            </div>
+        )}
+
         {/* Top Header Bar */}
-        <div className="absolute top-0 inset-x-0 z-[90] flex items-center justify-between p-4 pointer-events-none">
-            <div className="flex items-center gap-3 pointer-events-auto bg-black/40 backdrop-blur-md rounded-full px-4 py-1.5 border border-white/10">
-                <span className="text-white/60 text-xs font-bold uppercase tracking-widest">{currentIndex + 1} / {items.length}</span>
+        <div className={`absolute top-0 inset-x-0 z-[90] flex items-center justify-between p-4 pointer-events-none transition-all duration-500 ${isFocusMode ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
+            <div className="flex items-center gap-2 pointer-events-auto">
+                <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md rounded-full px-4 py-1.5 border border-white/10">
+                    <span className="text-white/60 text-xs font-bold uppercase tracking-widest">{currentIndex + 1} / {items.length}</span>
+                </div>
+                
+                {/* Autoplay Toggle */}
+                <button 
+                    onClick={() => setIsAutoplay(!isAutoplay)}
+                    className={`flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full px-4 py-1.5 border transition-all ${isAutoplay ? 'border-pink-500 text-pink-400' : 'border-white/10 text-white/60'}`}
+                >
+                    <span className="text-[10px] font-black uppercase tracking-tighter">{isAutoplay ? 'Autoplay On' : 'Autoplay Off'}</span>
+                </button>
             </div>
             
             <button 
@@ -207,8 +231,20 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
             </button>
         </div>
 
+        {/* Floating Focus Toggle (Always visible but subtle) */}
+        <button 
+            onClick={() => setIsFocusMode(!isFocusMode)}
+            className={`fixed top-1/2 -translate-y-1/2 right-4 z-[95] p-3 rounded-full bg-black/20 backdrop-blur-md border border-white/10 transition-all hover:bg-white/10 ${isFocusMode ? 'opacity-30 hover:opacity-100' : 'opacity-100'}`}
+            title={isFocusMode ? 'Exit Focus Mode' : 'Enter Focus Mode'}
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 ${isFocusMode ? 'text-pink-500' : 'text-white'}`}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        </button>
+
         {/* Desktop Navigation Arrows */}
-        <div className="hidden md:flex absolute inset-y-0 left-0 w-24 items-center justify-center z-[85] pointer-events-none">
+        <div className={`hidden md:flex absolute inset-y-0 left-0 w-24 items-center justify-center z-[85] pointer-events-none transition-opacity duration-500 ${isFocusMode ? 'opacity-0' : 'opacity-100'}`}>
             {currentIndex > 0 && (
                 <button 
                     onClick={(e) => { e.stopPropagation(); goToPrevious(); }}
@@ -218,7 +254,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                 </button>
             )}
         </div>
-        <div className="hidden md:flex absolute inset-y-0 right-0 w-24 items-center justify-center z-[85] pointer-events-none">
+        <div className={`hidden md:flex absolute inset-y-0 right-0 w-24 items-center justify-center z-[85] pointer-events-none transition-opacity duration-500 ${isFocusMode ? 'opacity-0' : 'opacity-100'}`}>
             {currentIndex < items.length - 1 && (
                 <button 
                     onClick={(e) => { e.stopPropagation(); goToNext(); }}
@@ -244,7 +280,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
             />
 
             {/* OVERLAY: Bottom Actions */}
-            <div className={`absolute inset-0 pointer-events-none flex flex-col justify-end pb-safe transition-opacity duration-300 ${isDrawerOpen ? 'opacity-0' : 'opacity-100'}`}>
+            <div className={`absolute inset-0 pointer-events-none flex flex-col justify-end pb-safe transition-all duration-500 ${isDrawerOpen || isFocusMode ? 'opacity-0 translate-y-8' : 'opacity-100 translate-y-0'}`}>
                 <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
                 
                 <div className="relative z-10 flex items-end justify-between px-4 pb-8 md:px-12 md:pb-12">
@@ -274,17 +310,9 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                             </div>
                         </div>
 
-                        <p className="text-white/90 text-sm md:text-lg mb-3 drop-shadow-lg leading-relaxed max-w-lg">
+                        <p className="text-white/90 text-sm md:text-lg mb-3 drop-shadow-lg leading-relaxed max-w-lg line-clamp-2">
                             {item.description}
                         </p>
-                        
-                        {item.tags && (
-                            <div className="flex flex-wrap gap-3">
-                                {item.tags.slice(0, 4).map(tag => (
-                                    <span key={tag} className="text-xs font-bold text-white/60 bg-white/5 px-2 py-1 rounded border border-white/5">#{tag}</span>
-                                ))}
-                            </div>
-                        )}
                     </div>
 
                     <div className="flex flex-col gap-5 pointer-events-auto items-center">
@@ -305,7 +333,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                             >
                                 <ChatIcon className="w-7 h-7 md:w-8 md:h-8" />
                             </button>
-                            <span className="text-xs font-black text-white drop-shadow-lg">Info</span>
                         </div>
 
                         {!isOwner && session && (
@@ -378,7 +405,13 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
         {isReportModalOpen && (
             <ReportModal 
                 onClose={() => setIsReportModalOpen(false)}
-                onSubmit={handleReportSubmit}
+                onSubmit={async (reason, details) => {
+                    if (!session) return;
+                    setIsReporting(true);
+                    await reportMediaItem({ media_id: safeItem.id, reporter_id: session.user.id, reason, details });
+                    setIsReporting(false);
+                    setIsReportModalOpen(false);
+                }}
                 isSubmitting={isReporting}
             />
         )}
@@ -390,6 +423,13 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                 onClose={() => setIsTipModalOpen(false)}
             />
         )}
+
+        <style>{`
+            @keyframes progress-width {
+                from { width: 0%; }
+                to { width: 100%; }
+            }
+        `}</style>
     </div>
   );
 };

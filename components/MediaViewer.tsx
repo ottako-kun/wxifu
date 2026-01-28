@@ -31,18 +31,19 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
         {!isUnlocked && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-xl pointer-events-auto" onClick={(e) => e.stopPropagation()}>
                 <div className="bg-gray-900/80 border border-yellow-500/40 rounded-3xl p-8 text-center shadow-[0_0_50px_rgba(234,179,8,0.2)] max-w-sm mx-4 backdrop-blur-md">
-                    <div className="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-yellow-500/30">
+                    <div className="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-yellow-500/30 animate-pulse">
                         <LockIcon className="w-10 h-10 text-yellow-500" />
                     </div>
-                    <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-widest font-orbitron">Premium</h3>
+                    <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-widest font-orbitron">Premium Content</h3>
                     <p className="text-gray-400 text-sm mb-8 leading-relaxed">
-                        This creation is part of <span className="text-pink-400 font-bold">{item.author}</span>'s exclusive collection.
+                        This creation by <span className="text-pink-400 font-bold">{item.author}</span> is exclusive to premium supporters.
                     </p>
                     <button 
                         onClick={onUnlockClick}
                         disabled={isUnlocking}
-                        className="w-full py-4 bg-gradient-to-r from-yellow-600 to-yellow-400 hover:from-yellow-500 hover:to-yellow-300 text-black font-black uppercase tracking-widest rounded-xl shadow-xl transform transition-all active:scale-95 disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-3"
+                        className="w-full py-4 bg-gradient-to-r from-yellow-600 to-yellow-400 hover:from-yellow-500 hover:to-yellow-300 text-black font-black uppercase tracking-widest rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.4)] transform transition-all active:scale-95 disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-3 group overflow-hidden relative"
                     >
+                        <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                         {isUnlocking ? <LoadingSpinner className="w-6 h-6 text-black" /> : (
                             <>
                                 <span className="text-lg">{item.price || 5}</span>
@@ -74,12 +75,12 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                         className="max-w-full max-h-full w-auto h-auto outline-none shadow-2xl"
                     />
                     ) : (
-                    <div className="w-full h-full relative">
+                    <div className="w-full h-full relative overflow-hidden">
                         <iframe 
                             src={item.videoSrc}
                             allow="autoplay; encrypted-media; picture-in-picture"
                             allowFullScreen
-                            className="absolute inset-0 w-full h-full border-0"
+                            className="absolute inset-0 w-full h-full border-0 scale-100 md:scale-105"
                             title={item.description || 'Video content'}
                         />
                     </div>

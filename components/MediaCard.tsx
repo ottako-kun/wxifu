@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MediaItem, MediaType } from '../types';
 import PlayIcon from './icons/PlayIcon';
 import ShareIcon from './icons/ShareIcon';
@@ -26,10 +26,12 @@ interface MediaCardProps {
 
 const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, session, onDataChange }) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isInView, setIsInView] = useState(false);
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   
+  const cardRef = useRef<HTMLDivElement>(null);
   const { confirm } = useConfirm();
   const toast = useToast();
   const { isUnlocked: checkIsUnlocked } = useWallet();
@@ -42,6 +44,25 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
   // Use Custom Hook for Likes
   const { likeCount, isLiked, toggleLike } = useMediaLikes(item.id, session?.user.id, isStatic);
   
+  // Intersection Observer for Lazy Loading
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' } // Load when item is within 200px of viewport
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   const handleLikeAction = async () => {
     // Trigger Animation immediately for feedback
     setShowHeartAnimation(true);
@@ -109,23 +130,28 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
   return (
     <>
       <div 
+        ref={cardRef}
         className={`group relative overflow-hidden rounded-xl bg-gray-900 border border-gray-800 cursor-pointer mb-3 break-inside-avoid shadow-lg transition-all duration-300 hover:shadow-pink-500/10 hover:border-gray-700 hover:ring-1 hover:ring-pink-500/30 ${!isImageLoaded ? 'min-h-[200px] animate-pulse-bg' : ''} ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
         onClick={handleCardClick}
         onTouchEnd={handleTouchEnd}
       >
         <div className="relative">
-            <img 
-                src={item.src} 
-                alt={item.description || "Gallery content"} 
-                className={`w-full h-auto object-cover block transition-all duration-700 ease-in-out
-                    ${isImageLoaded ? 'opacity-100 scale-100 group-hover:scale-105' : 'opacity-0 scale-105'}
-                    ${!isUnlocked ? 'blur-md brightness-50' : ''}
-                `}
-                loading="lazy"
-                decoding="async"
-                onLoad={() => setIsImageLoaded(true)}
-                onError={() => setIsImageLoaded(true)}
-            />
+            {isInView ? (
+              <img 
+                  src={item.src} 
+                  alt={item.description || "Gallery content"} 
+                  className={`w-full h-auto object-cover block transition-all duration-700 ease-in-out
+                      ${isImageLoaded ? 'opacity-100 scale-100 group-hover:scale-105' : 'opacity-0 scale-105'}
+                      ${!isUnlocked ? 'blur-md brightness-50' : ''}
+                  `}
+                  loading="lazy"
+                  decoding="async"
+                  onLoad={() => setIsImageLoaded(true)}
+                  onError={() => setIsImageLoaded(true)}
+              />
+            ) : (
+              <div className="w-full aspect-square bg-gray-900 animate-pulse-bg" />
+            )}
 
             {/* Heart Animation Overlay */}
             {showHeartAnimation && (
