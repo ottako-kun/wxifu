@@ -4,6 +4,8 @@ export enum MediaType {
   Video = 'VIDEO',
 }
 
+export type DensityType = 'compact' | 'standard' | 'large';
+
 export interface MediaItem {
   id: string;
   type: MediaType;

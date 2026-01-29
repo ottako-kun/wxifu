@@ -1,5 +1,8 @@
 {
-  "name": "otaku-x",
-  "description": "A premium gallery for anime artwork, illustrations, and videos.",
-  "requestFramePermissions": []
+  "name": "otaku-x-ultra",
+  "description": "Premium TikTok-inspired immersive gallery for high-resolution anime artwork and videos.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
 }

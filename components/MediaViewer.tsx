@@ -200,7 +200,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                     }}
                                     onPlay={() => setIsPlaying(true)}
                                     onPause={() => setIsPlaying(false)}
-                                    className="max-w-full max-h-full w-auto h-auto outline-none shadow-2xl z-10"
+                                    className="max-w-full max-h-full w-auto h-auto outline-none shadow-2xl z-10 object-contain"
                                     onError={() => setVideoError(true)}
                                 />
                                 

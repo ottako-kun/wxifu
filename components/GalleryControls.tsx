@@ -6,6 +6,8 @@ import CloseIcon from './icons/CloseIcon';
 import FilterIcon from './icons/FilterIcon';
 import GridIcon from './icons/GridIcon';
 import ListIcon from './icons/ListIcon';
+import { useUI } from '../context/UIContext';
+import { DensityType } from '../types';
 
 interface GalleryControlsProps {
   galleryName: string;
@@ -43,8 +45,15 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
   onViewModeChange
 }) => {
   const [showFilters, setShowFilters] = useState(false);
+  const { density, setDensity } = useUI();
 
   const activeFilterCount = (selectedCategory !== 'All' ? 1 : 0) + selectedTags.length;
+
+  const densities: { id: DensityType; label: string }[] = [
+    { id: 'compact', label: 'Compact' },
+    { id: 'standard', label: 'Standard' },
+    { id: 'large', label: 'Large' },
+  ];
 
   return (
     <div className="max-w-4xl mx-auto mb-2 space-y-3">
@@ -120,9 +129,9 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
 
       {/* Expandable Filter Drawer */}
       {showFilters && (
-        <div className="bg-gray-900/60 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-4 animate-slide-up origin-top shadow-2xl">
+        <div className="bg-gray-900/60 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-4 animate-slide-up origin-top shadow-2xl space-y-4">
             {/* Header / Clear */}
-            <div className="flex justify-between items-center mb-3">
+            <div className="flex justify-between items-center mb-1">
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Refine Results</span>
                 {(activeFilterCount > 0) && (
                     <button onClick={clearFilters} className="text-[10px] text-red-400 hover:text-red-300 font-bold uppercase flex items-center gap-1" title="Reset all active filters">
@@ -131,8 +140,25 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
                 )}
             </div>
 
+            {/* Density Selection */}
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Grid Density</span>
+                <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
+                    {densities.map((d) => (
+                        <button
+                            key={d.id}
+                            onClick={() => setDensity(d.id)}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${density === d.id ? 'bg-pink-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            {d.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             {/* Categories */}
-            <div className="mb-4">
+            <div>
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-2">Categories</span>
                 <div className="flex flex-wrap gap-2">
                     {availableCategories.map(category => (
                         <button
