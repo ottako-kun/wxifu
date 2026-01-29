@@ -23,6 +23,7 @@ import ChatIcon from './icons/ChatIcon';
 import ShareIcon from './icons/ShareIcon';
 import GiftIcon from './icons/GiftIcon';
 import TipModal from './TipModal';
+import LoadingSpinner from './icons/LoadingSpinner';
 
 interface MediaDetailModalProps {
   items: MediaItem[];
@@ -53,7 +54,16 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   const [isReporting, setIsReporting] = useState(false);
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
 
-  const item = items[currentIndex];
+  // Ensure index is within bounds
+  const validIndex = Math.min(Math.max(0, currentIndex), items.length - 1);
+  const item = items[validIndex];
+
+  // If items change and currentIndex becomes invalid
+  useEffect(() => {
+      if (currentIndex >= items.length) {
+          setCurrentIndex(Math.max(0, items.length - 1));
+      }
+  }, [items, currentIndex]);
 
   const safeItem: MediaItem = item || {
       id: 'fallback',
@@ -189,7 +199,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
 
   const handleUnlockClick = async () => {
       if (!session) {
-          toast.error("Please login to unlock content");
+          toast.error("Please sign in to unlock content");
           return;
       }
       await unlockContent(safeItem.id, safeItem.price || 0, safeItem.user_id);
@@ -223,17 +233,24 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     };
   }, []);
 
-  if (!item) return null;
+  if (!item) {
+      return (
+        <div className="fixed inset-0 bg-black z-[1000] flex items-center justify-center">
+            <LoadingSpinner className="w-10 h-10 text-pink-500" />
+        </div>
+      );
+  }
 
+  // Final fix: Return the complete component with the default export
   return (
     <div 
-      className={`fixed inset-0 bg-black z-[80] flex flex-col transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      className={`fixed inset-0 bg-black z-[1000] flex flex-col transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
       role="dialog"
       aria-modal="true"
     >
         {/* Autoplay Progress Bar */}
         {isAutoplay && item.type === MediaType.Photo && (
-            <div className="absolute top-0 left-0 right-0 h-1 z-[110] bg-white/10">
+            <div className="absolute top-0 left-0 right-0 h-1 z-[1100] bg-white/10">
                 <div 
                     className="h-full bg-pink-500 transition-all duration-100 ease-linear shadow-[0_0_10px_#ec4899]" 
                     style={{ width: `${autoplayProgress}%` }}
@@ -242,174 +259,130 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
         )}
 
         {/* Top Header Bar */}
-        <div className={`absolute top-0 inset-x-0 z-[90] flex items-center justify-between p-4 pointer-events-none transition-all duration-500 ${isFocusMode ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
-            <div className="flex items-center gap-2 pointer-events-auto">
-                <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md rounded-full px-4 py-1.5 border border-white/10">
-                    <span className="text-white/60 text-[10px] font-black uppercase tracking-widest">{currentIndex + 1} / {items.length}</span>
-                </div>
-                
+        <div className={`absolute top-0 inset-x-0 z-[1100] flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent transition-opacity duration-300 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+            <button 
+                onClick={handleClose}
+                className="p-2 text-white/70 hover:text-white bg-black/20 backdrop-blur-md rounded-full transition-colors"
+                aria-label="Close"
+            >
+                <CloseIcon className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center gap-2">
                 <button 
                     onClick={() => setIsAutoplay(!isAutoplay)}
-                    className={`flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full px-4 py-1.5 border transition-all active:scale-95 ${isAutoplay ? 'border-pink-500 text-pink-400 shadow-[0_0_10px_rgba(236,72,153,0.3)]' : 'border-white/10 text-white/60'}`}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${isAutoplay ? 'bg-pink-600 text-white shadow-[0_0_10px_#ec4899]' : 'bg-white/10 text-white/70 hover:bg-white/20'}`}
                 >
-                    <span className="text-[10px] font-black uppercase tracking-tighter">{isAutoplay ? 'Autoplay On' : 'Autoplay Off'}</span>
+                    {isAutoplay ? 'Autoplay ON' : 'Autoplay OFF'}
+                </button>
+                <button 
+                    onClick={() => setIsFocusMode(!isFocusMode)}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${isFocusMode ? 'bg-cyan-600 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'}`}
+                >
+                    {isFocusMode ? 'Normal View' : 'Focus Mode'}
                 </button>
             </div>
-            
-            <button 
-                onClick={handleClose} 
-                className="pointer-events-auto text-white/70 hover:text-white bg-black/40 hover:bg-red-500/80 rounded-full p-2.5 transition-all backdrop-blur-md border border-white/10 active:scale-90"
-            >
-                <CloseIcon className="w-6 h-6"/>
-            </button>
-        </div>
-
-        {/* Desktop Navigation Arrows */}
-        <div className={`hidden md:flex absolute inset-y-0 left-0 w-24 items-center justify-center z-[85] pointer-events-none transition-opacity duration-500 ${isFocusMode || isZoomed ? 'opacity-0' : 'opacity-100'}`}>
-            {currentIndex > 0 && (
-                <button 
-                    onClick={(e) => { e.stopPropagation(); goToPrevious(); }}
-                    className="pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all backdrop-blur-sm border border-white/5 active:scale-90"
-                >
-                    <ChevronLeftIcon className="w-8 h-8" />
-                </button>
-            )}
-        </div>
-        <div className={`hidden md:flex absolute inset-y-0 right-0 w-24 items-center justify-center z-[85] pointer-events-none transition-opacity duration-500 ${isFocusMode || isZoomed ? 'opacity-0' : 'opacity-100'}`}>
-            {currentIndex < items.length - 1 && (
-                <button 
-                    onClick={(e) => { e.stopPropagation(); goToNext(); }}
-                    className="pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all backdrop-blur-sm border border-white/5 active:scale-90"
-                >
-                    <ChevronRightIcon className="w-8 h-8" />
-                </button>
-            )}
         </div>
 
         {/* Main Content Area */}
-        <div 
-            className={`relative flex-grow w-full h-full overflow-hidden bg-[#020202] transition-all duration-500 ${isDrawerOpen ? 'md:pr-[400px]' : ''}`}
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-            onClick={handleDoubleTap}
-        >
-            <MediaViewer 
-                item={item}
-                isUnlocked={isUnlocked}
-                onUnlockClick={handleUnlockClick}
-                isUnlocking={isWalletLoading}
-                onMediaEnded={handleMediaEnded}
-                onZoomChange={setIsZoomed}
-            />
-
-            {/* Heart Animation Overlay */}
-            {showHeartAnimation && (
-                <div className="absolute inset-0 flex items-center justify-center z-[100] pointer-events-none animate-bounce-in">
-                    <HeartIcon filled className="w-32 h-32 text-white drop-shadow-2xl opacity-90" />
-                </div>
+        <div className="flex-grow flex flex-col md:flex-row relative overflow-hidden h-full">
+            {/* Navigation Buttons (Desktop) */}
+            {!isFocusMode && !isZoomed && (
+                <>
+                    <button 
+                        onClick={goToPrevious}
+                        disabled={currentIndex === 0}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-black/20 hover:bg-black/40 text-white rounded-full transition-all disabled:opacity-0 disabled:pointer-events-none hidden md:block"
+                    >
+                        <ChevronLeftIcon className="w-8 h-8" />
+                    </button>
+                    <button 
+                        onClick={goToNext}
+                        disabled={currentIndex === items.length - 1}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-black/20 hover:bg-black/40 text-white rounded-full transition-all disabled:opacity-0 disabled:pointer-events-none hidden md:block"
+                    >
+                        <ChevronRightIcon className="w-8 h-8" />
+                    </button>
+                </>
             )}
 
-            {/* OVERLAY: Bottom Actions */}
-            <div className={`absolute inset-0 pointer-events-none flex flex-col justify-end pb-safe transition-all duration-500 ${isDrawerOpen || isFocusMode || isZoomed ? 'opacity-0 translate-y-8' : 'opacity-100 translate-y-0'}`}>
-                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
-                
-                <div className="relative z-10 flex items-end justify-between px-6 pb-10 md:px-12 md:pb-12">
-                    <div className="flex-grow max-w-[75%] md:max-w-2xl pointer-events-auto">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="cursor-pointer active:scale-90 transition-transform" onClick={handleAuthorClick}>
-                                {item.author_avatar ? (
-                                    <img src={item.author_avatar} alt={item.author} className="w-12 h-12 rounded-full border-2 border-pink-500 shadow-xl object-cover" />
-                                ) : (
-                                    <div className="w-12 h-12 bg-gradient-to-br from-pink-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                        {item.author?.charAt(0)}
-                                    </div>
-                                )}
-                            </div>
-                            <div>
-                                <h2 className="text-white font-bold text-xl leading-none cursor-pointer hover:underline font-orbitron" onClick={handleAuthorClick}>
-                                    {item.author}
-                                </h2>
-                                {!isOwner && (
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); toggleFollow(item.author || ''); }}
-                                        className="text-[10px] font-bold text-pink-400 hover:text-white transition-colors uppercase tracking-widest mt-1 active:scale-95"
-                                    >
-                                        {isFollowing ? 'Following' : '+ Follow'}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-
-                        <p className="text-white/90 text-sm md:text-lg mb-3 drop-shadow-lg leading-relaxed max-w-lg line-clamp-2">
-                            {item.description}
-                        </p>
-                    </div>
-
-                    <div className="flex flex-col gap-5 pointer-events-auto items-center">
-                        <div className="flex flex-col items-center gap-1.5">
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); handleLikeAction(); }}
-                                className={`p-4 rounded-full backdrop-blur-xl border transition-all active:scale-75 ${isLiked ? 'bg-pink-500 border-pink-500 text-white shadow-[0_0_20px_#ec4899]' : 'bg-white/10 border-white/10 text-white hover:bg-white/20'}`}
-                            >
-                                <HeartIcon filled={isLiked} className="w-7 h-7 md:w-8 md:h-8" />
-                            </button>
-                            <span className="text-[10px] font-black text-white drop-shadow-lg">{likeCount}</span>
-                        </div>
-
-                        <div className="flex flex-col items-center gap-1.5">
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); setIsDrawerOpen(!isDrawerOpen); }}
-                                className="p-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 text-white hover:bg-white/20 transition-all active:scale-75 shadow-lg"
-                            >
-                                <ChatIcon className="w-7 h-7 md:w-8 md:h-8" />
-                            </button>
-                        </div>
-
-                        {!isOwner && session && (
-                             <button 
-                                onClick={(e) => { e.stopPropagation(); setIsTipModalOpen(true); }}
-                                className="p-4 rounded-full bg-yellow-500/20 backdrop-blur-xl border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-all active:scale-75 shadow-lg"
-                             >
-                                 <GiftIcon className="w-6 h-6 md:w-7 md:h-7" />
-                             </button>
-                        )}
-
-                        <button 
-                            onClick={handleShareClick}
-                            className="p-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 text-white hover:bg-white/20 transition-all active:scale-75 shadow-lg"
-                        >
-                            <ShareIcon className="w-6 h-6 md:w-7 md:h-7" />
-                        </button>
-                    </div>
-                </div>
+            {/* Viewer Component */}
+            <div 
+                className="flex-grow h-full relative"
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+                onMouseDown={handleDoubleTap}
+            >
+                <MediaViewer 
+                    item={safeItem}
+                    isUnlocked={isUnlocked}
+                    onUnlockClick={handleUnlockClick}
+                    isUnlocking={isWalletLoading}
+                    onMediaEnded={handleMediaEnded}
+                    onZoomChange={setIsZoomed}
+                />
             </div>
+
+            {/* Sidebar (Desktop) */}
+            {!isFocusMode && (
+                <div className="hidden md:block w-96 h-full border-l border-white/10 bg-black/40 backdrop-blur-md overflow-y-auto custom-scrollbar">
+                    <MediaSidebar 
+                        item={safeItem}
+                        session={session}
+                        relatedItems={relatedItems}
+                        isOwner={isOwner}
+                        onAuthorClick={handleAuthorClick}
+                        onRelatedClick={handleRelatedClick}
+                        onShareClick={handleShareClick}
+                        onReportClick={() => setIsReportModalOpen(true)}
+                        onDataChange={onDataChange}
+                        onDeleteSuccess={handleClose}
+                    />
+                </div>
+            )}
         </div>
 
-        {/* --- RESPONSIVE DRAWER --- */}
+        {/* Mobile Sidebar Trigger / Quick Info */}
+        {!isFocusMode && (
+            <div className="md:hidden p-4 pb-safe bg-gradient-to-t from-black to-transparent flex items-center justify-between">
+                <div className="flex items-center gap-3" onClick={handleAuthorClick}>
+                    {safeItem.author_avatar ? (
+                        <img src={safeItem.author_avatar} alt={safeItem.author} className="w-8 h-8 rounded-full border border-pink-500" />
+                    ) : (
+                        <div className="w-8 h-8 rounded-full bg-pink-600 flex items-center justify-center font-bold text-white text-xs">
+                            {safeItem.author?.charAt(0)}
+                        </div>
+                    )}
+                    <div>
+                        <p className="text-white text-sm font-bold">{safeItem.author}</p>
+                        <p className="text-gray-400 text-[10px] uppercase tracking-wider">{safeItem.category}</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <button onClick={handleLikeAction} className={isLiked ? 'text-pink-500' : 'text-white'}>
+                        <HeartIcon filled={isLiked} className="w-6 h-6" />
+                    </button>
+                    <button onClick={() => setIsDrawerOpen(true)} className="text-white">
+                        <ChatIcon className="w-6 h-6" />
+                    </button>
+                    <button onClick={handleShareClick} className="text-white">
+                        <ShareIcon className="w-6 h-6" />
+                    </button>
+                </div>
+            </div>
+        )}
+
+        {/* Mobile Drawer */}
         {isDrawerOpen && (
-            <div 
-                className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm transition-all duration-300"
-                onClick={() => setIsDrawerOpen(false)}
-            >
-                <div 
-                    className="absolute bottom-0 md:top-0 md:right-0 w-full md:w-[400px] h-[80vh] md:h-full bg-[#080808] border-t md:border-t-0 md:border-l border-white/10 rounded-t-[2.5rem] md:rounded-none flex flex-col shadow-2xl animate-slide-up md:animate-slide-in-right overflow-hidden ring-1 ring-white/10"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="md:hidden w-full flex justify-center pt-4 pb-2" onClick={() => setIsDrawerOpen(false)}>
-                        <div className="w-16 h-1.5 bg-white/10 rounded-full"></div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-6 border-b border-white/5">
-                        <h3 className="text-white font-black text-lg uppercase tracking-widest font-orbitron">Details</h3>
-                        <button onClick={() => setIsDrawerOpen(false)} className="text-white/40 hover:text-white transition-colors p-2 bg-white/5 rounded-full">
-                            <CloseIcon className="w-6 h-6" />
-                        </button>
-                    </div>
-
-                    <div className="flex-grow overflow-y-auto custom-scrollbar">
-                         <MediaSidebar 
-                            item={item}
+            <div className="md:hidden fixed inset-0 z-[1200] flex flex-col animate-slide-up">
+                <div className="flex-grow bg-black/50" onClick={() => setIsDrawerOpen(false)}></div>
+                <div className="h-[80vh] bg-gray-900 rounded-t-3xl border-t border-white/10 overflow-hidden flex flex-col">
+                    <div className="w-12 h-1.5 bg-gray-700 rounded-full mx-auto my-4 flex-shrink-0" onClick={() => setIsDrawerOpen(false)}></div>
+                    <div className="flex-grow overflow-y-auto">
+                        <MediaSidebar 
+                            item={safeItem}
                             session={session}
                             relatedItems={relatedItems}
                             isOwner={isOwner}
@@ -425,33 +398,47 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
             </div>
         )}
 
+        {/* Popovers & Modals */}
         {shareAnchorEl && (
-            <SharePopover
-                item={item}
-                onClose={closeSharePopover}
+            <SharePopover 
+                item={safeItem}
                 anchorEl={shareAnchorEl}
+                onClose={closeSharePopover}
             />
         )}
 
         {isReportModalOpen && (
             <ReportModal 
                 onClose={() => setIsReportModalOpen(false)}
-                onSubmit={async (reason, details) => {
-                    if (!session) return;
-                    setIsReporting(true);
-                    await reportMediaItem({ media_id: safeItem.id, reporter_id: session.user.id, reason, details });
-                    setIsReporting(false);
-                    setIsReportModalOpen(false);
-                    toast.success("Thank you for your report.");
-                }}
                 isSubmitting={isReporting}
+                onSubmit={async (reason, details) => {
+                    if (!session) {
+                        toast.error("Please sign in to report content");
+                        return;
+                    }
+                    setIsReporting(true);
+                    try {
+                        await reportMediaItem({
+                            media_id: safeItem.id,
+                            reporter_id: session.user.id,
+                            reason,
+                            details
+                        });
+                        toast.success("Report submitted successfully");
+                        setIsReportModalOpen(false);
+                    } catch (e) {
+                        toast.error("Failed to submit report");
+                    } finally {
+                        setIsReporting(false);
+                    }
+                }}
             />
         )}
 
         {isTipModalOpen && (
-            <TipModal
-                recipientId={item.user_id || ''}
-                recipientName={item.author || ''}
+            <TipModal 
+                recipientId={safeItem.user_id || ''}
+                recipientName={safeItem.author || ''}
                 onClose={() => setIsTipModalOpen(false)}
             />
         )}
