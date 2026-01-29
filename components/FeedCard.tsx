@@ -57,7 +57,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
           }
         });
       },
-      { threshold: 0.6 } // Play when 60% of the video is visible
+      { threshold: 0.6 }
     );
 
     if (cardRef.current) {
@@ -109,10 +109,10 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
             onMouseDown={handleTapInteraction}
             onTouchEnd={handleTapInteraction}
         >
-             {/* Dynamic Heart Animation */}
+             {/* Enhanced Heart Burst */}
              {showHeartAnimation && (
                 <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
-                    <HeartIcon filled className="w-32 h-32 text-pink-500 drop-shadow-[0_0_20px_#ec4899] animate-heart-burst" />
+                    <HeartIcon filled className="w-40 h-40 text-pink-500 drop-shadow-[0_0_20px_#ec4899] animate-heart-burst" />
                 </div>
             )}
 
@@ -124,7 +124,6 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                             <LockIcon className="w-8 h-8 text-yellow-500" />
                         </div>
                         <h3 className="text-white font-bold text-xl mb-1 font-orbitron tracking-tight">Support Creator</h3>
-                        <p className="text-gray-400 text-xs mb-6 max-w-[200px]">Unlock high-res access to this masterpiece.</p>
                         <button 
                             onClick={handleUnlock}
                             disabled={isWalletLoading}
@@ -165,9 +164,8 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                 )
             )}
 
-            {/* TikTok Style Side Actions (Absolute) */}
+            {/* TikTok Style Side Actions */}
             <div className="absolute bottom-20 right-4 z-30 flex flex-col items-center gap-6 md:gap-8">
-                {/* Profile Circle */}
                 <div className="flex flex-col items-center">
                     <div 
                         onClick={handleUserClick} 
@@ -221,17 +219,21 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                     <span className="text-[10px] font-bold text-white/90 mt-1 drop-shadow-md">Share</span>
                 </div>
                 
-                {!isOwner && session && (
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setIsTipModalOpen(true); }}
-                        className="p-2 text-yellow-500/80 hover:text-yellow-400 transition-all active:scale-75"
-                    >
-                        <GiftIcon className="w-7 h-7 drop-shadow-lg" />
-                    </button>
+                {item.type === MediaType.Video && isPlaying && (
+                    <div className="relative w-12 h-12 flex items-center justify-center">
+                        <div className="absolute top-0 right-0 animate-float-note opacity-0">
+                            <svg className="w-3 h-3 text-pink-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-gray-800 to-black p-2 border-4 border-gray-700/50 animate-vinyl shadow-xl">
+                             <div className="w-full h-full rounded-full bg-pink-500/20 flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-pink-500 shadow-[0_0_10px_#ec4899]"></div>
+                             </div>
+                        </div>
+                    </div>
                 )}
             </div>
 
-            {/* Bottom Caption Overlay */}
+            {/* Bottom Caption */}
             <div className="absolute bottom-0 inset-x-0 p-4 pt-12 pb-6 bg-gradient-to-t from-black via-black/40 to-transparent z-20 pointer-events-none">
                 <div className="pointer-events-auto">
                     <h3 onClick={handleUserClick} className="font-bold text-white text-base mb-1.5 hover:text-pink-400 cursor-pointer inline-block drop-shadow-md">

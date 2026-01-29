@@ -44,8 +44,14 @@ const HomeView: React.FC<HomeViewProps> = ({
   const scrollDirection = useScrollDirection();
   const [viewMode, setViewMode] = useState<'grid' | 'feed'>('grid');
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Determine which dataset to use
+  useEffect(() => {
+    const handleScroll = () => setShowScrollTop(window.scrollY > 800);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   let itemsToDisplay: MediaItem[] = [];
   let galleryName = '';
   let isCurrentLoading = isLoading;
@@ -61,7 +67,6 @@ const HomeView: React.FC<HomeViewProps> = ({
     galleryName = 'following';
   }
 
-  // Use the custom filter hook
   const {
     searchQuery, setSearchQuery,
     sortOrder, toggleSort,
@@ -75,13 +80,11 @@ const HomeView: React.FC<HomeViewProps> = ({
     visibleItems,
   } = useGalleryFilters(itemsToDisplay);
 
-  // Reset filters when changing tabs (Optional, but good UX)
   useEffect(() => {
     clearFilters();
     setSelectedItemIndex(null);
   }, [activeTab]);
 
-  // Infinite Scroll Observer
   const observerTarget = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -91,51 +94,34 @@ const HomeView: React.FC<HomeViewProps> = ({
           loadMore();
         }
       },
-      { threshold: 0.1, rootMargin: '400px' } // Load well before the user hits the bottom
+      { threshold: 0.1, rootMargin: '400px' }
     );
 
     if (observerTarget.current) {
       observer.observe(observerTarget.current);
     }
 
-    return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
-      }
-    };
+    return () => observer.disconnect();
   }, [visibleCount, sortedItems.length, loadMore]);
 
-  // Wrap the refresh in a promise for PullToRefresh
   const handleRefresh = async () => {
      onDataChange();
-     // Slight artificial delay so the spinner shows for a satisfying moment
      await new Promise(r => setTimeout(r, 1000));
   };
 
-  const handleItemClick = useCallback((index: number) => {
-      setSelectedItemIndex(index);
-  }, []);
-
-  const handleModalClose = useCallback(() => {
-      setSelectedItemIndex(null);
-  }, []);
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <Hero />
-      <main className="container mx-auto px-4 py-4 min-h-screen">
-        
-        {/* Sticky Header for Controls 
-            - When scrolling down (header hidden), stick to top: 0
-            - When scrolling up (header shown), stick to top: 64px (approx header height)
-        */}
+      <main className="container mx-auto px-4 py-4 min-h-screen relative">
         <div 
             className={`sticky z-40 py-2 -mx-4 px-4 bg-gradient-to-b from-[#050505] via-[#050505]/95 to-transparent backdrop-blur-sm transition-[top] duration-300 ease-in-out`}
             style={{ top: scrollDirection === 'down' ? '0px' : '56px' }}
         >
              <GalleryTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-             
-             {/* Show controls only if signed in (for following) or normal tabs */}
              {(activeTab !== 'following' || session) && (
                 <GalleryControls 
                     galleryName={galleryName}
@@ -157,7 +143,6 @@ const HomeView: React.FC<HomeViewProps> = ({
              )}
         </div>
 
-        {/* Following Tab - Not Signed In State */}
         {activeTab === 'following' && !session ? (
             <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-gray-800 rounded-3xl bg-gray-900/20 max-w-2xl mx-auto mt-10">
                 <div className="w-20 h-20 rounded-full bg-gray-800 flex items-center justify-center mb-6">
@@ -166,104 +151,49 @@ const HomeView: React.FC<HomeViewProps> = ({
                     </svg>
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-3 font-orbitron">Join the Community</h2>
-                <p className="text-gray-400 mb-8 max-w-md">
-                    Sign in to follow your favorite artists and see their latest uploads right here.
-                </p>
-                <button
-                    onClick={signInWithGoogle}
-                    className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors shadow-lg"
-                >
-                    Sign In with Google
-                </button>
+                <button onClick={signInWithGoogle} className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors shadow-lg">Sign In with Google</button>
             </div>
         ) : (
             <>
-                {/* Content Area */}
                 {itemsToDisplay.length > 0 || isCurrentLoading ? (
                   sortedItems.length > 0 || isCurrentLoading ? (
                     <div className="animate-fade-in space-y-12 mt-4">
-                        
-                    {/* Render either Grid or Feed */}
-                    {viewMode === 'grid' ? (
-                        <MediaGrid
-                            items={visibleItems}
-                            onUserClick={onUserClick}
-                            session={session}
-                            onDataChange={onDataChange}
-                            isLoading={isCurrentLoading}
-                            onItemClick={handleItemClick}
-                        />
-                    ) : (
-                        <FeedView 
-                            items={visibleItems}
-                            session={session}
-                            onUserClick={onUserClick}
-                            onDataChange={onDataChange}
-                            isLoading={isCurrentLoading}
-                            onItemClick={handleItemClick}
-                        />
-                    )}
-
-                    {/* Infinite Scroll Sentinel */}
-                    {visibleCount < sortedItems.length && !isCurrentLoading && (
-                        <div ref={observerTarget} className="flex justify-center py-8 w-full">
-                            <LoadingSpinner className="w-8 h-8 text-pink-500/50" />
-                        </div>
-                    )}
-
-                    {!isCurrentLoading && (
-                      <div className="text-center text-xs text-gray-600">
-                          Showing {Math.min(visibleCount, sortedItems.length)} of {sortedItems.length} results
-                      </div>
-                    )}
+                        {viewMode === 'grid' ? (
+                            <MediaGrid items={visibleItems} onUserClick={onUserClick} session={session} onDataChange={onDataChange} isLoading={isCurrentLoading} onItemClick={setSelectedItemIndex} />
+                        ) : (
+                            <FeedView items={visibleItems} session={session} onUserClick={onUserClick} onDataChange={onDataChange} isLoading={isCurrentLoading} onItemClick={setSelectedItemIndex} />
+                        )}
+                        {visibleCount < sortedItems.length && !isCurrentLoading && <div ref={observerTarget} className="flex justify-center py-8 w-full"><LoadingSpinner className="w-8 h-8 text-pink-500/50" /></div>}
+                        {!isCurrentLoading && <div className="text-center text-xs text-gray-600">Showing {Math.min(visibleCount, sortedItems.length)} of {sortedItems.length} results</div>}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-[40vh] text-center animate-fade-in border border-dashed border-gray-800 rounded-3xl bg-gray-900/20 m-4">
-                    <div className="w-16 h-16 mb-4 text-gray-700">
-                        <SearchIcon className="w-full h-full" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-400 mb-2">No Results Found</h2>
-                    <p className="text-gray-500 max-w-md mx-auto mb-6">
-                        We couldn't find any {galleryName === 'following' ? 'posts' : galleryName + 's'} matching "{searchQuery}" or your selected filters.
-                    </p>
-                    <button
-                        onClick={clearFilters}
-                        className="px-6 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg transition-colors font-medium"
-                    >
-                        Clear all filters
-                    </button>
+                    <div className="flex flex-col items-center justify-center h-[40vh] text-center border border-dashed border-gray-800 rounded-3xl bg-gray-900/20 m-4">
+                        <div className="w-16 h-16 mb-4 text-gray-700"><SearchIcon className="w-full h-full" /></div>
+                        <h2 className="text-2xl font-bold text-gray-400 mb-2">No Results Found</h2>
+                        <button onClick={clearFilters} className="px-6 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg transition-colors font-medium">Clear all filters</button>
                     </div>
                 )
                 ) : (
                 <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-                    {activeTab === 'following' ? (
-                        <>
-                            <h2 className="text-2xl font-bold text-gray-400 mb-2">Feed Empty</h2>
-                            <p className="text-gray-500 max-w-md">You aren't following anyone yet, or the people you follow haven't posted anything.</p>
-                            <button onClick={() => setActiveTab('photos')} className="mt-4 text-pink-500 hover:text-pink-400 underline">Explore the Gallery</button>
-                        </>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center gap-4 opacity-50">
-                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 text-yellow-500 mb-2">
-                             <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
-                           </svg>
-                           <h2 className="text-xl font-bold text-gray-500 uppercase tracking-widest font-orbitron">Under Construction</h2>
-                        </div>
-                    )}
+                    <h2 className="text-xl font-bold text-gray-500 uppercase tracking-widest font-orbitron">No content available</h2>
                 </div>
                 )}
             </>
         )}
         
+        {/* Floating Back to Top Button */}
+        {showScrollTop && (
+            <button 
+                onClick={scrollToTop}
+                className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 md:left-auto md:right-32 z-[55] p-3 rounded-full bg-pink-500/10 backdrop-blur-md border border-pink-500/30 text-pink-500 shadow-lg hover:bg-pink-500 hover:text-white transition-all transform active:scale-90 animate-fade-in"
+                title="Back to Top"
+            >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7"/></svg>
+            </button>
+        )}
+        
         {selectedItemIndex !== null && (
-            <MediaDetailModal 
-                items={visibleItems} 
-                initialIndex={selectedItemIndex} 
-                onClose={handleModalClose} 
-                onUserClick={onUserClick}
-                session={session || null}
-                onDataChange={onDataChange}
-            />
+            <MediaDetailModal items={visibleItems} initialIndex={selectedItemIndex} onClose={() => setSelectedItemIndex(null)} onUserClick={onUserClick} session={session || null} onDataChange={onDataChange} />
         )}
       </main>
     </PullToRefresh>
