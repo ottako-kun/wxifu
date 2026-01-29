@@ -1,6 +1,6 @@
 import React from 'react';
 import { Session } from '@supabase/supabase-js';
-import { APP_CONFIG } from '../gallery-data';
+import { APP_CONFIG } from '../config';
 import UploadButton from './UploadButton';
 import UploadModal from './UploadModal';
 import ChatWindow from './ChatWindow';

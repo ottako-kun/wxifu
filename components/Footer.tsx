@@ -1,6 +1,6 @@
 import React from 'react';
 import TwitterIcon from './icons/TwitterIcon';
-import { APP_CONFIG } from '../gallery-data';
+import { APP_CONFIG } from '../config';
 import { useUI } from '../context/UIContext';
 
 const Footer: React.FC = () => {

@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { MediaItem } from '../types';
 import { Session } from '@supabase/supabase-js';
 import { deleteMediaItem } from '../lib/supabaseClient';
-import { APP_CONFIG } from '../gallery-data';
+// Fix: Import APP_CONFIG from config.ts as gallery-data.ts was removed
+import { APP_CONFIG } from '../config';
 import PencilIcon from './icons/PencilIcon';
 import TrashIcon from './icons/TrashIcon';
 import ShareIcon from './icons/ShareIcon';

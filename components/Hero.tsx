@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { APP_CONFIG } from '../gallery-data';
+import { APP_CONFIG } from '../config';
 
 const Hero: React.FC = () => {
   return (

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { MediaItem } from '../types';
-import { APP_CONFIG } from '../gallery-data';
+import { APP_CONFIG } from '../config';
 
 export const useGalleryFilters = (items: MediaItem[]) => {
   const [searchQuery, setSearchQuery] = useState('');
