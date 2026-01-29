@@ -24,7 +24,7 @@ export const useAppNavigation = () => {
   const { closeChat } = useUI();
   
   // Data Logic
-  const { photoMedia, videoMedia, followedMedia, isLoading, refresh } = useMediaLibrary(session);
+  const { photoMedia, videoMedia, followedMedia, isLoading, error, refresh } = useMediaLibrary(session);
 
   // Handle Auth Session
   useEffect(() => {
@@ -110,6 +110,7 @@ export const useAppNavigation = () => {
       videoMedia,
       followedMedia,
       isLoading,
+      error,
       refresh
   };
 };

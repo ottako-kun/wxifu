@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import Hero from './Hero';
 import MediaGrid from './MediaGrid';
@@ -20,6 +19,7 @@ interface HomeViewProps {
   videoMedia: MediaItem[];
   followedMedia?: MediaItem[];
   isLoading: boolean;
+  error?: string | null;
   session: Session | null;
   onUserClick: (user: { id: string; name: string; avatar: string }) => void;
   onDataChange: () => void;
@@ -33,6 +33,7 @@ const HomeView: React.FC<HomeViewProps> = ({
   videoMedia,
   followedMedia = [],
   isLoading,
+  error,
   session,
   onUserClick,
   onDataChange,
@@ -121,6 +122,26 @@ const HomeView: React.FC<HomeViewProps> = ({
     <PullToRefresh onRefresh={handleRefresh}>
       <Hero />
       <main className={`container mx-auto px-4 py-4 min-h-screen relative ${viewMode === 'feed' ? 'max-w-none px-0' : ''}`}>
+        
+        {/* Sync Error Banner */}
+        {error && (
+            <div className="max-w-4xl mx-auto mb-6 bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center justify-between animate-fade-in shadow-xl shadow-red-900/5">
+                <div className="flex items-center gap-3">
+                    <span className="text-red-500 text-xl">⚠️</span>
+                    <div className="flex flex-col">
+                        <p className="text-xs font-bold text-red-500 uppercase tracking-widest">Neural Link Disturbance</p>
+                        <p className="text-sm text-red-200/80">{error}. Using local archive.</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={onDataChange} 
+                    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/40 text-red-400 text-[10px] font-black uppercase rounded-lg transition-all active:scale-95"
+                >
+                    Reconnect
+                </button>
+            </div>
+        )}
+
         <div 
             className={`sticky z-40 py-3 -mx-4 px-4 bg-gradient-to-b from-[#050505] via-[#050505]/95 to-transparent backdrop-blur-xl transition-[top] duration-300 ease-in-out border-b border-white/5`}
             style={{ top: scrollDirection === 'down' ? '0px' : '56px' }}

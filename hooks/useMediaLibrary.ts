@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, getFollowedMedia } from '../lib/supabaseClient';
 import { fallbackPhotoMedia, fallbackVideoMedia } from '../gallery-data';
@@ -11,9 +10,11 @@ export const useMediaLibrary = (session: Session | null) => {
   const [videoMedia, setVideoMedia] = useState<MediaItem[]>([]);
   const [followedMedia, setFollowedMedia] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
       let fetchedData: any[] = [];
 
@@ -26,17 +27,15 @@ export const useMediaLibrary = (session: Session | null) => {
       if (!joinError && joinData) {
         fetchedData = joinData;
       } else {
-        // Attempt 2: Fallback Manual Fetch (Only runs if join fails, e.g., missing relation)
-        if (joinError?.code !== 'PGRST116') { 
-             // console.warn("Database join failed, falling back to manual fetch...", joinError?.message);
-        }
-        
+        // Attempt 2: Fallback Manual Fetch
         const { data: mediaData, error: mediaError } = await supabase
           .from('media')
           .select('*')
           .order('created_at', { ascending: false });
           
-        if (!mediaError && mediaData && mediaData.length > 0) {
+        if (mediaError) throw mediaError;
+
+        if (mediaData && mediaData.length > 0) {
            const userIds = Array.from(new Set(
                mediaData
                   .map(m => m.user_id)
@@ -75,12 +74,12 @@ export const useMediaLibrary = (session: Session | null) => {
 
       // --- FETCH FOLLOWED MEDIA ---
       if (session) {
-          const { data: followedDataRaw } = await getFollowedMedia(session.user.id);
+          const { data: followedDataRaw, error: followFetchError } = await getFollowedMedia(session.user.id);
+          if (followFetchError) throw followFetchError;
           
           if (followedDataRaw && followedDataRaw.length > 0) {
               const processedFollowed = followedDataRaw.map((item, index) => {
                   const processed = processMediaItem(item, index);
-                  // Ensure profile info is attached correctly if join worked
                   if (item.profiles) {
                       processed.author = item.profiles.name || processed.author;
                       processed.author_avatar = item.profiles.avatar || processed.author_avatar;
@@ -97,6 +96,7 @@ export const useMediaLibrary = (session: Session | null) => {
 
     } catch (err: any) {
       console.error("Error fetching media:", err.message);
+      setError(err.message || "Failed to sync with central database.");
       // On critical error, still show the static gallery from the file
       setPhotoMedia(fallbackPhotoMedia);
       setVideoMedia(fallbackVideoMedia);
@@ -109,5 +109,5 @@ export const useMediaLibrary = (session: Session | null) => {
     fetchData();
   }, [fetchData]);
 
-  return { photoMedia, videoMedia, followedMedia, isLoading, refresh: fetchData };
+  return { photoMedia, videoMedia, followedMedia, isLoading, error, refresh: fetchData };
 };

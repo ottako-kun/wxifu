@@ -46,6 +46,7 @@ const AppContent: React.FC = () => {
       videoMedia,
       followedMedia,
       isLoading,
+      error,
       refresh
   } = useAppNavigation();
 
@@ -139,6 +140,7 @@ const AppContent: React.FC = () => {
              videoMedia={videoMedia}
              followedMedia={followedMedia}
              isLoading={isLoading}
+             error={error}
              session={session}
              onUserClick={handleUserClick}
              onDataChange={refresh}

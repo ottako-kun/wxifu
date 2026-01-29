@@ -1,9 +1,7 @@
-
 import { MediaItem, MediaType } from '../types';
 import { getDriveId, getGoogleDriveImageUrl, getGoogleDriveVideoPreviewUrl } from './googleDrive';
 
-export const DEFAULT_VIDEO_THUMBNAIL_ID = '1sILwvb70QBKknRuhk0fJLwnO7kmdEywQ';
-export const DEFAULT_THUMB_URL = `https://lh3.googleusercontent.com/d/${DEFAULT_VIDEO_THUMBNAIL_ID}`;
+export const DEFAULT_THUMB_URL = '/favicon.svg';
 
 // Simple string hash for stable IDs
 export const generateHash = (str: string) => {
@@ -73,7 +71,7 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
   return {
     id: id.toString(),
     type,
-    src: finalSrc,
+    src: finalSrc || DEFAULT_THUMB_URL,
     videoSrc: finalVideoSrc,
     description: item.description,
     category: item.category || (type === MediaType.Photo ? 'Illustration' : 'Clip'),
