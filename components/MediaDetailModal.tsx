@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MediaItem, MediaType } from '../types';
-import { reportMediaItem } from '../lib/supabaseClient';
 import CloseIcon from './icons/CloseIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import ChevronRightIcon from './icons/ChevronRightIcon';
@@ -22,7 +21,8 @@ import ChatIcon from './icons/ChatIcon';
 import ShareIcon from './icons/ShareIcon';
 import GiftIcon from './icons/GiftIcon';
 import TipModal from './TipModal';
-import LoadingSpinner from './icons/LoadingSpinner';
+import FlagIcon from './icons/FlagIcon';
+import Avatar from './Avatar';
 
 interface MediaDetailModalProps {
   items: MediaItem[];
@@ -39,14 +39,9 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
   
-  // Immersive States
-  const [isFocusMode, setIsFocusMode] = useState(false);
-  const [isAutoplay, setIsAutoplay] = useState(false);
-
-  // Drawer / UI State
+  // HUD state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [isReporting, setIsReporting] = useState(false);
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
 
   const item = items[currentIndex] || items[0];
@@ -63,7 +58,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     if (isZoomed) return;
     if (currentIndex > 0) {
         setCurrentIndex(prev => prev - 1);
-        setIsDrawerOpen(false);
         setIsZoomed(false);
     }
   }, [currentIndex, isZoomed]);
@@ -72,10 +66,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     if (isZoomed) return;
     if (currentIndex < items.length - 1) {
         setCurrentIndex(prev => prev + 1);
-        setIsDrawerOpen(false);
         setIsZoomed(false);
-    } else {
-        setIsAutoplay(false);
     }
   }, [currentIndex, items.length, isZoomed]);
 
@@ -89,10 +80,10 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   }, [onClose]);
   
   const { onTouchStart, onTouchMove, onTouchEnd } = useSwipe({
-    onSwipeUp: isDrawerOpen ? undefined : () => setIsDrawerOpen(true),
-    onSwipeDown: isDrawerOpen ? () => setIsDrawerOpen(false) : handleClose,
-    onSwipeLeft: isDrawerOpen ? undefined : goToNext,
-    onSwipeRight: isDrawerOpen ? undefined : goToPrevious,
+    onSwipeUp: goToNext,
+    onSwipeDown: goToPrevious,
+    onSwipeLeft: () => setIsDrawerOpen(true),
+    onSwipeRight: isDrawerOpen ? () => setIsDrawerOpen(false) : handleClose,
     disabled: isZoomed
   });
 
@@ -121,40 +112,106 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-        {/* Top Header */}
-        <div className={`absolute top-0 inset-x-0 z-[1100] flex items-center justify-between p-4 pt-8 bg-gradient-to-b from-black/80 to-transparent transition-opacity duration-300 ${isFocusMode ? 'opacity-0' : 'opacity-100'}`}>
-            <button onClick={handleClose} className="p-2 text-white/70 hover:text-white bg-black/20 backdrop-blur-md rounded-full transition-colors"><CloseIcon className="w-6 h-6" /></button>
-            <div className="flex items-center gap-2">
-                 <button onClick={() => setIsFocusMode(!isFocusMode)} className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-[10px] font-bold text-white uppercase tracking-widest border border-white/10">{isFocusMode ? 'Show Controls' : 'Focus Mode'}</button>
+        {/* Top Actions */}
+        <div className="absolute top-0 inset-x-0 z-[1100] flex items-center justify-between p-6 bg-gradient-to-b from-black/80 to-transparent">
+            <button onClick={handleClose} className="p-2 text-white/70 hover:text-white bg-black/20 backdrop-blur-md rounded-full transition-colors border border-white/5">
+                <CloseIcon className="w-6 h-6" />
+            </button>
+            <div className="flex items-center gap-3">
+                 <button onClick={() => setIsReportModalOpen(true)} className="p-2 text-white/40 hover:text-red-400 bg-black/20 backdrop-blur-md rounded-full transition-colors border border-white/5">
+                     <FlagIcon className="w-5 h-5" />
+                 </button>
             </div>
         </div>
 
-        <div className="flex-grow flex flex-col md:flex-row relative overflow-hidden h-full">
-            {/* Nav Arrows (Desktop) */}
-            <button onClick={goToPrevious} disabled={currentIndex === 0} className="absolute left-6 top-1/2 -translate-y-1/2 z-50 p-4 bg-black/20 hover:bg-black/40 text-white rounded-full transition-all disabled:opacity-0 hidden lg:block border border-white/5 backdrop-blur-sm"><ChevronLeftIcon className="w-8 h-8" /></button>
-            <button onClick={goToNext} disabled={currentIndex === items.length - 1} className="absolute right-6 top-1/2 -translate-y-1/2 z-50 p-4 bg-black/20 hover:bg-black/40 text-white rounded-full transition-all disabled:opacity-0 hidden lg:block border border-white/5 backdrop-blur-sm"><ChevronRightIcon className="w-8 h-8" /></button>
+        {/* Full Screen Viewer */}
+        <div className="flex-grow w-full h-full relative overflow-hidden">
+            <MediaViewer 
+                item={item} 
+                isUnlocked={isUnlocked} 
+                onUnlockClick={() => unlockContent(item.id, item.price || 0)} 
+                isUnlocking={isWalletLoading} 
+                onMediaEnded={goToNext}
+                onZoomChange={setIsZoomed} 
+            />
+        </div>
 
-            {/* Main Viewer */}
-            <div className="flex-grow h-full relative">
-                <MediaViewer 
-                    item={item} 
-                    isUnlocked={isUnlocked} 
-                    onUnlockClick={() => unlockContent(item.id, item.price || 0)} 
-                    isUnlocking={isWalletLoading} 
-                    onMediaEnded={goToNext}
-                    onZoomChange={setIsZoomed} 
-                />
+        {/* TikTok Interaction Overlay */}
+        <div className="absolute inset-0 pointer-events-none z-[1050] flex flex-col justify-end">
+            <div className="flex items-end justify-between p-6 pb-12 gap-6 bg-gradient-to-t from-black/90 via-black/20 to-transparent">
+                
+                {/* Meta Info (Bottom Left) */}
+                <div className="flex-grow max-w-[70%] pointer-events-auto flex flex-col gap-3 animate-slide-up">
+                    <div className="flex items-center gap-3 cursor-pointer group" onClick={() => onUserClick?.({ id: item.user_id!, name: item.author!, avatar: item.author_avatar || '' })}>
+                        <Avatar src={item.author_avatar} alt={item.author} size="md" className="ring-2 ring-pink-500 group-hover:scale-105 transition-transform" />
+                        <div>
+                            <h3 className="text-white font-bold text-base drop-shadow-md">@{item.author}</h3>
+                            <span className="text-cyan-400 text-[10px] font-bold uppercase tracking-widest bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-500/20">{item.category}</span>
+                        </div>
+                    </div>
+                    
+                    <p className="text-white/90 text-sm line-clamp-2 leading-snug drop-shadow-md font-light italic">
+                        {item.description}
+                    </p>
+                    
+                    <div className="flex flex-wrap gap-2">
+                        {item.tags?.map(tag => (
+                            <span key={tag} className="text-pink-400 font-bold text-xs drop-shadow-md">#{tag}</span>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Side Action HUD (Bottom Right) */}
+                <div className="flex flex-col items-center gap-7 mb-4 pointer-events-auto animate-fade-in">
+                    <div className="flex flex-col items-center">
+                        <button onClick={handleLikeAction} className={`p-3 rounded-full bg-black/20 backdrop-blur-xl border border-white/10 transition-all active:scale-75 ${isLiked ? 'text-pink-500' : 'text-white'}`}>
+                            <HeartIcon filled={isLiked} className="w-8 h-8 drop-shadow-lg" />
+                        </button>
+                        <span className="text-[11px] font-bold text-white mt-1.5 drop-shadow-md">{likeCount}</span>
+                    </div>
+
+                    <div className="flex flex-col items-center">
+                        <button onClick={() => setIsDrawerOpen(true)} className="p-3 rounded-full bg-black/20 backdrop-blur-xl border border-white/10 text-white transition-all active:scale-75">
+                            <ChatIcon className="w-8 h-8 drop-shadow-lg" />
+                        </button>
+                        <span className="text-[11px] font-bold text-white mt-1.5 drop-shadow-md">Details</span>
+                    </div>
+
+                    <div className="flex flex-col items-center">
+                        <button onClick={() => setIsTipModalOpen(true)} className="p-3 rounded-full bg-black/20 backdrop-blur-xl border border-white/10 text-yellow-500 transition-all active:scale-75">
+                            <GiftIcon className="w-8 h-8 drop-shadow-lg" />
+                        </button>
+                        <span className="text-[11px] font-bold text-white mt-1.5 drop-shadow-md">Support</span>
+                    </div>
+
+                    <div className="flex flex-col items-center">
+                        <button onClick={(e) => setShareAnchorEl(e.currentTarget as HTMLElement)} className="p-3 rounded-full bg-black/20 backdrop-blur-xl border border-white/10 text-white transition-all active:scale-75">
+                            <ShareIcon className="w-8 h-8 drop-shadow-lg" />
+                        </button>
+                        <span className="text-[11px] font-bold text-white mt-1.5 drop-shadow-md">Share</span>
+                    </div>
+                </div>
             </div>
+        </div>
 
-            {/* Sidebar (Desktop) */}
-            {!isFocusMode && (
-                <div className="hidden lg:block w-[400px] h-full border-l border-white/10 bg-[#050505] overflow-y-auto custom-scrollbar">
+        {/* Slide-out Sidebar/Drawer (Right/Bottom) */}
+        {isDrawerOpen && (
+            <div className="fixed inset-0 z-[1200] flex animate-fade-in">
+                {/* Backdrop overlay */}
+                <div className="flex-grow bg-black/60 backdrop-blur-sm" onClick={() => setIsDrawerOpen(false)}></div>
+                
+                {/* Content Panel */}
+                <div className="w-full md:w-[450px] bg-[#050505] h-full shadow-[-20px_0_50px_rgba(0,0,0,0.5)] border-l border-white/10 overflow-y-auto custom-scrollbar animate-slide-left">
+                    <div className="sticky top-0 z-50 p-6 bg-[#050505]/80 backdrop-blur-md flex items-center justify-between border-b border-white/5">
+                        <h3 className="text-white font-bold uppercase tracking-widest text-sm">Engagement Panel</h3>
+                        <button onClick={() => setIsDrawerOpen(false)} className="p-2 text-gray-400 hover:text-white"><CloseIcon className="w-5 h-5" /></button>
+                    </div>
                     <MediaSidebar 
                         item={item} 
                         session={session} 
                         relatedItems={relatedItems} 
                         isOwner={isOwner} 
-                        onAuthorClick={() => { handleClose(); onUserClick?.({ id: item.user_id!, name: item.author!, avatar: item.author_avatar || '' }); }} 
+                        onAuthorClick={() => { setIsDrawerOpen(false); handleClose(); onUserClick?.({ id: item.user_id!, name: item.author!, avatar: item.author_avatar || '' }); }} 
                         onRelatedClick={(id) => { const idx = items.findIndex(i => i.id === id); if (idx !== -1) setCurrentIndex(idx); }} 
                         onShareClick={(e) => setShareAnchorEl(e.currentTarget as HTMLElement)} 
                         onReportClick={() => setIsReportModalOpen(true)} 
@@ -162,73 +219,11 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                         onDeleteSuccess={handleClose} 
                     />
                 </div>
-            )}
-        </div>
-
-        {/* Mobile Interaction Bar */}
-        {!isFocusMode && (
-            <div className="lg:hidden fixed bottom-0 inset-x-0 p-4 pb-safe bg-gradient-to-t from-black to-transparent z-[1050] flex items-end justify-between gap-4">
-                <div className="flex flex-col gap-2 max-w-[70%]">
-                    {/* Fixed onAuthorClick error: using onUserClick and closing modal on navigation */}
-                    <div className="flex items-center gap-3" onClick={() => { handleClose(); onUserClick?.({ id: item.user_id!, name: item.author!, avatar: item.author_avatar || '' }); }}>
-                        <div className="w-10 h-10 rounded-full border-2 border-pink-500 overflow-hidden shadow-lg">
-                            <img src={item.author_avatar || `https://ui-avatars.com/api/?name=${item.author}`} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="overflow-hidden">
-                            <p className="text-white font-bold text-sm truncate">{item.author}</p>
-                            <p className="text-gray-400 text-[10px] uppercase tracking-wider">{item.category}</p>
-                        </div>
-                    </div>
-                    <p className="text-gray-200 text-xs line-clamp-2 leading-snug">{item.description}</p>
-                </div>
-
-                {/* Vertical Actions */}
-                <div className="flex flex-col items-center gap-6 mb-2">
-                    <div className="flex flex-col items-center">
-                        <button onClick={handleLikeAction} className={`p-2 transition-transform active:scale-75 ${isLiked ? 'text-pink-500' : 'text-white'}`}>
-                            <HeartIcon filled={isLiked} className="w-8 h-8 drop-shadow-lg" />
-                        </button>
-                        <span className="text-[10px] font-bold text-white drop-shadow-md">{likeCount}</span>
-                    </div>
-                    <button onClick={() => setIsDrawerOpen(true)} className="p-2 text-white">
-                        <ChatIcon className="w-8 h-8 drop-shadow-lg" />
-                    </button>
-                    <button onClick={() => setIsTipModalOpen(true)} className="p-2 text-yellow-500">
-                        <GiftIcon className="w-8 h-8 drop-shadow-lg" />
-                    </button>
-                    <button onClick={(e) => setShareAnchorEl(e.currentTarget as HTMLElement)} className="p-2 text-white">
-                        <ShareIcon className="w-8 h-8 drop-shadow-lg" />
-                    </button>
-                </div>
-            </div>
-        )}
-
-        {/* Mobile Swipe-up Drawer */}
-        {isDrawerOpen && (
-            <div className="lg:hidden fixed inset-0 z-[1200] flex flex-col animate-slide-up">
-                <div className="flex-grow" onClick={() => setIsDrawerOpen(false)}></div>
-                <div className="h-[70vh] bg-[#050505] rounded-t-[2.5rem] border-t border-white/10 flex flex-col overflow-hidden shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
-                    <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto my-4 flex-shrink-0" onClick={() => setIsDrawerOpen(false)}></div>
-                    <div className="flex-grow overflow-y-auto custom-scrollbar pb-20">
-                        <MediaSidebar 
-                            item={item} 
-                            session={session} 
-                            relatedItems={relatedItems} 
-                            isOwner={isOwner} 
-                            onAuthorClick={() => { setIsDrawerOpen(false); handleClose(); onUserClick?.({ id: item.user_id!, name: item.author!, avatar: item.author_avatar || '' }); }} 
-                            onRelatedClick={(id) => { const idx = items.findIndex(i => i.id === id); if (idx !== -1) setCurrentIndex(idx); }} 
-                            onShareClick={(e) => setShareAnchorEl(e.currentTarget as HTMLElement)} 
-                            onReportClick={() => setIsReportModalOpen(true)} 
-                            onDataChange={onDataChange} 
-                            onDeleteSuccess={handleClose} 
-                        />
-                    </div>
-                </div>
             </div>
         )}
 
         {shareAnchorEl && <SharePopover item={item} anchorEl={shareAnchorEl} onClose={() => setShareAnchorEl(null)} />}
-        {isReportModalOpen && <ReportModal onClose={() => setIsReportModalOpen(false)} isSubmitting={isReporting} onSubmit={async (r, d) => { if (!session) return; setIsReporting(true); try { await reportMediaItem({ media_id: item.id, reporter_id: session.user.id, reason: r, details: d }); toast.success("Reported"); setIsReportModalOpen(false); } finally { setIsReporting(false); } }} />}
+        {isReportModalOpen && <ReportModal onClose={() => setIsReportModalOpen(false)} isSubmitting={false} onSubmit={async () => {}} />}
         {isTipModalOpen && <TipModal recipientId={item.user_id || ''} recipientName={item.author || ''} onClose={() => setIsTipModalOpen(false)} />}
     </div>
   );
