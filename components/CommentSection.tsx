@@ -8,6 +8,7 @@ import SendIcon from './icons/SendIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
 import { useConfirm } from '../context/ConfirmationContext';
 import { useComments } from '../hooks/useComments';
+import Avatar from './Avatar';
 
 interface CommentSectionProps {
   mediaId: string;
@@ -15,193 +16,81 @@ interface CommentSectionProps {
 }
 
 const CommentSection: React.FC<CommentSectionProps> = ({ mediaId, session }) => {
-  // Use Custom Hook
   const { comments, isLoading, postComment, removeComment, editComment } = useComments(mediaId, session);
-  
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Edit State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
-
   const { confirm } = useConfirm();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
-
+    if (!newComment.trim() || isSubmitting) return;
     setIsSubmitting(true);
-    const result = await postComment(newComment);
-    if (result.success) {
-        setNewComment('');
-    }
+    if ((await postComment(newComment)).success) setNewComment('');
     setIsSubmitting(false);
   };
 
-  const handleDelete = async (commentId: string) => {
-      const isConfirmed = await confirm({
-          title: 'Delete Comment',
-          message: 'Are you sure you want to delete this comment?',
-          confirmText: 'Delete',
-          variant: 'danger'
-      });
-
-      if (!isConfirmed) return;
-      await removeComment(commentId);
-  };
-
-  const startEdit = (comment: Comment) => {
-      setEditingId(comment.id);
-      setEditContent(comment.content);
-  };
-
-  const cancelEdit = () => {
-      setEditingId(null);
-      setEditContent('');
-  };
-
-  const handleUpdate = async (commentId: string) => {
-      if (!editContent.trim()) return;
-      const result = await editComment(commentId, editContent);
-      if (result.success) {
-          setEditingId(null);
+  const handleDelete = async (id: string) => {
+      if (await confirm({ title: 'Delete Comment', message: 'Delete this comment?', confirmText: 'Delete', variant: 'danger' })) {
+          await removeComment(id);
       }
   };
 
   return (
-    <div className="flex flex-col h-full bg-black/20 rounded-xl border border-gray-800/50 overflow-hidden">
-        {/* Header */}
-        <div className="p-3 border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                Comments ({comments.length})
-            </h3>
+    <div className="flex flex-col bg-gray-900/40 rounded-3xl border border-white/5 overflow-hidden">
+        <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
+            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Feed Interactions ({comments.length})</h3>
         </div>
 
-        {/* List */}
-        <div className="flex-grow overflow-y-auto p-4 space-y-4 max-h-[300px] md:max-h-[400px]">
+        <div className="p-4 space-y-5 max-h-[350px] overflow-y-auto custom-scrollbar">
             {isLoading ? (
-                <div className="flex justify-center py-4">
-                    <LoadingSpinner className="w-6 h-6 text-pink-500" />
-                </div>
+                <div className="flex justify-center py-6"><LoadingSpinner className="w-6 h-6 text-pink-500" /></div>
             ) : comments.length === 0 ? (
-                <div className="text-center py-8 text-gray-600 text-sm">
-                    No comments yet. Be the first to share your thoughts!
-                </div>
+                <div className="text-center py-10 text-gray-600 text-xs uppercase tracking-widest">No transmissions yet</div>
             ) : (
-                comments.map(comment => {
-                    const isAuthor = session?.user.id === comment.user_id;
-                    const isEditing = editingId === comment.id;
-
-                    return (
-                        <div key={comment.id} className="group flex gap-3 animate-fade-in">
-                            {/* Avatar */}
-                            <div className="flex-shrink-0 mt-1">
-                                <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 overflow-hidden">
-                                    {comment.author_avatar ? (
-                                        <img src={comment.author_avatar} alt={comment.author_name} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-500">
-                                            {comment.author_name.charAt(0).toUpperCase()}
+                comments.map(c => (
+                    <div key={c.id} className="flex gap-3 group animate-fade-in">
+                        <Avatar src={c.author_avatar} alt={c.author_name} size="sm" />
+                        <div className="flex-grow min-w-0">
+                            <div className="flex items-center justify-between mb-0.5">
+                                <span className="text-xs font-bold text-gray-200">{c.author_name}</span>
+                                <span className="text-[9px] text-gray-600">{new Date(c.created_at).toLocaleDateString()}</span>
+                            </div>
+                            {editingId === c.id ? (
+                                <div className="mt-2">
+                                    <textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="w-full bg-black/40 border border-pink-500/50 rounded-xl p-3 text-sm text-white focus:outline-none" rows={2} />
+                                    <div className="flex justify-end gap-2 mt-2">
+                                        <button onClick={() => setEditingId(null)} className="text-xs text-gray-500">Cancel</button>
+                                        <button onClick={async () => { if ((await editComment(c.id, editContent)).success) setEditingId(null); }} className="text-xs font-bold text-pink-500">Save</button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <p className="text-sm text-gray-400 font-light leading-relaxed">{c.content}</p>
+                                    {session?.user.id === c.user_id && (
+                                        <div className="flex gap-3 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => { setEditingId(c.id); setEditContent(c.content); }} className="text-[9px] uppercase font-bold text-gray-600 hover:text-white flex items-center gap-1"><PencilIcon className="w-2.5 h-2.5"/> Edit</button>
+                                            <button onClick={() => handleDelete(c.id)} className="text-[9px] uppercase font-bold text-gray-600 hover:text-red-500 flex items-center gap-1"><TrashIcon className="w-2.5 h-2.5"/> Delete</button>
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                            
-                            {/* Content */}
-                            <div className="flex-grow min-w-0">
-                                <div className="flex items-center justify-between mb-0.5">
-                                    <span className="text-xs font-bold text-gray-300 hover:text-pink-400 cursor-pointer transition-colors">
-                                        {comment.author_name}
-                                    </span>
-                                    <span className="text-[10px] text-gray-600">
-                                        {new Date(comment.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                    </span>
-                                </div>
-
-                                {isEditing ? (
-                                    <div className="mt-1">
-                                        <textarea 
-                                            value={editContent}
-                                            onChange={(e) => setEditContent(e.target.value)}
-                                            className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-sm text-white focus:outline-none focus:border-pink-500 mb-2"
-                                            rows={2}
-                                            autoFocus
-                                        />
-                                        <div className="flex gap-2 justify-end">
-                                            <button 
-                                                onClick={cancelEdit}
-                                                className="text-xs text-gray-400 hover:text-white"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button 
-                                                onClick={() => handleUpdate(comment.id)}
-                                                className="text-xs bg-pink-600 px-3 py-1 rounded text-white font-bold"
-                                            >
-                                                Save
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="group relative">
-                                        <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-wrap">
-                                            {comment.content}
-                                        </p>
-                                        
-                                        {/* Actions */}
-                                        {isAuthor && (
-                                            <div className="flex items-center gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button 
-                                                    onClick={() => startEdit(comment)} 
-                                                    className="text-[10px] text-gray-500 hover:text-white flex items-center gap-1"
-                                                >
-                                                    <PencilIcon className="w-3 h-3" /> Edit
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleDelete(comment.id)} 
-                                                    className="text-[10px] text-gray-500 hover:text-red-400 flex items-center gap-1"
-                                                >
-                                                    <TrashIcon className="w-3 h-3" /> Delete
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                            )}
                         </div>
-                    );
-                })
+                    </div>
+                ))
             )}
         </div>
 
-        {/* Input Form */}
         {session ? (
-            <form onSubmit={handleSubmit} className="p-3 border-t border-gray-800 bg-gray-900/50 backdrop-blur-sm">
-                <div className="flex gap-2 items-center">
-                    <input 
-                        type="text"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Add a comment..."
-                        className="flex-grow bg-gray-800/50 border border-gray-700 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors placeholder-gray-600"
-                        disabled={isSubmitting}
-                    />
-                    <button 
-                        type="submit" 
-                        disabled={!newComment.trim() || isSubmitting}
-                        className="p-2 bg-gradient-to-r from-pink-600 to-cyan-600 rounded-full text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-pink-500/20 transition-all"
-                    >
-                        {isSubmitting ? <LoadingSpinner className="w-4 h-4" /> : <SendIcon className="w-4 h-4" />}
-                    </button>
+            <form onSubmit={handleSubmit} className="p-3 bg-black/40 border-t border-white/5">
+                <div className="flex gap-2">
+                    <input value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Say something..." className="flex-grow bg-white/5 border border-white/10 rounded-full px-5 py-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-pink-500 transition-colors" />
+                    <button type="submit" disabled={!newComment.trim() || isSubmitting} className="p-2.5 bg-gradient-to-tr from-pink-600 to-pink-500 rounded-full text-white shadow-lg active:scale-90 disabled:opacity-50"><SendIcon className="w-4 h-4" /></button>
                 </div>
             </form>
         ) : (
-            <div className="p-4 border-t border-gray-800 text-center bg-gray-900/80">
-                <p className="text-xs text-gray-500">
-                    Please <span className="text-cyan-400 font-bold">sign in</span> to leave a comment.
-                </p>
-            </div>
+            <div className="p-4 bg-black/20 text-center border-t border-white/5"><p className="text-[10px] text-gray-600 uppercase tracking-widest">Sign in to leave a trace</p></div>
         )}
     </div>
   );

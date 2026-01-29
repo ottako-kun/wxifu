@@ -14,6 +14,7 @@ import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmationContext';
 import EditMediaForm from './EditMediaForm';
 import { useFollow } from '../hooks/useFollow';
+import Avatar from './Avatar';
 
 interface MediaSidebarProps {
   item: MediaItem;
@@ -41,19 +42,13 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
   onDeleteSuccess
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  
-  // Use Follow Hook
   const { isFollowing, isLoading: isFollowLoading, toggleFollow } = useFollow(session?.user.id, item.user_id || '');
-
   const toast = useToast();
   const { confirm } = useConfirm();
 
-  // Reset editing mode when item changes
-  useEffect(() => {
-    setIsEditing(false);
-  }, [item]);
+  useEffect(() => { setIsEditing(false); }, [item]);
 
-  const handleFollowToggleWrapper = async () => {
+  const handleFollowToggle = async () => {
       if (await toggleFollow(item.author || 'Artist')) {
           if (onDataChange) onDataChange();
       }
@@ -61,178 +56,82 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
 
   const handleEditSuccess = (updatedFields: Partial<MediaItem>) => {
       setIsEditing(false);
-      // Mutate local item to reflect changes immediately in UI
       Object.assign(item, updatedFields);
       if (onDataChange) onDataChange();
   };
 
   const handleDelete = async () => {
-    const isConfirmed = await confirm({
-        title: 'Delete Post',
-        message: 'Are you sure you want to delete this post? This action cannot be undone.',
-        confirmText: 'Delete',
-        variant: 'danger'
-    });
-
+    const isConfirmed = await confirm({ title: 'Delete Post', message: 'Delete this post permanently?', confirmText: 'Delete', variant: 'danger' });
     if (!isConfirmed) return;
-
     const { error } = await deleteMediaItem(item.id);
-    
-    if (error) {
-        toast.error('Failed to delete item: ' + error.message);
-    } else {
-        toast.success('Post deleted');
-        if (onDataChange) onDataChange();
-        onDeleteSuccess();
-    }
+    if (error) toast.error(error.message);
+    else { toast.success('Deleted'); onDeleteSuccess(); if (onDataChange) onDataChange(); }
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-transparent relative z-10">
-      <div className="flex-grow flex flex-col pb-safe">
-        
-        {/* Header: Brand or Author */}
-        <div className="p-4 md:p-6 pb-4">
-            <div className="flex items-center gap-x-4 mb-4 border-b border-gray-800 pb-4 justify-between">
-            <div className="flex items-center gap-x-3">
-                <div className="cursor-pointer group relative" onClick={onAuthorClick}>
-                    {item.author_avatar ? (
-                        <img src={item.author_avatar} alt={item.author} className="w-10 h-10 rounded-full border border-pink-500 shadow-lg object-cover" />
-                    ) : (
-                        <div className="w-10 h-10 bg-gradient-to-br from-pink-600 to-purple-600 rounded-full shadow-lg flex items-center justify-center text-white font-bold text-lg border border-white/10">
-                            {item.author?.charAt(0) || APP_CONFIG.name.charAt(0)}
-                        </div>
-                    )}
-                </div>
-                <div className="overflow-hidden">
-                    <h2 
-                        className="text-base font-bold text-white leading-none mb-1 font-orbitron truncate cursor-pointer hover:text-pink-400 transition-colors"
-                        onClick={onAuthorClick}
-                    >
-                        {item.author || APP_CONFIG.name}
-                    </h2>
-                    <div className="flex items-center gap-2">
-                        {!isOwner && session && item.user_id && !item.user_id.startsWith('static') && (
-                            <button 
-                                onClick={handleFollowToggleWrapper}
-                                disabled={isFollowLoading}
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded border transition-colors uppercase ${
-                                    isFollowing 
-                                    ? 'border-gray-600 text-gray-400 hover:text-white' 
-                                    : 'border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-white'
-                                }`}
-                            >
-                                {isFollowing ? 'Following' : '+ Follow'}
-                            </button>
-                        )}
+    <div className="w-full flex flex-col bg-transparent">
+        <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3 cursor-pointer" onClick={onAuthorClick}>
+                    <Avatar src={item.author_avatar} alt={item.author} size="md" frame={isFollowing ? 'neon-pink' : 'none'} />
+                    <div>
+                        <h2 className="text-white font-bold text-sm font-orbitron hover:text-pink-500 transition-colors">{item.author}</h2>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest">Creator</p>
                     </div>
                 </div>
-            </div>
-            
-            {/* Owner Controls */}
-            {isOwner && (
-                <div className="flex gap-2">
+                {!isOwner && session && !item.user_id?.startsWith('static') && (
                     <button 
-                        onClick={() => setIsEditing(!isEditing)} 
-                        className={`p-2 rounded-lg transition-colors ${isEditing ? 'bg-pink-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
-                        title="Edit Post"
+                        onClick={handleFollowToggle}
+                        disabled={isFollowLoading}
+                        className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase transition-all ${isFollowing ? 'bg-gray-800 text-gray-400 border border-gray-700' : 'bg-pink-600 text-white shadow-lg shadow-pink-900/20'}`}
                     >
-                        <PencilIcon className="w-4 h-4" />
+                        {isFollowing ? 'Following' : 'Follow'}
                     </button>
-                    <button 
-                        onClick={handleDelete}
-                        className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-red-500 transition-colors"
-                        title="Delete Post"
-                    >
-                        <TrashIcon className="w-4 h-4" />
-                    </button>
-                </div>
-            )}
+                )}
+                {isOwner && (
+                    <div className="flex gap-2">
+                        <button onClick={() => setIsEditing(!isEditing)} className={`p-2 rounded-lg transition-colors ${isEditing ? 'bg-pink-600 text-white' : 'bg-gray-800 text-gray-400'}`}><PencilIcon className="w-4 h-4" /></button>
+                        <button onClick={handleDelete} className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-red-500"><TrashIcon className="w-4 h-4" /></button>
+                    </div>
+                )}
             </div>
-            
-            {isEditing ? (
-                <EditMediaForm 
-                    item={item} 
-                    onCancel={() => setIsEditing(false)} 
-                    onSuccess={handleEditSuccess} 
-                />
-            ) : (
-                <>
-                    <div className="mb-2 flex items-center justify-between">
-                    <span className="text-xs font-bold text-cyan-500 uppercase tracking-wider">About</span>
-                    {item.category && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded border border-pink-500/30 bg-pink-500/10 text-pink-300 uppercase">
-                        {item.category}
-                        </span>
-                    )}
-                    </div>
-                    <div className="prose prose-invert prose-sm prose-p:text-gray-300 prose-p:font-light prose-p:leading-relaxed mb-4">
-                        <p className="text-sm">{item.description || 'No description available.'}</p>
-                    </div>
 
+            {isEditing ? (
+                <EditMediaForm item={item} onCancel={() => setIsEditing(false)} onSuccess={handleEditSuccess} />
+            ) : (
+                <div className="space-y-4">
+                    <p className="text-sm text-gray-300 leading-relaxed font-light">{item.description}</p>
                     {item.tags && item.tags.length > 0 && (
-                    <div className="mb-6">
                         <div className="flex flex-wrap gap-2">
-                        {item.tags.map(tag => (
-                            <span key={tag} className="text-xs text-gray-400 border border-gray-700 px-2 py-1 rounded cursor-default">
-                            #{tag}
-                            </span>
-                        ))}
+                            {item.tags.map(tag => <span key={tag} className="text-[10px] text-pink-400 bg-pink-950/30 px-2 py-0.5 rounded-md border border-pink-500/20">#{tag}</span>)}
                         </div>
-                    </div>
                     )}
-                </>
+                </div>
             )}
         </div>
 
-        {/* Comments Section */}
-        <div className="flex-grow px-4 pb-4">
+        <div className="px-4 mb-6">
             <CommentSection mediaId={item.id} session={session} />
         </div>
 
-        {/* Related Media Section */}
         {relatedItems.length > 0 && (
-            <div className="px-4 py-4 border-t border-gray-800">
-                <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">More Like This</h3>
+            <div className="p-6 pt-0">
+                <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">Related Artworks</h3>
                 <div className="grid grid-cols-3 gap-2">
                     {relatedItems.map(rel => (
-                        <div 
-                            key={rel.id} 
-                            onClick={() => onRelatedClick(rel.id)}
-                            className="aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity relative group/rel"
-                        >
-                            <img src={rel.src} alt="Related" className="w-full h-full object-cover" />
-                            {rel.is_premium && !isOwner && rel.user_id !== session?.user.id && (
-                                <div className="absolute top-1 right-1 bg-black/60 p-0.5 rounded-full">
-                                    <LockIcon className="w-3 h-3 text-yellow-500" />
-                                </div>
-                            )}
+                        <div key={rel.id} onClick={() => onRelatedClick(rel.id)} className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-pink-500 transition-all relative">
+                            <img src={rel.src} className="w-full h-full object-cover" alt="Related" />
+                            {rel.is_premium && <div className="absolute top-1 right-1 bg-black/60 p-0.5 rounded-full"><LockIcon className="w-2.5 h-2.5 text-yellow-500" /></div>}
                         </div>
                     ))}
                 </div>
             </div>
         )}
-
-      </div>
-      
-      {/* Footer Actions */}
-      <div className="p-4 bg-gray-900 border-t border-gray-800 flex-shrink-0 flex gap-2">
-        <button
-          onClick={onShareClick}
-          className="flex-grow flex items-center justify-center gap-x-2 px-4 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-white transition-all font-bold tracking-wide border border-gray-700"
-        >
-          <ShareIcon className="w-5 h-5" />
-          <span className="text-xs">Share</span>
-        </button>
         
-        <button
-            onClick={onReportClick}
-            className="p-3 rounded-xl bg-gray-800 hover:bg-red-900/30 text-gray-400 hover:text-red-400 border border-gray-700 hover:border-red-800 transition-colors"
-            title="Report Content"
-        >
-            <FlagIcon className="w-5 h-5" />
-        </button>
-      </div>
+        <div className="p-6 pt-0 flex gap-2">
+            <button onClick={onShareClick} className="flex-grow flex items-center justify-center gap-2 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl text-xs font-bold uppercase transition-all"><ShareIcon className="w-4 h-4" /> Share Link</button>
+            <button onClick={onReportClick} className="p-3 bg-gray-800 hover:bg-red-900/20 text-gray-500 hover:text-red-500 rounded-xl transition-all"><FlagIcon className="w-4 h-4" /></button>
+        </div>
     </div>
   );
 };
