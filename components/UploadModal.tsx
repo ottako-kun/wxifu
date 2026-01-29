@@ -40,14 +40,34 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      const newTag = tagInput.trim().replace(/^#/, '');
-      if (newTag && !formData.tags.includes(newTag)) {
-        setFormData(prev => ({ ...prev, tags: [...prev.tags, newTag] }));
-        setTagInput('');
+  // Improved tag processing logic
+  const processTags = (input: string, isFinal: boolean = false) => {
+    if (input.includes(',') || isFinal) {
+      const parts = input.split(',');
+      
+      // If it's the final submission (Enter), process all parts
+      // If it's typing/pasting, process all parts except the last one (which might be incomplete)
+      const tagsToProcess = isFinal ? parts : parts.slice(0, -1);
+      const remainingInput = isFinal ? '' : parts[parts.length - 1];
+
+      const newTags = tagsToProcess
+        .map(t => t.trim().replace(/^#/, ''))
+        .filter(t => t !== '' && !formData.tags.includes(t));
+      
+      if (newTags.length > 0) {
+        setFormData(prev => ({ ...prev, tags: [...prev.tags, ...newTags] }));
       }
+      
+      setTagInput(remainingInput);
+    } else {
+      setTagInput(input);
+    }
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      processTags(tagInput, true);
     } else if (e.key === 'Backspace' && !tagInput && formData.tags.length > 0) {
       setFormData(prev => ({ ...prev, tags: prev.tags.slice(0, -1) }));
     }
@@ -60,7 +80,17 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.src || !formData.description || !formData.category) return;
-    await onSubmit(formData);
+    
+    // Ensure any remaining tag input is processed before submit
+    const finalTags = [...formData.tags];
+    if (tagInput.trim()) {
+        const lastTags = tagInput.split(',')
+            .map(t => t.trim().replace(/^#/, ''))
+            .filter(t => t !== '' && !finalTags.includes(t));
+        finalTags.push(...lastTags);
+    }
+
+    await onSubmit({ ...formData, tags: finalTags });
   };
 
   const isVideo = formData.type === MediaType.Video;
@@ -188,7 +218,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
           {/* Tags - Dynamic Input */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-              Tags
+              Tags (comma separated)
             </label>
             <div className="bg-gray-800 border border-gray-700 rounded-lg p-2 flex flex-wrap gap-2 focus-within:ring-2 focus-within:ring-cyan-500 focus-within:border-transparent transition-all">
                 {formData.tags.map(tag => (
@@ -206,9 +236,9 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
                 <input 
                   type="text" 
                   value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
+                  onChange={(e) => processTags(e.target.value)}
                   onKeyDown={handleTagKeyDown}
-                  placeholder={formData.tags.length === 0 ? "Add tags (press Enter)..." : ""}
+                  placeholder={formData.tags.length === 0 ? "Paste tags (e.g. waifu, art, 4k)..." : ""}
                   className="bg-transparent text-white placeholder-gray-500 focus:outline-none flex-grow min-w-[120px] text-sm py-1"
                 />
             </div>
