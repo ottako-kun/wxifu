@@ -170,6 +170,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                             onClick={handleUnlock}
                             disabled={isWalletLoading}
                             className="w-full py-4 bg-gradient-to-r from-yellow-600 to-yellow-400 hover:from-yellow-500 hover:to-yellow-300 text-black font-black rounded-2xl shadow-lg transform transition-all active:scale-95 flex items-center justify-center gap-2 uppercase text-xs tracking-widest"
+                            title={`Pay ${item.price} Coins to unlock`}
                         >
                             {isWalletLoading ? <LoadingSpinner className="w-5 h-5 text-black"/> : `Unlock ${item.price} Coins`}
                         </button>
@@ -199,6 +200,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                         {/* Global Sound Toggle Button */}
                         <button 
                             onClick={handleMuteToggle}
+                            title={isGlobalMuted ? "Unmute Audio" : "Mute Audio"}
                             className="absolute top-4 right-4 z-30 p-2.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 text-white opacity-80 hover:opacity-100 transition-all hover:scale-110"
                         >
                             {isGlobalMuted ? (
@@ -216,7 +218,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
             {/* TikTok Style Side Actions */}
             <div className="absolute bottom-28 right-4 z-30 flex flex-col items-center gap-5 md:gap-7">
                 <div className="flex flex-col items-center">
-                    <div className="relative" onClick={handleUserClick}>
+                    <div className="relative" onClick={handleUserClick} title={`View @${item.author}'s profile`}>
                         <Avatar 
                            src={item.author_avatar} 
                            alt={item.author} 
@@ -228,6 +230,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                             <button 
                                 onClick={(e) => { e.stopPropagation(); toggleFollow(item.author || ''); }}
                                 className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center text-white z-40 shadow-lg border-2 border-black animate-bounce-in"
+                                title="Follow creator"
                             >
                                 <span className="text-xs font-bold leading-none">+</span>
                             </button>
@@ -239,6 +242,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                     <button 
                         onClick={(e) => { e.stopPropagation(); handleLikeAction(); }}
                         className={`p-2.5 rounded-full transition-all active:scale-75 ${isLiked ? 'text-pink-500' : 'text-white/90 hover:text-white'}`}
+                        title={isLiked ? "Unlike artwork" : "Like artwork"}
                     >
                         <HeartIcon filled={isLiked} className="w-9 h-9 drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]" />
                     </button>
@@ -249,6 +253,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                     <button 
                         onClick={(e) => { e.stopPropagation(); onItemClick(); }}
                         className="p-2.5 text-white/90 hover:text-white transition-all active:scale-75"
+                        title="View details & comments"
                     >
                         <ChatIcon className="w-9 h-9 drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]" />
                     </button>
@@ -259,6 +264,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                     <button 
                         onClick={(e) => { e.stopPropagation(); setIsTipModalOpen(true); }}
                         className="p-2.5 text-yellow-500/90 hover:text-yellow-400 transition-all active:scale-75"
+                        title="Send a gift/tip to artist"
                     >
                         <GiftIcon className="w-9 h-9 drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]" />
                     </button>
@@ -269,6 +275,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                     <button 
                         onClick={handleShareClick}
                         className="p-2.5 text-white/90 hover:text-white transition-all active:scale-75"
+                        title="Share this content"
                     >
                         <ShareIcon className="w-9 h-9 drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]" />
                     </button>
@@ -292,7 +299,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
             {/* Bottom Caption Area */}
             <div className="absolute bottom-0 inset-x-0 p-5 pt-20 pb-10 bg-gradient-to-t from-black via-black/60 to-transparent z-20 pointer-events-none">
                 <div className="pointer-events-auto max-w-[85%]">
-                    <h3 onClick={handleUserClick} className="font-black text-white text-lg mb-2 hover:text-pink-400 cursor-pointer inline-flex items-center gap-1.5 drop-shadow-lg">
+                    <h3 onClick={handleUserClick} className="font-black text-white text-lg mb-2 hover:text-pink-400 cursor-pointer inline-flex items-center gap-1.5 drop-shadow-lg" title="Visit profile">
                         @{item.author}
                         <div className="w-3.5 h-3.5 bg-cyan-500 rounded-full flex items-center justify-center border border-black shadow-[0_0_8px_#06b6d4]">
                              <svg viewBox="0 0 24 24" fill="currentColor" className="w-[80%] h-[80%] text-white">
@@ -306,7 +313,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                     {item.tags && item.tags.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2.5">
                             {item.tags.slice(0, 4).map(tag => (
-                                <span key={tag} className="text-xs text-pink-400 font-black drop-shadow-md hover:text-white transition-colors cursor-pointer">#{tag}</span>
+                                <span key={tag} className="text-xs text-pink-400 font-black drop-shadow-md hover:text-white transition-colors cursor-pointer" title={`Search for #${tag}`}>#{tag}</span>
                             ))}
                         </div>
                     )}

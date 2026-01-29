@@ -36,6 +36,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
         <button 
           onClick={() => onNavigate('home')}
           className={navItemClass(currentView === 'home')}
+          title="Home Gallery"
         >
           <HomeIcon className="w-6 h-6" />
           <span className="text-[8px] uppercase tracking-widest font-black mt-0.5">Home</span>
@@ -48,6 +49,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
         <button 
           onClick={onSearchClick}
           className={navItemClass(false)}
+          title="Search Content"
         >
           <SearchIcon className="w-6 h-6" />
           <span className="text-[8px] uppercase tracking-widest font-black mt-0.5">Explore</span>
@@ -57,6 +59,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
         <div className="relative -top-3">
            <button 
              onClick={onUploadClick}
+             title="Upload Artwork"
              className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-600 to-purple-600 shadow-[0_0_20px_rgba(236,72,153,0.4)] border-2 border-black text-white transform active:scale-90 transition-all duration-200"
            >
              <UploadIcon className="w-6 h-6 stroke-[2.5]" />
@@ -67,6 +70,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
         <button 
           onClick={() => onNavigate('inbox')}
           className={navItemClass(currentView === 'inbox')}
+          title="Messages"
         >
            <div className="relative">
              <InboxIcon className="w-6 h-6" />
@@ -81,6 +85,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
         <button 
           onClick={() => onNavigate('profile')}
           className={navItemClass(currentView === 'profile')}
+          title="Your Profile"
         >
           {session?.user.user_metadata.avatar_url ? (
             <img 

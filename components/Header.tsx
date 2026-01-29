@@ -65,7 +65,7 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo and Title */}
         <div className="flex items-center gap-6">
-            <a href="/" onClick={handleLogoClick} className="flex items-center gap-x-3 group cursor-pointer">
+            <a href="/" onClick={handleLogoClick} className="flex items-center gap-x-3 group cursor-pointer" title="Return to Home">
             <div className="relative w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-gray-900 rounded border border-pink-500 overflow-hidden group-hover:shadow-[0_0_15px_rgba(236,72,153,0.5)] transition-shadow">
                 <div className="absolute inset-0 bg-pink-500 opacity-20 group-hover:opacity-40 transition-opacity"></div>
                 <span className="text-pink-500 font-black text-lg md:text-xl leading-none select-none relative z-10">{APP_CONFIG.name.charAt(0)}</span>
@@ -88,10 +88,10 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-1 ml-4 border-l border-gray-800 pl-4">
-                <button onClick={() => handleNavClick('home')} className="px-3 py-1.5 text-sm font-bold text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors">
+                <button onClick={() => handleNavClick('home')} className="px-3 py-1.5 text-sm font-bold text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors" title="Browse the main gallery">
                     Gallery
                 </button>
-                <button onClick={handleOpenShop} className="px-3 py-1.5 text-sm font-bold text-gray-400 hover:text-yellow-400 hover:bg-yellow-900/10 rounded-lg transition-colors">
+                <button onClick={handleOpenShop} className="px-3 py-1.5 text-sm font-bold text-gray-400 hover:text-yellow-400 hover:bg-yellow-900/10 rounded-lg transition-colors" title="Buy Coins & Avatar Frames">
                     Shop
                 </button>
             </nav>
@@ -105,7 +105,7 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
               <button 
                   onClick={handleOpenShop}
                   className="hidden md:flex items-center gap-1.5 bg-yellow-900/20 border border-yellow-500/30 px-3 py-1.5 rounded-full hover:bg-yellow-900/40 hover:border-yellow-500 transition-all cursor-pointer group/coin"
-                  title="Buy Coins"
+                  title="Your balance. Click to recharge."
               >
                   <CoinIcon className="w-4 h-4 text-yellow-500 group-hover/coin:scale-110 transition-transform" />
                   <span className="text-xs font-bold text-yellow-400 font-orbitron">{balance}</span>
@@ -115,7 +115,7 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
               </button>
 
               {/* Mobile Coin Balance (Simple) */}
-              <button onClick={handleOpenShop} className="md:hidden flex items-center gap-1 text-yellow-500">
+              <button onClick={handleOpenShop} className="md:hidden flex items-center gap-1 text-yellow-500" title="Coins">
                   <CoinIcon className="w-5 h-5" />
                   <span className="text-xs font-bold">{balance}</span>
               </button>
@@ -124,7 +124,7 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
               <button 
                 onClick={handleInboxClick}
                 className="hidden sm:flex p-2 text-gray-400 hover:text-cyan-400 transition-colors rounded-full hover:bg-gray-800"
-                title="Messages"
+                title="View Messages"
               >
                   <InboxIcon className="w-6 h-6" />
               </button>
@@ -132,6 +132,7 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
               <div 
                 className="flex items-center gap-3 cursor-pointer p-1 pr-3 rounded-full hover:bg-gray-800/50 transition-colors"
                 onClick={toggleMenu}
+                title="Account Menu"
               >
                 <Avatar 
                     src={session.user.user_metadata.avatar_url} 
@@ -194,6 +195,7 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate }) => {
           ) : (
             <button
               onClick={signInWithGoogle}
+              title="Sign in to your account"
               className="flex items-center gap-2 px-4 py-2 bg-white text-gray-900 hover:bg-gray-100 rounded-lg font-medium text-sm transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] transform hover:-translate-y-0.5"
             >
               <GoogleIcon className="w-4 h-4" />

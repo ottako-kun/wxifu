@@ -72,7 +72,7 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
     <div className="w-full flex flex-col bg-transparent">
         <div className="p-6">
             <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3 cursor-pointer" onClick={onAuthorClick}>
+                <div className="flex items-center gap-3 cursor-pointer" onClick={onAuthorClick} title={`Visit @${item.author}'s profile`}>
                     <Avatar src={item.author_avatar} alt={item.author} size="md" frame={isFollowing ? 'neon-pink' : 'none'} />
                     <div>
                         <h2 className="text-white font-bold text-sm font-orbitron hover:text-pink-500 transition-colors">{item.author}</h2>
@@ -83,6 +83,7 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
                     <button 
                         onClick={handleFollowToggle}
                         disabled={isFollowLoading}
+                        title={isFollowing ? "Unfollow this creator" : "Follow this creator"}
                         className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase transition-all ${isFollowing ? 'bg-gray-800 text-gray-400 border border-gray-700' : 'bg-pink-600 text-white shadow-lg shadow-pink-900/20'}`}
                     >
                         {isFollowing ? 'Following' : 'Follow'}
@@ -90,8 +91,8 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
                 )}
                 {isOwner && (
                     <div className="flex gap-2">
-                        <button onClick={() => setIsEditing(!isEditing)} className={`p-2 rounded-lg transition-colors ${isEditing ? 'bg-pink-600 text-white' : 'bg-gray-800 text-gray-400'}`}><PencilIcon className="w-4 h-4" /></button>
-                        <button onClick={handleDelete} className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-red-500"><TrashIcon className="w-4 h-4" /></button>
+                        <button onClick={() => setIsEditing(!isEditing)} title="Edit post details" className={`p-2 rounded-lg transition-colors ${isEditing ? 'bg-pink-600 text-white' : 'bg-gray-800 text-gray-400'}`}><PencilIcon className="w-4 h-4" /></button>
+                        <button onClick={handleDelete} title="Delete this post" className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-red-500"><TrashIcon className="w-4 h-4" /></button>
                     </div>
                 )}
             </div>
@@ -103,7 +104,7 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
                     <p className="text-sm text-gray-300 leading-relaxed font-light">{item.description}</p>
                     {item.tags && item.tags.length > 0 && (
                         <div className="flex flex-wrap gap-2">
-                            {item.tags.map(tag => <span key={tag} className="text-[10px] text-pink-400 bg-pink-950/30 px-2 py-0.5 rounded-md border border-pink-500/20">#{tag}</span>)}
+                            {item.tags.map(tag => <span key={tag} className="text-[10px] text-pink-400 bg-pink-950/30 px-2 py-0.5 rounded-md border border-pink-500/20" title={`Tag: #${tag}`}>#{tag}</span>)}
                         </div>
                     )}
                 </div>
@@ -119,7 +120,7 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
                 <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">Related Artworks</h3>
                 <div className="grid grid-cols-3 gap-2">
                     {relatedItems.map(rel => (
-                        <div key={rel.id} onClick={() => onRelatedClick(rel.id)} className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-pink-500 transition-all relative">
+                        <div key={rel.id} onClick={() => onRelatedClick(rel.id)} className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-pink-500 transition-all relative" title="View related content">
                             <img src={rel.src} className="w-full h-full object-cover" alt="Related" />
                             {rel.is_premium && <div className="absolute top-1 right-1 bg-black/60 p-0.5 rounded-full"><LockIcon className="w-2.5 h-2.5 text-yellow-500" /></div>}
                         </div>
@@ -129,8 +130,8 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
         )}
         
         <div className="p-6 pt-0 flex gap-2">
-            <button onClick={onShareClick} className="flex-grow flex items-center justify-center gap-2 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl text-xs font-bold uppercase transition-all"><ShareIcon className="w-4 h-4" /> Share Link</button>
-            <button onClick={onReportClick} className="p-3 bg-gray-800 hover:bg-red-900/20 text-gray-500 hover:text-red-500 rounded-xl transition-all"><FlagIcon className="w-4 h-4" /></button>
+            <button onClick={onShareClick} className="flex-grow flex items-center justify-center gap-2 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl text-xs font-bold uppercase transition-all" title="Share artwork link"><ShareIcon className="w-4 h-4" /> Share Link</button>
+            <button onClick={onReportClick} className="p-3 bg-gray-800 hover:bg-red-900/20 text-gray-500 hover:text-red-500 rounded-xl transition-all" title="Report inappropriate content"><FlagIcon className="w-4 h-4" /></button>
         </div>
     </div>
   );
