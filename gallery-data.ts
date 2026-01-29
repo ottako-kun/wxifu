@@ -26,7 +26,7 @@ export const APP_CONFIG = {
 };
 
 // --- STATIC GALLERY DATA ---
-// You can add your Google Drive or Hypnotube links here.
+// You can add your Google Drive or direct media links here.
 const CUSTOM_MEDIA_COLLECTION: any[] = [
   {
     type: 'PHOTO',
@@ -39,7 +39,7 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
   },
   {
     type: 'VIDEO',
-    link: 'https://hypnotube.com/video/neon-dreams-amv-86718.html',
+    link: 'https://drive.google.com/file/d/1sILwvb70QBKknRuhk0fJLwnO7kmdEywQ/view',
     thumbnail: 'https://images.unsplash.com/photo-1614728263952-84ea206f99b6?q=80&w=1974&auto=format&fit=crop',
     description: 'Neon Dreams AMV - High Energy Edit',
     category: 'AMV',

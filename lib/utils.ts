@@ -53,17 +53,8 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
      if (driveId) {
         // Handle Google Drive
         finalVideoSrc = getGoogleDriveVideoPreviewUrl(driveId);
-     } else if (sourceString.includes('hypnotube.com')) {
-        // Handle Hypnotube Embed Conversion
-        // Pattern: ...video/xxxx-xxxx-86718.html -> 86718
-        const hypnotubeMatch = sourceString.match(/video\/(?:.*-)?(\d+)\.html/);
-        if (hypnotubeMatch && hypnotubeMatch[1]) {
-            finalVideoSrc = `https://hypnotube.com/embed/${hypnotubeMatch[1]}`;
-        } else {
-            finalVideoSrc = sourceString;
-        }
      } else {
-        // Otherwise use the direct link or existing videoSrc
+        // Use the direct link or existing videoSrc for non-Drive links
         finalVideoSrc = item.videoSrc || sourceString;
      }
   }

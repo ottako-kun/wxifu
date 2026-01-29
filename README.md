@@ -20,7 +20,7 @@ The platform supports Google Drive links for both images and videos.
 2.  Click the **Upload Button** (Plus icon).
 3.  Paste a **Google Drive Link** (ensure it is shared as "Anyone with the link").
     *   *Images*: Converted to high-performance CDN links.
-    *   *Videos*: Embedded via Google Drive preview player.
+    *   *Videos*: Embedded via Google Drive preview player for seamless streaming.
 4.  The content is stored in the Supabase database and served dynamically.
 
 ### 👥 **Social & Community**

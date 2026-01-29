@@ -148,7 +148,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
           {/* URL Input */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-              {isVideo ? 'Video Link (Hypnotube / Drive)' : 'Image Link (Direct / Drive)'}
+              {isVideo ? 'Video Link (Google Drive / Direct)' : 'Image Link (Direct / Drive)'}
             </label>
             <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -159,13 +159,13 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
                 required
                 value={formData.src}
                 onChange={(e) => handleChange('src', e.target.value)}
-                placeholder={isVideo ? "https://hypnotube.com/video/..." : "https://drive.google.com/file/d/..."}
+                placeholder={isVideo ? "https://drive.google.com/file/d/..." : "https://drive.google.com/file/d/..."}
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
                 />
             </div>
             <p className="text-[10px] text-gray-500 mt-2">
                 {isVideo 
-                  ? "Supports Hypnotube videos and Google Drive preview links." 
+                  ? "Supports shared Google Drive files and direct video URLs." 
                   : "Supports direct image URLs and shared Google Drive images."}
             </p>
           </div>
