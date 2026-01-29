@@ -16,6 +16,7 @@ import { useFollow } from '../hooks/useFollow';
 import LoadingSpinner from './icons/LoadingSpinner';
 import { useDoubleTap } from '../hooks/useDoubleTap';
 import { useUI } from '../context/UIContext';
+import Avatar from './Avatar';
 
 interface FeedCardProps {
   item: MediaItem;
@@ -39,7 +40,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   const { isLiked, likeCount, toggleLike } = useMediaLikes(item.id, session?.user.id, item.id.startsWith('static'));
   const { isUnlocked: checkIsUnlocked, unlockContent, isLoading: isWalletLoading } = useWallet();
   const { isFollowing, toggleFollow } = useFollow(session?.user.id, item.user_id || '');
-  const { isGlobalMuted, toggleGlobalMute } = useUI();
+  const { isGlobalMuted, toggleGlobalMute, showVolumeHUD } = useUI();
 
   const isOwner = session?.user.id === item.user_id;
   const isUnlocked = isOwner || !item.is_premium || checkIsUnlocked(item.id);
@@ -138,6 +139,19 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                 </div>
             )}
 
+            {/* Volume HUD Overlay */}
+            {showVolumeHUD && (
+               <div className="absolute inset-0 flex items-center justify-center z-[45] pointer-events-none animate-fade-in">
+                  <div className="w-20 h-20 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 animate-pulse">
+                     {isGlobalMuted ? (
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path strokeLinecap="round" d="M15.54 8.46l5.66 5.66m0-5.66l-5.66 5.66"/></svg>
+                     ) : (
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
+                     )}
+                  </div>
+               </div>
+            )}
+
             {!isUnlocked ? (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 backdrop-blur-xl">
                     <img src={item.src} className="absolute inset-0 w-full h-full object-cover opacity-20 blur-2xl" alt="Locked" />
@@ -203,18 +217,13 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
             {/* TikTok Style Side Actions */}
             <div className="absolute bottom-20 right-4 z-30 flex flex-col items-center gap-6 md:gap-8">
                 <div className="flex flex-col items-center">
-                    <div 
-                        onClick={handleUserClick} 
-                        className="w-12 h-12 rounded-full border-2 border-white p-0.5 bg-black cursor-pointer transform hover:scale-110 transition-transform shadow-xl"
-                    >
-                        {item.author_avatar ? (
-                            <img src={item.author_avatar} alt={item.author} className="w-full h-full rounded-full object-cover" />
-                        ) : (
-                            <div className="w-full h-full rounded-full bg-pink-600 flex items-center justify-center font-bold text-white text-lg">
-                                {item.author?.charAt(0)}
-                            </div>
-                        )}
-                    </div>
+                    <Avatar 
+                       src={item.author_avatar} 
+                       alt={item.author} 
+                       size="md"
+                       isVerified={true} // Hardcoded for demo, would come from profile
+                       className="cursor-pointer transform hover:scale-110 transition-transform shadow-xl"
+                    />
                     {session && !isOwner && !isFollowing && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); toggleFollow(item.author || ''); }}
@@ -292,7 +301,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
             {item.type === MediaType.Video && isUnlocked && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10 z-50 overflow-hidden">
                     <div 
-                        className="h-full bg-pink-500 shadow-[0_0_8px_#ec4899] transition-all duration-300 ease-linear"
+                        className="h-full bg-gradient-to-r from-pink-500 to-cyan-400 shadow-[0_0_8px_#ec4899] transition-all duration-300 ease-linear"
                         style={{ width: `${progress}%` }}
                     />
                 </div>

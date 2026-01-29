@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { MediaItem } from '../types';
 import MediaGrid from './MediaGrid';
@@ -7,6 +8,7 @@ import UploadIcon from './icons/UploadIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import GridIcon from './icons/GridIcon';
 import ListIcon from './icons/ListIcon';
+import HeartIcon from './icons/HeartIcon';
 import EditProfileModal from './EditProfileModal';
 import TipModal from './TipModal';
 import MediaDetailModal from './MediaDetailModal';
@@ -22,6 +24,7 @@ export interface UserProfileData {
     avatar: string;
     bio?: string;
     frame?: string;
+    is_verified?: boolean;
 }
 
 interface ProfileViewProps {
@@ -39,6 +42,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   const [isEditing, setIsEditing] = useState(false);
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'feed'>('grid');
+  const [activeSubTab, setActiveSubTab] = useState<'posts' | 'liked'>('posts');
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
 
   // Use Follow Hook
@@ -54,14 +58,20 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   // Stats Logic (Extracted)
   const { followersCount, followingCount, incrementFollowers, decrementFollowers } = useProfileStats(profileData.id);
 
+  // Filter for Liked Media (Mock logic: owner only, would be API backed)
+  const likedMedia = useMemo(() => {
+     if (!isOwner) return [];
+     // For demo: randomly select some from global userMedia as liked
+     return userMedia.filter((_, i) => i % 3 === 0);
+  }, [isOwner, userMedia]);
+
+  const displayItems = activeSubTab === 'posts' ? userMedia : likedMedia;
+
   // Sync state if profileData changes (e.g. switching viewed profile)
   useEffect(() => {
-      // Check for frame in localStorage hack (Simulating DB fetch)
       if (isOwner) {
           setViewedUserFrame(activeFrame);
       } else {
-          // In real app, profileData would have 'frame' from DB. 
-          // Here we mock it or default to none for others unless we stored it globally
           const stored = localStorage.getItem(`frame_${profileData.id}`);
           setViewedUserFrame(stored || 'none');
       }
@@ -69,7 +79,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
 
   const handleFollowToggleWrapper = async () => {
       if (await toggleFollow(profileData.name)) {
-          // Optimistically update stats if successful
           if (isFollowing) {
               decrementFollowers();
           } else {
@@ -79,7 +88,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
       }
   };
 
-  // Stats
   const postCount = userMedia.length;
 
   return (
@@ -113,9 +121,22 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
       {/* Profile Gallery Controls */}
       <div className="space-y-8">
         <div className="flex items-center justify-between border-t border-gray-800 pt-4">
-             <button className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white border-b-2 border-pink-500 pb-2">
-                 Collection
-             </button>
+             <div className="flex gap-8">
+                <button 
+                    onClick={() => setActiveSubTab('posts')}
+                    className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest pb-2 transition-all ${activeSubTab === 'posts' ? 'text-white border-b-2 border-pink-500' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                    <GridIcon className="w-4 h-4" /> Posts
+                </button>
+                {isOwner && (
+                    <button 
+                        onClick={() => setActiveSubTab('liked')}
+                        className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest pb-2 transition-all ${activeSubTab === 'liked' ? 'text-white border-b-2 border-pink-500' : 'text-gray-500 hover:text-gray-300'}`}
+                    >
+                        <HeartIcon filled={activeSubTab === 'liked'} className="w-4 h-4" /> Liked
+                    </button>
+                )}
+             </div>
              
              {/* View Toggle */}
              <div className="flex bg-gray-900 border border-gray-800 rounded-full p-0.5">
@@ -134,10 +155,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
              </div>
         </div>
 
-        {userMedia.length > 0 ? (
+        {displayItems.length > 0 ? (
           viewMode === 'grid' ? (
               <MediaGrid 
-                items={userMedia} 
+                items={displayItems} 
                 onUserClick={onUserClick}
                 session={session}
                 onDataChange={onDataChange} 
@@ -145,7 +166,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
               />
           ) : (
               <FeedView
-                items={userMedia}
+                items={displayItems}
                 session={session}
                 onUserClick={onUserClick}
                 onDataChange={onDataChange}
@@ -156,11 +177,13 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
         ) : (
            <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-gray-800 rounded-3xl bg-gray-900/20">
              <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mb-4">
-               <UploadIcon className="w-8 h-8 text-gray-600" />
+               {activeSubTab === 'posts' ? <UploadIcon className="w-8 h-8 text-gray-600" /> : <HeartIcon className="w-8 h-8 text-gray-600" />}
              </div>
-             <h3 className="text-xl font-bold text-white mb-2">No Posts Yet</h3>
+             <h3 className="text-xl font-bold text-white mb-2">{activeSubTab === 'posts' ? 'No Posts Yet' : 'No Liked Posts'}</h3>
              <p className="text-gray-500 max-w-xs mb-6">
-                 {isOwner ? "Upload your first photo or video to show it here." : "This user hasn't posted anything yet."}
+                 {isOwner 
+                    ? (activeSubTab === 'posts' ? "Upload your first photo or video to show it here." : "Posts you've liked will appear here.") 
+                    : "This user hasn't posted anything yet."}
              </p>
            </div>
         )}
@@ -168,7 +191,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
 
       {selectedItemIndex !== null && (
             <MediaDetailModal 
-                items={userMedia} 
+                items={displayItems} 
                 initialIndex={selectedItemIndex} 
                 onClose={() => setSelectedItemIndex(null)} 
                 onUserClick={onUserClick}

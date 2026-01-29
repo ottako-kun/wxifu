@@ -34,6 +34,7 @@ export interface UserProfileData {
     bio?: string;
     coins?: number;
     frame?: string; // ID of the equipped frame
+    is_verified?: boolean; // TikTok-style verification badge
 }
 
 export interface Comment {

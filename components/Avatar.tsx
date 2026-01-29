@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 // Frame Definitions
@@ -34,17 +35,26 @@ interface AvatarProps {
   src?: string;
   alt?: string;
   frame?: string;
+  isVerified?: boolean;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   className?: string;
 }
 
-const Avatar: React.FC<AvatarProps> = ({ src, alt, frame, size = 'md', className = '' }) => {
+const Avatar: React.FC<AvatarProps> = ({ src, alt, frame, isVerified, size = 'md', className = '' }) => {
   const sizeClasses = {
     sm: 'w-8 h-8 text-[10px]',
     md: 'w-10 h-10 text-xs',
     lg: 'w-16 h-16 text-lg',
     xl: 'w-32 h-32 text-4xl',
     '2xl': 'w-40 h-40 text-5xl',
+  };
+
+  const badgeSize = {
+    sm: 'w-3 h-3',
+    md: 'w-3.5 h-3.5',
+    lg: 'w-5 h-5',
+    xl: 'w-8 h-8',
+    '2xl': 'w-10 h-10',
   };
 
   const frameStyle = frame && FRAMES[frame] ? FRAMES[frame].css : '';
@@ -67,9 +77,16 @@ const Avatar: React.FC<AvatarProps> = ({ src, alt, frame, size = 'md', className
             )}
         </div>
         
-        {/* Particle Effects for expensive frames could go here */}
+        {isVerified && (
+          <div className={`absolute bottom-0 right-0 z-20 bg-cyan-500 rounded-full flex items-center justify-center border-2 border-black ${badgeSize[size]} shadow-[0_0_8px_#06b6d4]`}>
+             <svg viewBox="0 0 24 24" fill="currentColor" className="w-[70%] h-[70%] text-white">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+             </svg>
+          </div>
+        )}
+
         {frame === 'gold-rush' && (
-             <div className="absolute inset-0 rounded-full animate-pulse border border-yellow-200/50 z-20 pointer-events-none"></div>
+             <div className="absolute inset-0 rounded-full animate-pulse border border-yellow-200/50 z-10 pointer-events-none"></div>
         )}
     </div>
   );
