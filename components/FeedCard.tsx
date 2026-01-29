@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { MediaItem, MediaType } from '../types';
 import { Session } from '@supabase/supabase-js';
@@ -141,14 +142,14 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                 item.type === MediaType.Video ? (
                     <div className="relative w-full h-full">
                          <img src={item.src} className="w-full h-full object-cover" />
-                         <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[2px]">
-                             <div className="w-20 h-20 rounded-full bg-black/50 border-2 border-pink-500/80 flex items-center justify-center shadow-[0_0_40px_rgba(236,72,153,0.5)] transition-transform duration-300 hover:scale-110">
-                                 <PlayIcon className="w-10 h-10 text-white ml-1 filter drop-shadow-[0_0_10px_rgba(255,255,255,0.7)]" />
+                         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                             <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center">
+                                 <PlayIcon className="w-8 h-8 text-white ml-1" />
                              </div>
                          </div>
-                         <div className="absolute top-3 right-3 bg-pink-500/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 flex items-center gap-2 shadow-[0_0_15px_rgba(236,72,153,0.4)]">
-                             <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-                             <span className="text-[10px] font-black text-white uppercase tracking-wider">VIDEO</span>
+                         <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md border border-white/10 flex items-center gap-1">
+                             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                             <span className="text-[10px] font-bold text-white uppercase">Video</span>
                          </div>
                     </div>
                 ) : (

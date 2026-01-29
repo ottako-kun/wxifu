@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { MediaItem, MediaType } from '../types';
 import PlayIcon from './icons/PlayIcon';
@@ -174,9 +175,9 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
             {/* Type Badges */}
             <div className="absolute top-2 right-2 flex gap-1 z-20">
                 {item.type === MediaType.Video && (
-                    <div className="bg-pink-500/80 backdrop-blur-md rounded-lg px-2 py-1 border border-white/20 flex items-center gap-1 shadow-[0_0_10px_rgba(236,72,153,0.3)]">
+                    <div className="bg-black/60 backdrop-blur-md rounded-lg px-2 py-1 border border-white/10 flex items-center gap-1">
                         <VideoIcon className="w-3 h-3 text-white" />
-                        <span className="text-[10px] font-black text-white uppercase tracking-tighter">VIDEO</span>
+                        <span className="text-[10px] font-bold text-white uppercase">Video</span>
                     </div>
                 )}
             </div>
@@ -213,13 +214,11 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
 
         {/* --- DESKTOP: Hover Overlay (Updated for better visibility) --- */}
         <div className="hidden md:flex absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-col justify-end p-4 z-20">
-            {/* Center Play Button for Video - Refined with better border and glow */}
+            {/* Center Play Button for Video */}
             {item.type === MediaType.Video && isUnlocked && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-14 h-14 rounded-full bg-black/40 backdrop-blur-md border-2 border-pink-500/60 flex items-center justify-center shadow-[0_0_30px_rgba(236,72,153,0.4)] transform scale-90 group-hover:scale-110 transition-all duration-500">
-                        <div className="bg-pink-500/10 w-full h-full rounded-full flex items-center justify-center">
-                            <PlayIcon className="w-7 h-7 text-white ml-1 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
-                        </div>
+                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] transform scale-90 group-hover:scale-110 transition-transform duration-300">
+                        <PlayIcon className="w-6 h-6 text-white ml-1" />
                     </div>
                 </div>
             )}

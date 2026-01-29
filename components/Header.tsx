@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { signInWithGoogle, signOut } from '../lib/supabaseClient';
@@ -6,7 +7,7 @@ import InboxIcon from './icons/InboxIcon';
 import CoinIcon from './icons/CoinIcon';
 import HomeIcon from './icons/HomeIcon';
 import UploadIcon from './icons/UploadIcon';
-import { APP_CONFIG } from '../config';
+import { APP_CONFIG } from '../gallery-data';
 import { useWallet } from '../context/WalletContext';
 import { useUI } from '../context/UIContext';
 import { useToast } from '../context/ToastContext';

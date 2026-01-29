@@ -1,5 +1,7 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, getFollowedMedia } from '../lib/supabaseClient';
+import { fallbackPhotoMedia, fallbackVideoMedia } from '../gallery-data';
 import { processMediaItem } from '../lib/utils';
 import { MediaItem, MediaType } from '../types';
 import { Session } from '@supabase/supabase-js';
@@ -24,7 +26,11 @@ export const useMediaLibrary = (session: Session | null) => {
       if (!joinError && joinData) {
         fetchedData = joinData;
       } else {
-        // Attempt 2: Fallback Manual Fetch
+        // Attempt 2: Fallback Manual Fetch (Only runs if join fails, e.g., missing relation)
+        if (joinError?.code !== 'PGRST116') { 
+             // console.warn("Database join failed, falling back to manual fetch...", joinError?.message);
+        }
+        
         const { data: mediaData, error: mediaError } = await supabase
           .from('media')
           .select('*')
@@ -64,8 +70,8 @@ export const useMediaLibrary = (session: Session | null) => {
           }
       });
       
-      setPhotoMedia(fetchedPhotos);
-      setVideoMedia(fetchedVideos);
+      setPhotoMedia([...fetchedPhotos, ...fallbackPhotoMedia]);
+      setVideoMedia([...fetchedVideos, ...fallbackVideoMedia]);
 
       // --- FETCH FOLLOWED MEDIA ---
       if (session) {
@@ -74,6 +80,7 @@ export const useMediaLibrary = (session: Session | null) => {
           if (followedDataRaw && followedDataRaw.length > 0) {
               const processedFollowed = followedDataRaw.map((item, index) => {
                   const processed = processMediaItem(item, index);
+                  // Ensure profile info is attached correctly if join worked
                   if (item.profiles) {
                       processed.author = item.profiles.name || processed.author;
                       processed.author_avatar = item.profiles.avatar || processed.author_avatar;
@@ -90,8 +97,9 @@ export const useMediaLibrary = (session: Session | null) => {
 
     } catch (err: any) {
       console.error("Error fetching media:", err.message);
-      setPhotoMedia([]);
-      setVideoMedia([]);
+      // On critical error, still show the static gallery from the file
+      setPhotoMedia(fallbackPhotoMedia);
+      setVideoMedia(fallbackVideoMedia);
     } finally {
       setIsLoading(false);
     }
