@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, getFollowedMedia } from '../lib/supabaseClient';
 import { fallbackPhotoMedia, fallbackVideoMedia } from '../gallery-data';
@@ -95,9 +96,9 @@ export const useMediaLibrary = (session: Session | null) => {
       }
 
     } catch (err: any) {
-      console.error("Error fetching media:", err.message);
-      setError(err.message || "Failed to sync with central database.");
-      // On critical error, still show the static gallery from the file
+      console.warn("Supabase Sync unavailable, using Local Archive:", err.message);
+      // We don't set setError here so the UI doesn't show a scary banner
+      // The app simply defaults to the local constant file
       setPhotoMedia(fallbackPhotoMedia);
       setVideoMedia(fallbackVideoMedia);
     } finally {

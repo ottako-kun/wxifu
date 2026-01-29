@@ -123,18 +123,7 @@ const HomeView: React.FC<HomeViewProps> = ({
       <Hero />
       <main className={`container mx-auto py-6 min-h-screen relative ${viewMode === 'feed' ? 'max-w-none px-0' : 'px-4'}`}>
         
-        {error && (
-            <div className="max-w-4xl mx-auto mb-8 bg-red-950/20 border border-red-500/30 p-4 rounded-3xl flex items-center justify-between animate-fade-in backdrop-blur-md">
-                <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">⚠️</div>
-                    <div>
-                        <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.2em]">Synchronization Lost</p>
-                        <p className="text-xs text-red-200/60 font-medium">Neural link unstable. Defaulting to local archive.</p>
-                    </div>
-                </div>
-                <button onClick={onDataChange} className="px-5 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 text-[10px] font-black uppercase rounded-xl transition-all border border-red-500/20">Reconnect</button>
-            </div>
-        )}
+        {/* Sync error banner removed for cleaner UX - the app handles sync failures gracefully in useMediaLibrary */}
 
         <div 
             className={`sticky z-40 py-4 -mx-4 px-4 bg-gradient-to-b from-[#020202] via-[#020202]/95 to-transparent backdrop-blur-2xl transition-[top] duration-500 ease-in-out border-b border-white/5`}
