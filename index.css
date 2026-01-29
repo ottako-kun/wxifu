@@ -43,13 +43,13 @@ h1, h2, h3, h4, h5, h6 {
   animation: pulse-bg 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* TikTok Style Heart Burst */
+/* Enhanced Heart Burst */
 @keyframes heartBurst {
-  0% { transform: scale(0) rotate(-15deg); opacity: 0; }
-  20% { transform: scale(1.6) rotate(10deg); opacity: 1; }
+  0% { transform: scale(0) rotate(-15deg); opacity: 0; filter: blur(4px); }
+  20% { transform: scale(1.6) rotate(10deg); opacity: 1; filter: blur(0); }
   40% { transform: scale(1.1) rotate(-5deg); opacity: 1; }
   80% { transform: scale(1) rotate(0); opacity: 0.8; }
-  100% { transform: scale(1.5); opacity: 0; }
+  100% { transform: scale(1.8); opacity: 0; filter: blur(8px); }
 }
 
 .animate-heart-burst {
@@ -134,9 +134,28 @@ h1, h2, h3, h4, h5, h6 {
   background: #ec4899;
 }
 
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .glass {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }

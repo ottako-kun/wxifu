@@ -10,17 +10,26 @@ export const getDriveId = (input: string): string | null => {
   
   // Pattern 1: /d/ID (Standard sharing/view links)
   // Example: https://drive.google.com/file/d/1sILwvb70QBKknRuhk0fJLwnO7kmdEywQ/view
-  const matchSlash = input.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  const matchSlash = input.match(/\/d\/([a-zA-Z0-9_-]{25,})/);
   if (matchSlash && matchSlash[1]) return matchSlash[1];
 
-  // Pattern 2: id=ID (Export links, open?id=)
+  // Pattern 2: id=ID (Export links, open?id=, uc?id=)
   // Example: https://drive.google.com/open?id=1sILwvb70QBKknRuhk0fJLwnO7kmdEywQ
-  const matchIdParam = input.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  const matchIdParam = input.match(/[?&]id=([a-zA-Z0-9_-]{25,})/);
   if (matchIdParam && matchIdParam[1]) return matchIdParam[1];
 
-  // Pattern 3: Raw ID detection
+  // Pattern 3: uc link variants
+  // Example: https://docs.google.com/uc?export=download&id=...
+  if (input.includes('id=')) {
+      const parts = input.split('id=');
+      if (parts.length > 1) {
+          const idCandidate = parts[1].split('&')[0];
+          if (idCandidate.length >= 25) return idCandidate;
+      }
+  }
+
+  // Pattern 4: Raw ID detection
   // Drive IDs are usually long strings (25+ chars) of alphanumeric + symbols
-  // We check if the input *is* just the ID itself, not a URL
   if (/^[a-zA-Z0-9_-]{25,}$/.test(input) && !input.includes('/') && !input.includes('.')) {
       return input;
   }
@@ -40,5 +49,5 @@ export const getGoogleDriveVideoPreviewUrl = (id: string): string => {
 };
 
 export const isGoogleDriveLink = (url: string): boolean => {
-    return url.includes('drive.google.com') || url.includes('googleusercontent.com');
+    return url.includes('drive.google.com') || url.includes('googleusercontent.com') || url.includes('docs.google.com');
 };

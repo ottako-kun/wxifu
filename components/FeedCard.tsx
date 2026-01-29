@@ -15,6 +15,7 @@ import { useWallet } from '../context/WalletContext';
 import { useFollow } from '../hooks/useFollow';
 import LoadingSpinner from './icons/LoadingSpinner';
 import { useDoubleTap } from '../hooks/useDoubleTap';
+import { useUI } from '../context/UIContext';
 
 interface FeedCardProps {
   item: MediaItem;
@@ -29,6 +30,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -37,9 +39,17 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   const { isLiked, likeCount, toggleLike } = useMediaLikes(item.id, session?.user.id, item.id.startsWith('static'));
   const { isUnlocked: checkIsUnlocked, unlockContent, isLoading: isWalletLoading } = useWallet();
   const { isFollowing, toggleFollow } = useFollow(session?.user.id, item.user_id || '');
+  const { isGlobalMuted, toggleGlobalMute } = useUI();
 
   const isOwner = session?.user.id === item.user_id;
   const isUnlocked = isOwner || !item.is_premium || checkIsUnlocked(item.id);
+
+  // Sync Global Mute
+  useEffect(() => {
+    if (videoRef.current) {
+        videoRef.current.muted = isGlobalMuted;
+    }
+  }, [isGlobalMuted]);
 
   // Intersection Observer for Autoplay
   useEffect(() => {
@@ -66,6 +76,13 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
 
     return () => observer.disconnect();
   }, [item.type, isUnlocked]);
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+        const p = (videoRef.current.currentTime / videoRef.current.duration) * 100;
+        setProgress(p);
+    }
+  };
 
   const handleLikeAction = async () => {
     setShowHeartAnimation(true);
@@ -97,10 +114,15 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
       if (success && onDataChange) onDataChange();
   };
 
+  const handleMuteToggle = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      toggleGlobalMute();
+  };
+
   return (
     <div 
       ref={cardRef}
-      className="snap-item w-full max-w-xl mx-auto h-[85vh] md:h-[90vh] bg-black md:bg-gray-900 md:border md:border-gray-800 md:rounded-3xl overflow-hidden mb-0 md:mb-8 shadow-2xl relative flex flex-col group/feed"
+      className="w-full max-w-xl mx-auto h-[85vh] md:h-[90vh] bg-black md:bg-gray-900 md:border md:border-gray-800 md:rounded-3xl overflow-hidden mb-0 md:mb-8 shadow-2xl relative flex flex-col group/feed"
     >
         {/* Media Container */}
         <div 
@@ -112,7 +134,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
              {/* Enhanced Heart Burst */}
              {showHeartAnimation && (
                 <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
-                    <HeartIcon filled className="w-40 h-40 text-pink-500 drop-shadow-[0_0_20px_#ec4899] animate-heart-burst" />
+                    <HeartIcon filled className="w-40 h-40 text-pink-500 drop-shadow-[0_0_25px_#ec4899] animate-heart-burst" />
                 </div>
             )}
 
@@ -123,7 +145,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                         <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mb-4 border border-yellow-500/30">
                             <LockIcon className="w-8 h-8 text-yellow-500" />
                         </div>
-                        <h3 className="text-white font-bold text-xl mb-1 font-orbitron tracking-tight">Support Creator</h3>
+                        <h3 className="text-white font-bold text-xl mb-1 font-orbitron tracking-tight">Premium Content</h3>
                         <button 
                             onClick={handleUnlock}
                             disabled={isWalletLoading}
@@ -140,9 +162,10 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                             ref={videoRef}
                             src={item.videoSrc}
                             loop
-                            muted
+                            muted={isGlobalMuted}
                             playsInline
                             poster={item.src}
+                            onTimeUpdate={handleTimeUpdate}
                             className="w-full h-full object-contain z-10"
                         />
                         {!isPlaying && (
@@ -152,10 +175,23 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                                 </div>
                              </div>
                         )}
-                        <div className="absolute bottom-4 left-4 z-20 pointer-events-none">
+                        
+                        {/* Global Sound Toggle Button */}
+                        <button 
+                            onClick={handleMuteToggle}
+                            className="absolute top-4 right-4 z-30 p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 text-white opacity-80 hover:opacity-100 transition-opacity"
+                        >
+                            {isGlobalMuted ? (
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path strokeLinecap="round" d="M15.54 8.46l5.66 5.66m0-5.66l-5.66 5.66"/></svg>
+                            ) : (
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
+                            )}
+                        </button>
+
+                        <div className="absolute bottom-6 left-4 z-20 pointer-events-none">
                             <div className="bg-black/40 backdrop-blur-md px-2 py-1 rounded border border-white/10 flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                                <span className="text-[10px] font-bold text-white uppercase tracking-tighter">AMV / Video</span>
+                                <span className="text-[10px] font-bold text-white uppercase tracking-tighter">AMV</span>
                             </div>
                         </div>
                     </div>
@@ -251,6 +287,16 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                     )}
                 </div>
             </div>
+
+            {/* Video Progress Strip (The TikTok Line) */}
+            {item.type === MediaType.Video && isUnlocked && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10 z-50 overflow-hidden">
+                    <div 
+                        className="h-full bg-pink-500 shadow-[0_0_8px_#ec4899] transition-all duration-300 ease-linear"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+            )}
         </div>
 
         {shareAnchorEl && (

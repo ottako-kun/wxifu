@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { UserProfileData } from '../types';
 
@@ -21,6 +22,10 @@ interface UIContextType {
   activeLegalModal: 'privacy' | 'terms' | null;
   openLegal: (type: 'privacy' | 'terms') => void;
   closeLegal: () => void;
+
+  // Global Media State (TikTok style)
+  isGlobalMuted: boolean;
+  toggleGlobalMute: () => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -30,6 +35,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [activeChatUser, setActiveChatUser] = useState<UserProfileData | null>(null);
   const [isDailyRewardOpen, setIsDailyRewardOpen] = useState(false);
   const [activeLegalModal, setActiveLegalModal] = useState<'privacy' | 'terms' | null>(null);
+  const [isGlobalMuted, setIsGlobalMuted] = useState(true);
 
   const openShop = useCallback(() => setIsShopOpen(true), []);
   const closeShop = useCallback(() => setIsShopOpen(false), []);
@@ -43,12 +49,15 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const openLegal = useCallback((type: 'privacy' | 'terms') => setActiveLegalModal(type), []);
   const closeLegal = useCallback(() => setActiveLegalModal(null), []);
 
+  const toggleGlobalMute = useCallback(() => setIsGlobalMuted(prev => !prev), []);
+
   return (
     <UIContext.Provider value={{
       isShopOpen, openShop, closeShop,
       activeChatUser, openChat, closeChat,
       isDailyRewardOpen, openDailyReward, closeDailyReward,
-      activeLegalModal, openLegal, closeLegal
+      activeLegalModal, openLegal, closeLegal,
+      isGlobalMuted, toggleGlobalMute
     }}>
       {children}
     </UIContext.Provider>

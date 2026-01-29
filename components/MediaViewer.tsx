@@ -5,6 +5,7 @@ import ZoomableImage from './ZoomableImage';
 import LockIcon from './icons/LockIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
 import PlayIcon from './icons/PlayIcon';
+import { useUI } from '../context/UIContext';
 
 interface MediaViewerProps {
   item: MediaItem;
@@ -26,12 +27,12 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
   const isPhoto = item.type === MediaType.Photo;
   const [videoError, setVideoError] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const { isGlobalMuted, toggleGlobalMute } = useUI();
 
   // Video State
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [isSeeking, setIsSeeking] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -50,6 +51,13 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
     setCurrentTime(0);
     setDuration(0);
   }, [item.id]);
+
+  // Sync Global Mute
+  useEffect(() => {
+    if (videoRef.current) {
+        videoRef.current.muted = isGlobalMuted;
+    }
+  }, [isGlobalMuted]);
 
   const togglePlay = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -86,10 +94,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
 
   const toggleMute = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (videoRef.current) {
-      videoRef.current.muted = !videoRef.current.muted;
-      setIsMuted(videoRef.current.muted);
-    }
+    toggleGlobalMute();
   };
 
   const handleInteraction = () => {
@@ -136,9 +141,9 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                     <div className="w-24 h-24 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-yellow-500/20 animate-pulse">
                         <LockIcon className="w-12 h-12 text-yellow-500" />
                     </div>
-                    <h3 className="text-2xl md:text-3xl font-black text-white mb-3 uppercase tracking-widest font-orbitron">Exclusive</h3>
+                    <h3 className="text-2xl md:text-3xl font-black text-white mb-3 uppercase tracking-widest font-orbitron">Exclusive Content</h3>
                     <p className="text-gray-400 text-sm mb-8 leading-relaxed px-2">
-                        This creation by <span className="text-pink-400 font-bold">{item.author}</span> is locked for supporters.
+                        Unlock this creation by <span className="text-pink-400 font-bold">{item.author}</span>.
                     </p>
                     <button 
                         onClick={onUnlockClick}
@@ -168,14 +173,14 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                 {isUnlocked ? (
                     videoError ? (
                         <div className="flex flex-col items-center text-center p-8 bg-gray-900/50 rounded-2xl border border-gray-800 border-dashed">
-                            <p className="text-gray-400 mb-6 font-medium">Link playback not supported in-app.</p>
+                            <p className="text-gray-400 mb-6 font-medium">Native playback error. Use external link.</p>
                             <a 
                                 href={item.videoSrc} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 className="px-8 py-3 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95"
                             >
-                                Open External Link
+                                Open Source Link
                             </a>
                         </div>
                     ) : (
@@ -186,6 +191,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                     src={item.videoSrc}
                                     autoPlay
                                     playsInline
+                                    muted={isGlobalMuted}
                                     onTimeUpdate={handleTimeUpdate}
                                     onLoadedMetadata={handleLoadedMetadata}
                                     onEnded={() => {
@@ -198,7 +204,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                     onError={() => setVideoError(true)}
                                 />
                                 
-                                {/* TikTok Style Play Overlay */}
+                                {/* Play Overlay */}
                                 <div className={`absolute inset-0 flex items-center justify-center z-20 transition-opacity duration-300 pointer-events-none ${!isPlaying ? 'opacity-100' : 'opacity-0'}`}>
                                     <div className="bg-black/40 backdrop-blur-sm p-6 rounded-full border border-white/20">
                                         <PlayIcon className="w-12 h-12 text-white" />
@@ -224,8 +230,6 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                             onChange={handleSeek}
                                             onMouseDown={() => setIsSeeking(true)}
                                             onMouseUp={() => setIsSeeking(false)}
-                                            onTouchStart={() => setIsSeeking(true)}
-                                            onTouchEnd={() => setIsSeeking(false)}
                                             className="flex-grow h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-pink-500 hover:h-2 transition-all"
                                         />
                                         <span className="text-[10px] text-white/70 font-mono w-10">
@@ -244,16 +248,12 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                                 )}
                                             </button>
                                             <button onClick={toggleMute} className="text-white hover:text-pink-500 transition-colors">
-                                                {isMuted ? (
+                                                {isGlobalMuted ? (
                                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path strokeLinecap="round" d="M15.54 8.46l5.66 5.66m0-5.66l-5.66 5.66"/></svg>
                                                 ) : (
                                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
                                                 )}
                                             </button>
-                                        </div>
-                                        
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[9px] font-black bg-pink-500 text-white px-2 py-0.5 rounded uppercase tracking-tighter">HD</span>
                                         </div>
                                     </div>
                                 </div>
