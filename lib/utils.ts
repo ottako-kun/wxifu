@@ -27,7 +27,6 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
   const sourceString = item.link || item.src || item.url || '';
   
   // Generate stable ID based on content source rather than index
-  // This prevents UI glitches when items are reordered or filtered
   const contentHash = generateHash(sourceString + (item.description || ''));
   const id = item.id || (isVideo ? `static-vid-${contentHash}` : `static-photo-${contentHash}`);
   
@@ -52,10 +51,19 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
      }
      
      if (driveId) {
-        // If it's a Drive ID, construct the preview URL
+        // Handle Google Drive
         finalVideoSrc = getGoogleDriveVideoPreviewUrl(driveId);
+     } else if (sourceString.includes('hypnotube.com')) {
+        // Handle Hypnotube Embed Conversion
+        // Pattern: ...video/xxxx-xxxx-86718.html -> 86718
+        const hypnotubeMatch = sourceString.match(/video\/(?:.*-)?(\d+)\.html/);
+        if (hypnotubeMatch && hypnotubeMatch[1]) {
+            finalVideoSrc = `https://hypnotube.com/embed/${hypnotubeMatch[1]}`;
+        } else {
+            finalVideoSrc = sourceString;
+        }
      } else {
-        // Otherwise use the direct link
+        // Otherwise use the direct link or existing videoSrc
         finalVideoSrc = item.videoSrc || sourceString;
      }
   }
@@ -63,7 +71,7 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
   // Author Logic
   const profileName = item.profiles?.name;
   const profileAvatar = item.profiles?.avatar;
-  const authorName = profileName || item.author || (item.user_id ? 'Unknown' : 'Ottako Admin');
+  const authorName = profileName || item.author || (item.user_id ? 'Unknown' : 'Ottaku Admin');
 
   // Pseudo User ID for static items to allow clicking profile
   let userId = item.user_id;

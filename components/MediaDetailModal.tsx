@@ -38,11 +38,14 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   const [isVisible, setIsVisible] = useState(false);
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
   
   // Immersive States
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isAutoplay, setIsAutoplay] = useState(false);
+  const [autoplayProgress, setAutoplayProgress] = useState(0);
   const autoplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Drawer / UI State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -75,31 +78,40 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   
   const isUnlocked = isOwner || !safeItem.is_premium || checkIsUnlocked(safeItem.id);
 
+  // PRE-FETCHING LOGIC
   useEffect(() => {
-      if (!item) {
-          onClose();
+      const nextItem = items[currentIndex + 1];
+      if (nextItem && nextItem.type === MediaType.Photo) {
+          const img = new Image();
+          img.src = nextItem.src;
       }
-  }, [item, onClose]);
+  }, [currentIndex, items]);
 
   const goToPrevious = useCallback(() => {
+    if (isZoomed) return;
     if (currentIndex > 0) {
         setCurrentIndex(prev => prev - 1);
         setIsDrawerOpen(false);
+        setIsZoomed(false);
+        setAutoplayProgress(0);
     }
-  }, [currentIndex]);
+  }, [currentIndex, isZoomed]);
 
   const goToNext = useCallback(() => {
+    if (isZoomed) return;
     if (currentIndex < items.length - 1) {
         setCurrentIndex(prev => prev + 1);
         setIsDrawerOpen(false);
+        setIsZoomed(false);
+        setAutoplayProgress(0);
     } else {
         setIsAutoplay(false);
     }
-  }, [currentIndex, items.length]);
+  }, [currentIndex, items.length, isZoomed]);
 
   const handleLikeAction = useCallback(async () => {
     setShowHeartAnimation(true);
-    setTimeout(() => setShowHeartAnimation(false), 1000);
+    setTimeout(() => setShowHeartAnimation(false), 800);
     await toggleLike();
   }, [toggleLike]);
 
@@ -112,10 +124,21 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   // Autoplay Effect (Photos only, Videos wait for handleMediaEnded)
   useEffect(() => {
     if (isAutoplay && isVisible && isUnlocked && item?.type === MediaType.Photo) {
-        autoplayTimerRef.current = setTimeout(goToNext, 6000);
+        const DURATION = 6000;
+        const INTERVAL = 50;
+        
+        autoplayTimerRef.current = setTimeout(goToNext, DURATION);
+        
+        progressIntervalRef.current = setInterval(() => {
+            setAutoplayProgress(prev => Math.min(prev + (INTERVAL / DURATION) * 100, 100));
+        }, INTERVAL);
+    } else {
+        setAutoplayProgress(0);
     }
+
     return () => {
         if (autoplayTimerRef.current) clearTimeout(autoplayTimerRef.current);
+        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
     };
   }, [isAutoplay, currentIndex, isVisible, isUnlocked, item?.type, goToNext]);
 
@@ -125,10 +148,11 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   }, [onClose]);
   
   const { onTouchStart, onTouchMove, onTouchEnd } = useSwipe({
-    onSwipeUp: goToNext,
-    onSwipeDown: goToPrevious,
-    onSwipeLeft: goToNext,
-    onSwipeRight: goToPrevious
+    onSwipeUp: isDrawerOpen ? undefined : goToNext,
+    onSwipeDown: isDrawerOpen ? undefined : goToPrevious,
+    onSwipeLeft: isDrawerOpen ? undefined : goToNext,
+    onSwipeRight: isDrawerOpen ? undefined : goToPrevious,
+    disabled: isZoomed
   });
 
   const handleDoubleTap = useDoubleTap(handleLikeAction);
@@ -171,7 +195,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       await unlockContent(safeItem.id, safeItem.price || 0, safeItem.user_id);
   };
 
-  // Enhanced Keyboard Nav
   useKeyboardNav({
     onNext: goToNext,
     onPrev: goToPrevious,
@@ -179,10 +202,9 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       if (isDrawerOpen) setIsDrawerOpen(false);
       else handleClose();
     },
-    disabled: !item
+    disabled: !item || isZoomed
   });
 
-  // Hotkeys for modal
   useEffect(() => {
       const handleHotkeys = (e: KeyboardEvent) => {
         if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
@@ -201,16 +223,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
     };
   }, []);
 
-  const handleLikeClick = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      handleLikeAction();
-  };
-
-  const toggleDrawer = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setIsDrawerOpen(!isDrawerOpen);
-  };
-
   if (!item) return null;
 
   return (
@@ -219,16 +231,26 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       role="dialog"
       aria-modal="true"
     >
+        {/* Autoplay Progress Bar */}
+        {isAutoplay && item.type === MediaType.Photo && (
+            <div className="absolute top-0 left-0 right-0 h-1 z-[110] bg-white/10">
+                <div 
+                    className="h-full bg-pink-500 transition-all duration-100 ease-linear shadow-[0_0_10px_#ec4899]" 
+                    style={{ width: `${autoplayProgress}%` }}
+                ></div>
+            </div>
+        )}
+
         {/* Top Header Bar */}
         <div className={`absolute top-0 inset-x-0 z-[90] flex items-center justify-between p-4 pointer-events-none transition-all duration-500 ${isFocusMode ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
             <div className="flex items-center gap-2 pointer-events-auto">
-                <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md rounded-full px-4 py-1.5 border border-white/10">
-                    <span className="text-white/60 text-xs font-bold uppercase tracking-widest">{currentIndex + 1} / {items.length}</span>
+                <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md rounded-full px-4 py-1.5 border border-white/10">
+                    <span className="text-white/60 text-[10px] font-black uppercase tracking-widest">{currentIndex + 1} / {items.length}</span>
                 </div>
                 
                 <button 
                     onClick={() => setIsAutoplay(!isAutoplay)}
-                    className={`flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full px-4 py-1.5 border transition-all ${isAutoplay ? 'border-pink-500 text-pink-400' : 'border-white/10 text-white/60'}`}
+                    className={`flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full px-4 py-1.5 border transition-all active:scale-95 ${isAutoplay ? 'border-pink-500 text-pink-400 shadow-[0_0_10px_rgba(236,72,153,0.3)]' : 'border-white/10 text-white/60'}`}
                 >
                     <span className="text-[10px] font-black uppercase tracking-tighter">{isAutoplay ? 'Autoplay On' : 'Autoplay Off'}</span>
                 </button>
@@ -236,28 +258,28 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
             
             <button 
                 onClick={handleClose} 
-                className="pointer-events-auto text-white/70 hover:text-white bg-black/40 hover:bg-red-500/80 rounded-full p-2.5 transition-all backdrop-blur-md border border-white/10"
+                className="pointer-events-auto text-white/70 hover:text-white bg-black/40 hover:bg-red-500/80 rounded-full p-2.5 transition-all backdrop-blur-md border border-white/10 active:scale-90"
             >
                 <CloseIcon className="w-6 h-6"/>
             </button>
         </div>
 
         {/* Desktop Navigation Arrows */}
-        <div className={`hidden md:flex absolute inset-y-0 left-0 w-24 items-center justify-center z-[85] pointer-events-none transition-opacity duration-500 ${isFocusMode ? 'opacity-0' : 'opacity-100'}`}>
+        <div className={`hidden md:flex absolute inset-y-0 left-0 w-24 items-center justify-center z-[85] pointer-events-none transition-opacity duration-500 ${isFocusMode || isZoomed ? 'opacity-0' : 'opacity-100'}`}>
             {currentIndex > 0 && (
                 <button 
                     onClick={(e) => { e.stopPropagation(); goToPrevious(); }}
-                    className="pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all backdrop-blur-sm border border-white/5"
+                    className="pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all backdrop-blur-sm border border-white/5 active:scale-90"
                 >
                     <ChevronLeftIcon className="w-8 h-8" />
                 </button>
             )}
         </div>
-        <div className={`hidden md:flex absolute inset-y-0 right-0 w-24 items-center justify-center z-[85] pointer-events-none transition-opacity duration-500 ${isFocusMode ? 'opacity-0' : 'opacity-100'}`}>
+        <div className={`hidden md:flex absolute inset-y-0 right-0 w-24 items-center justify-center z-[85] pointer-events-none transition-opacity duration-500 ${isFocusMode || isZoomed ? 'opacity-0' : 'opacity-100'}`}>
             {currentIndex < items.length - 1 && (
                 <button 
                     onClick={(e) => { e.stopPropagation(); goToNext(); }}
-                    className="pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all backdrop-blur-sm border border-white/5"
+                    className="pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all backdrop-blur-sm border border-white/5 active:scale-90"
                 >
                     <ChevronRightIcon className="w-8 h-8" />
                 </button>
@@ -266,7 +288,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
 
         {/* Main Content Area */}
         <div 
-            className={`relative flex-grow w-full h-full overflow-hidden bg-black transition-all duration-500 ${isDrawerOpen ? 'md:pr-[400px]' : ''}`}
+            className={`relative flex-grow w-full h-full overflow-hidden bg-[#020202] transition-all duration-500 ${isDrawerOpen ? 'md:pr-[400px]' : ''}`}
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -278,6 +300,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                 onUnlockClick={handleUnlockClick}
                 isUnlocking={isWalletLoading}
                 onMediaEnded={handleMediaEnded}
+                onZoomChange={setIsZoomed}
             />
 
             {/* Heart Animation Overlay */}
@@ -288,15 +311,15 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
             )}
 
             {/* OVERLAY: Bottom Actions */}
-            <div className={`absolute inset-0 pointer-events-none flex flex-col justify-end pb-safe transition-all duration-500 ${isDrawerOpen || isFocusMode ? 'opacity-0 translate-y-8' : 'opacity-100 translate-y-0'}`}>
-                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+            <div className={`absolute inset-0 pointer-events-none flex flex-col justify-end pb-safe transition-all duration-500 ${isDrawerOpen || isFocusMode || isZoomed ? 'opacity-0 translate-y-8' : 'opacity-100 translate-y-0'}`}>
+                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
                 
-                <div className="relative z-10 flex items-end justify-between px-4 pb-8 md:px-12 md:pb-12">
+                <div className="relative z-10 flex items-end justify-between px-6 pb-10 md:px-12 md:pb-12">
                     <div className="flex-grow max-w-[75%] md:max-w-2xl pointer-events-auto">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="cursor-pointer" onClick={handleAuthorClick}>
+                            <div className="cursor-pointer active:scale-90 transition-transform" onClick={handleAuthorClick}>
                                 {item.author_avatar ? (
-                                    <img src={item.author_avatar} alt={item.author} className="w-12 h-12 rounded-full border-2 border-pink-500 shadow-xl" />
+                                    <img src={item.author_avatar} alt={item.author} className="w-12 h-12 rounded-full border-2 border-pink-500 shadow-xl object-cover" />
                                 ) : (
                                     <div className="w-12 h-12 bg-gradient-to-br from-pink-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
                                         {item.author?.charAt(0)}
@@ -304,15 +327,15 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                                 )}
                             </div>
                             <div>
-                                <h2 className="text-white font-bold text-xl leading-none cursor-pointer hover:underline" onClick={handleAuthorClick}>
+                                <h2 className="text-white font-bold text-xl leading-none cursor-pointer hover:underline font-orbitron" onClick={handleAuthorClick}>
                                     {item.author}
                                 </h2>
                                 {!isOwner && (
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); toggleFollow(item.author || ''); }}
-                                        className="text-[11px] font-bold text-pink-400 hover:text-white transition-colors uppercase tracking-widest mt-1"
+                                        className="text-[10px] font-bold text-pink-400 hover:text-white transition-colors uppercase tracking-widest mt-1 active:scale-95"
                                     >
-                                        {isFollowing ? 'Following' : 'Follow'}
+                                        {isFollowing ? 'Following' : '+ Follow'}
                                     </button>
                                 )}
                             </div>
@@ -326,18 +349,18 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                     <div className="flex flex-col gap-5 pointer-events-auto items-center">
                         <div className="flex flex-col items-center gap-1.5">
                             <button 
-                                onClick={handleLikeClick}
-                                className={`p-4 rounded-full backdrop-blur-xl border transition-all active:scale-90 ${isLiked ? 'bg-pink-500 border-pink-500 text-white' : 'bg-white/10 border-white/10 text-white hover:bg-white/20'}`}
+                                onClick={(e) => { e.stopPropagation(); handleLikeAction(); }}
+                                className={`p-4 rounded-full backdrop-blur-xl border transition-all active:scale-75 ${isLiked ? 'bg-pink-500 border-pink-500 text-white shadow-[0_0_20px_#ec4899]' : 'bg-white/10 border-white/10 text-white hover:bg-white/20'}`}
                             >
                                 <HeartIcon filled={isLiked} className="w-7 h-7 md:w-8 md:h-8" />
                             </button>
-                            <span className="text-xs font-black text-white drop-shadow-lg">{likeCount}</span>
+                            <span className="text-[10px] font-black text-white drop-shadow-lg">{likeCount}</span>
                         </div>
 
                         <div className="flex flex-col items-center gap-1.5">
                             <button 
-                                onClick={toggleDrawer}
-                                className="p-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 text-white hover:bg-white/20 transition-all active:scale-90"
+                                onClick={(e) => { e.stopPropagation(); setIsDrawerOpen(!isDrawerOpen); }}
+                                className="p-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 text-white hover:bg-white/20 transition-all active:scale-75 shadow-lg"
                             >
                                 <ChatIcon className="w-7 h-7 md:w-8 md:h-8" />
                             </button>
@@ -346,7 +369,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                         {!isOwner && session && (
                              <button 
                                 onClick={(e) => { e.stopPropagation(); setIsTipModalOpen(true); }}
-                                className="p-4 rounded-full bg-yellow-500/20 backdrop-blur-xl border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-all active:scale-90"
+                                className="p-4 rounded-full bg-yellow-500/20 backdrop-blur-xl border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-all active:scale-75 shadow-lg"
                              >
                                  <GiftIcon className="w-6 h-6 md:w-7 md:h-7" />
                              </button>
@@ -354,7 +377,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
 
                         <button 
                             onClick={handleShareClick}
-                            className="p-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 text-white hover:bg-white/20 transition-all active:scale-90"
+                            className="p-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 text-white hover:bg-white/20 transition-all active:scale-75 shadow-lg"
                         >
                             <ShareIcon className="w-6 h-6 md:w-7 md:h-7" />
                         </button>
@@ -363,28 +386,28 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
             </div>
         </div>
 
-        {/* --- SLIDING DRAWER --- */}
+        {/* --- RESPONSIVE DRAWER --- */}
         {isDrawerOpen && (
             <div 
-                className="absolute inset-0 z-[85] bg-black/40 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none"
+                className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm transition-all duration-300"
                 onClick={() => setIsDrawerOpen(false)}
             >
                 <div 
-                    className="absolute bottom-0 md:top-0 md:right-0 w-full md:w-[400px] h-[75vh] md:h-full bg-[#0a0a0a] border-t md:border-t-0 md:border-l border-white/10 rounded-t-3xl md:rounded-none flex flex-col shadow-2xl animate-slide-up md:animate-slide-in-right overflow-hidden"
+                    className="absolute bottom-0 md:top-0 md:right-0 w-full md:w-[400px] h-[80vh] md:h-full bg-[#080808] border-t md:border-t-0 md:border-l border-white/10 rounded-t-[2.5rem] md:rounded-none flex flex-col shadow-2xl animate-slide-up md:animate-slide-in-right overflow-hidden ring-1 ring-white/10"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <div className="md:hidden w-full flex justify-center pt-3 pb-2" onClick={() => setIsDrawerOpen(false)}>
-                        <div className="w-12 h-1 bg-white/20 rounded-full"></div>
+                    <div className="md:hidden w-full flex justify-center pt-4 pb-2" onClick={() => setIsDrawerOpen(false)}>
+                        <div className="w-16 h-1.5 bg-white/10 rounded-full"></div>
                     </div>
 
                     <div className="flex items-center justify-between p-6 border-b border-white/5">
-                        <h3 className="text-white font-black text-lg uppercase tracking-widest font-orbitron">Metadata</h3>
-                        <button onClick={() => setIsDrawerOpen(false)} className="text-white/40 hover:text-white transition-colors">
+                        <h3 className="text-white font-black text-lg uppercase tracking-widest font-orbitron">Details</h3>
+                        <button onClick={() => setIsDrawerOpen(false)} className="text-white/40 hover:text-white transition-colors p-2 bg-white/5 rounded-full">
                             <CloseIcon className="w-6 h-6" />
                         </button>
                     </div>
 
-                    <div className="flex-grow overflow-y-auto">
+                    <div className="flex-grow overflow-y-auto custom-scrollbar">
                          <MediaSidebar 
                             item={item}
                             session={session}
@@ -419,6 +442,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                     await reportMediaItem({ media_id: safeItem.id, reporter_id: session.user.id, reason, details });
                     setIsReporting(false);
                     setIsReportModalOpen(false);
+                    toast.success("Thank you for your report.");
                 }}
                 isSubmitting={isReporting}
             />

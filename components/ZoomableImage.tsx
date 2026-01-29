@@ -1,15 +1,15 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import LoadingSpinner from './icons/LoadingSpinner';
 
 interface ZoomableImageProps {
   src: string;
   alt: string;
   isUnlocked: boolean;
-  onZoomClick?: (e: React.MouseEvent) => void;
+  onZoomChange?: (isZoomed: boolean) => void;
 }
 
-const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, isUnlocked }) => {
+const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, isUnlocked, onZoomChange }) => {
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -19,22 +19,26 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, isUnlocked }) =
   const pinchStartRef = useRef<{ dist: number; scale: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Notify parent of zoom state
+  useEffect(() => {
+    if (onZoomChange) {
+      onZoomChange(transform.scale > 1);
+    }
+  }, [transform.scale, onZoomChange]);
+
   // --- ZOOM & PAN HANDLERS ---
   const handleWheel = (e: React.WheelEvent) => {
     if (!isUnlocked) return;
     
-    // Normalize wheel delta to handle both mouse wheels and trackpads comfortably
-    // Math.sign(e.deltaY) ensures direction, 0.1 limits speed per event
     const zoomIntensity = 0.1;
     const direction = Math.sign(e.deltaY) * -1;
     const scaleAmount = direction * zoomIntensity;
     
-    const newScale = Math.min(Math.max(1, transform.scale + scaleAmount), 4);
+    const newScale = Math.min(Math.max(1, transform.scale + scaleAmount), 5);
     
     setTransform(prev => ({
       ...prev,
       scale: newScale,
-      // Reset position if zoomed out completely
       x: newScale === 1 ? 0 : prev.x,
       y: newScale === 1 ? 0 : prev.y
     }));
@@ -72,11 +76,10 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, isUnlocked }) =
     if (!isUnlocked) return;
 
     if (e.touches.length === 2) {
-      // Start Pinch
       const dist = getTouchDistance(e.touches);
       pinchStartRef.current = { dist, scale: transform.scale };
     } else if (e.touches.length === 1 && transform.scale > 1) {
-      // Start Pan (only if zoomed)
+      // If we are zoomed in, prevent the swipe behavior of the parent
       e.stopPropagation();
       dragStartRef.current = { 
           x: e.touches[0].clientX - transform.x, 
@@ -90,17 +93,15 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, isUnlocked }) =
     if (!isUnlocked) return;
 
     if (e.touches.length === 2 && pinchStartRef.current) {
-      // Pinch Zooming
       e.stopPropagation();
       e.preventDefault();
       
       const dist = getTouchDistance(e.touches);
       const scaleChange = dist / pinchStartRef.current.dist;
-      const newScale = Math.min(Math.max(1, pinchStartRef.current.scale * scaleChange), 4);
+      const newScale = Math.min(Math.max(1, pinchStartRef.current.scale * scaleChange), 5);
       
       setTransform(prev => ({ ...prev, scale: newScale }));
     } else if (e.touches.length === 1 && transform.scale > 1 && dragStartRef.current) {
-      // Panning
       e.stopPropagation();
       const x = e.touches[0].clientX - dragStartRef.current.x;
       const y = e.touches[0].clientY - dragStartRef.current.y;
@@ -119,10 +120,8 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, isUnlocked }) =
     if (!isUnlocked) return;
 
     if (transform.scale > 1) {
-      // Reset
       setTransform({ scale: 1, x: 0, y: 0 });
     } else {
-      // Zoom in
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -141,8 +140,8 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, isUnlocked }) =
       return (
           <div className="flex flex-col items-center justify-center h-full w-full text-gray-500 bg-gray-900/50 rounded-lg border border-gray-800 border-dashed p-8 text-center">
               <span className="text-4xl mb-4">⚠️</span>
-              <span className="text-sm uppercase font-bold text-gray-400">Image Failed to Load</span>
-              <span className="text-xs text-gray-600 mt-2">The link might be broken or private.</span>
+              <span className="text-sm uppercase font-bold text-gray-400">Broken Link</span>
+              <span className="text-xs text-gray-600 mt-2">The source image could not be loaded.</span>
           </div>
       );
   }
@@ -162,14 +161,14 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, isUnlocked }) =
     >
       {isLoading && (
          <div className="absolute inset-0 flex items-center justify-center z-0">
-             <LoadingSpinner className="w-8 h-8 text-pink-500" />
+             <LoadingSpinner className="w-10 h-10 text-pink-500" />
          </div>
       )}
       <img 
         src={src} 
         alt={alt} 
-        className={`max-h-full max-w-full object-contain select-none transition-transform duration-75 ease-out relative z-10
-            ${!isUnlocked ? 'blur-2xl opacity-50' : ''}
+        className={`max-h-full max-w-full object-contain select-none transition-transform duration-100 ease-out relative z-10
+            ${!isUnlocked ? 'blur-3xl opacity-30 grayscale' : ''}
             ${isDragging ? 'cursor-grabbing' : transform.scale > 1 ? 'cursor-grab' : 'cursor-zoom-in'}
         `}
         onClick={handleZoomClick}

@@ -13,7 +13,8 @@ interface State {
 
 // Inheriting from Component directly and declaring state as a property to fix "Property 'state' does not exist" errors
 class ErrorBoundary extends Component<Props, State> {
-  // Explicitly define state property to help TypeScript resolve it correctly
+  // Explicitly define props and state properties to help TypeScript resolve them correctly
+  public props: Props;
   public state: State = {
     hasError: false,
     error: null
@@ -21,6 +22,8 @@ class ErrorBoundary extends Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
+    // Explicitly assign props to instance property to satisfy strict type checking
+    this.props = props;
   }
 
   public static getDerivedStateFromError(error: Error): State {
