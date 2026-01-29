@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MediaItem, MediaType } from '../types';
 import { Session } from '@supabase/supabase-js';
 import HeartIcon from './icons/HeartIcon';
@@ -28,6 +28,10 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Hooks
   const { isLiked, likeCount, toggleLike } = useMediaLikes(item.id, session?.user.id, item.id.startsWith('static'));
@@ -37,14 +41,39 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   const isOwner = session?.user.id === item.user_id;
   const isUnlocked = isOwner || !item.is_premium || checkIsUnlocked(item.id);
 
+  // Intersection Observer for Autoplay
+  useEffect(() => {
+    if (item.type !== MediaType.Video || !isUnlocked) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            videoRef.current?.play().catch(() => {});
+            setIsPlaying(true);
+          } else {
+            videoRef.current?.pause();
+            setIsPlaying(false);
+          }
+        });
+      },
+      { threshold: 0.6 } // Play when 60% of the video is visible
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [item.type, isUnlocked]);
+
   const handleLikeAction = async () => {
     setShowHeartAnimation(true);
-    setTimeout(() => setShowHeartAnimation(false), 1000);
+    setTimeout(() => setShowHeartAnimation(false), 800);
     await toggleLike();
   };
 
-  // Use custom double tap hook
-  const handleDoubleTap = useDoubleTap(handleLikeAction);
+  const handleTapInteraction = useDoubleTap(handleLikeAction);
 
   const handleShareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -69,152 +98,157 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   };
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden mb-6 shadow-xl max-w-xl mx-auto animate-fade-in">
-        {/* Header */}
-        <div className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                <div onClick={handleUserClick} className="cursor-pointer">
-                    {item.author_avatar ? (
-                        <img src={item.author_avatar} alt={item.author} className="w-10 h-10 rounded-full border border-gray-700 object-cover" />
-                    ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-600 to-purple-600 flex items-center justify-center font-bold text-white text-sm">
-                            {item.author?.charAt(0)}
-                        </div>
-                    )}
-                </div>
-                <div>
-                    <h3 onClick={handleUserClick} className="font-bold text-white text-sm hover:text-pink-400 cursor-pointer transition-colors">
-                        {item.author}
-                    </h3>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">{item.category}</p>
-                </div>
-            </div>
-            
-            {!isOwner && session && item.user_id && !item.user_id.startsWith('static') && (
-                <button 
-                    onClick={() => toggleFollow(item.author || '')}
-                    className={`text-xs font-bold px-3 py-1.5 rounded-full transition-colors ${
-                        isFollowing 
-                        ? 'bg-gray-800 text-gray-400 border border-gray-700' 
-                        : 'bg-pink-600/20 text-pink-400 border border-pink-500/50 hover:bg-pink-600 hover:text-white'
-                    }`}
-                >
-                    {isFollowing ? 'Following' : 'Follow'}
-                </button>
-            )}
-        </div>
-
-        {/* Media Content */}
+    <div 
+      ref={cardRef}
+      className="snap-item w-full max-w-xl mx-auto h-[85vh] md:h-[90vh] bg-black md:bg-gray-900 md:border md:border-gray-800 md:rounded-3xl overflow-hidden mb-0 md:mb-8 shadow-2xl relative flex flex-col group/feed"
+    >
+        {/* Media Container */}
         <div 
-            className="relative bg-black w-full aspect-[4/5] sm:aspect-square flex items-center justify-center overflow-hidden cursor-pointer"
+            className="flex-grow relative w-full flex items-center justify-center overflow-hidden bg-black cursor-pointer"
             onClick={onItemClick}
-            onMouseDown={handleDoubleTap}
-            onTouchEnd={handleDoubleTap}
+            onMouseDown={handleTapInteraction}
+            onTouchEnd={handleTapInteraction}
         >
-             {/* Heart Overlay Animation */}
+             {/* Dynamic Heart Animation */}
              {showHeartAnimation && (
-                <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none animate-bounce-in">
-                    <HeartIcon filled className="w-24 h-24 text-white drop-shadow-2xl opacity-90" />
+                <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
+                    <HeartIcon filled className="w-32 h-32 text-pink-500 drop-shadow-[0_0_20px_#ec4899] animate-heart-burst" />
                 </div>
             )}
 
             {!isUnlocked ? (
-                // Locked State
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-xl">
-                    <img src={item.src} className="absolute inset-0 w-full h-full object-cover opacity-20 blur-xl" />
-                    <div className="relative z-20 flex flex-col items-center text-center p-6">
-                        <div className="w-14 h-14 bg-gray-800/80 rounded-full flex items-center justify-center mb-3 border border-yellow-500/50">
-                            <LockIcon className="w-6 h-6 text-yellow-500" />
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 backdrop-blur-xl">
+                    <img src={item.src} className="absolute inset-0 w-full h-full object-cover opacity-20 blur-2xl" alt="Locked" />
+                    <div className="relative z-20 flex flex-col items-center text-center p-6 bg-black/40 rounded-3xl border border-white/5">
+                        <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mb-4 border border-yellow-500/30">
+                            <LockIcon className="w-8 h-8 text-yellow-500" />
                         </div>
-                        <h3 className="text-white font-bold text-lg mb-1 font-orbitron">Premium Content</h3>
-                        <p className="text-gray-400 text-xs mb-4">Unlock to view full resolution</p>
+                        <h3 className="text-white font-bold text-xl mb-1 font-orbitron tracking-tight">Support Creator</h3>
+                        <p className="text-gray-400 text-xs mb-6 max-w-[200px]">Unlock high-res access to this masterpiece.</p>
                         <button 
                             onClick={handleUnlock}
                             disabled={isWalletLoading}
-                            className="px-6 py-2.5 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-black font-bold rounded-full shadow-lg transform transition-all active:scale-95 flex items-center gap-2"
+                            className="px-8 py-3 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-black font-black rounded-full shadow-lg transform transition-all active:scale-95 flex items-center gap-2 uppercase text-xs tracking-widest"
                         >
                             {isWalletLoading ? <LoadingSpinner className="w-4 h-4 text-black"/> : `Unlock ${item.price} Coins`}
                         </button>
                     </div>
                 </div>
             ) : (
-                // Unlocked State
                 item.type === MediaType.Video ? (
-                    <div className="relative w-full h-full">
-                         <img src={item.src} className="w-full h-full object-cover" />
-                         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                             <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center">
-                                 <PlayIcon className="w-8 h-8 text-white ml-1" />
+                    <div className="w-full h-full relative group/player">
+                        <video 
+                            ref={videoRef}
+                            src={item.videoSrc}
+                            loop
+                            muted
+                            playsInline
+                            poster={item.src}
+                            className="w-full h-full object-contain z-10"
+                        />
+                        {!isPlaying && (
+                             <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/20 pointer-events-none transition-opacity duration-300">
+                                <div className="p-5 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                                    <PlayIcon className="w-10 h-10 text-white" />
+                                </div>
                              </div>
-                         </div>
-                         <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md border border-white/10 flex items-center gap-1">
-                             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                             <span className="text-[10px] font-bold text-white uppercase">Video</span>
-                         </div>
+                        )}
+                        <div className="absolute bottom-4 left-4 z-20 pointer-events-none">
+                            <div className="bg-black/40 backdrop-blur-md px-2 py-1 rounded border border-white/10 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                                <span className="text-[10px] font-bold text-white uppercase tracking-tighter">AMV / Video</span>
+                            </div>
+                        </div>
                     </div>
                 ) : (
-                    <img src={item.src} alt={item.description} className="w-full h-full object-cover" />
+                    <img src={item.src} alt={item.description} className="w-full h-full object-contain" />
                 )
             )}
-        </div>
 
-        {/* Action Bar */}
-        <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-4">
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); handleLikeAction(); }}
-                        className={`transition-transform active:scale-90 ${isLiked ? 'text-pink-500' : 'text-white hover:text-pink-500'}`}
+            {/* TikTok Style Side Actions (Absolute) */}
+            <div className="absolute bottom-20 right-4 z-30 flex flex-col items-center gap-6 md:gap-8">
+                {/* Profile Circle */}
+                <div className="flex flex-col items-center">
+                    <div 
+                        onClick={handleUserClick} 
+                        className="w-12 h-12 rounded-full border-2 border-white p-0.5 bg-black cursor-pointer transform hover:scale-110 transition-transform shadow-xl"
                     >
-                        <HeartIcon filled={isLiked} className="w-7 h-7" />
-                    </button>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onItemClick(); }}
-                        className="text-white hover:text-cyan-400 transition-colors"
-                    >
-                        <ChatIcon className="w-7 h-7" />
-                    </button>
-                    {!isOwner && session && (
+                        {item.author_avatar ? (
+                            <img src={item.author_avatar} alt={item.author} className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full rounded-full bg-pink-600 flex items-center justify-center font-bold text-white text-lg">
+                                {item.author?.charAt(0)}
+                            </div>
+                        )}
+                    </div>
+                    {session && !isOwner && !isFollowing && (
                         <button 
-                            onClick={(e) => { e.stopPropagation(); setIsTipModalOpen(true); }}
-                            className="text-white hover:text-yellow-400 transition-colors"
+                            onClick={(e) => { e.stopPropagation(); toggleFollow(item.author || ''); }}
+                            className="w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center text-white -mt-3 relative z-40 shadow-lg border-2 border-black"
                         >
-                            <GiftIcon className="w-6 h-6" />
+                            <span className="text-xs font-bold">+</span>
                         </button>
                     )}
                 </div>
-                <button 
-                    onClick={handleShareClick}
-                    className="text-white hover:text-gray-300 transition-colors"
-                >
-                    <ShareIcon className="w-6 h-6" />
-                </button>
-            </div>
 
-            {/* Likes Count */}
-            <div className="text-sm font-bold text-white mb-2">
-                {likeCount} likes
-            </div>
-
-            {/* Caption */}
-            <div className="text-sm text-gray-300 leading-relaxed mb-2">
-                <span className="font-bold text-white mr-2 cursor-pointer" onClick={handleUserClick}>{item.author}</span>
-                {item.description}
-            </div>
-
-            {/* Tags */}
-            {item.tags && item.tags.length > 0 && (
-                <div className="flex flex-wrap gap-x-2 gap-y-1 mb-2">
-                    {item.tags.map(tag => (
-                        <span key={tag} className="text-xs text-cyan-500 cursor-pointer hover:underline">#{tag}</span>
-                    ))}
+                <div className="flex flex-col items-center">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); handleLikeAction(); }}
+                        className={`p-2 rounded-full transition-all active:scale-75 ${isLiked ? 'text-pink-500' : 'text-white/80 hover:text-white'}`}
+                    >
+                        <HeartIcon filled={isLiked} className="w-8 h-8 drop-shadow-lg" />
+                    </button>
+                    <span className="text-[10px] font-bold text-white/90 mt-1 drop-shadow-md">{likeCount > 999 ? (likeCount/1000).toFixed(1) + 'k' : likeCount}</span>
                 </div>
-            )}
 
-            {/* View Comments Link */}
-            <button onClick={onItemClick} className="text-gray-500 text-sm font-medium hover:text-gray-300 transition-colors">
-                View all comments
-            </button>
+                <div className="flex flex-col items-center">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onItemClick(); }}
+                        className="p-2 text-white/80 hover:text-white transition-all active:scale-75"
+                    >
+                        <ChatIcon className="w-8 h-8 drop-shadow-lg" />
+                    </button>
+                    <span className="text-[10px] font-bold text-white/90 mt-1 drop-shadow-md">Chat</span>
+                </div>
+
+                <div className="flex flex-col items-center">
+                    <button 
+                        onClick={handleShareClick}
+                        className="p-2 text-white/80 hover:text-white transition-all active:scale-75"
+                    >
+                        <ShareIcon className="w-8 h-8 drop-shadow-lg" />
+                    </button>
+                    <span className="text-[10px] font-bold text-white/90 mt-1 drop-shadow-md">Share</span>
+                </div>
+                
+                {!isOwner && session && (
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setIsTipModalOpen(true); }}
+                        className="p-2 text-yellow-500/80 hover:text-yellow-400 transition-all active:scale-75"
+                    >
+                        <GiftIcon className="w-7 h-7 drop-shadow-lg" />
+                    </button>
+                )}
+            </div>
+
+            {/* Bottom Caption Overlay */}
+            <div className="absolute bottom-0 inset-x-0 p-4 pt-12 pb-6 bg-gradient-to-t from-black via-black/40 to-transparent z-20 pointer-events-none">
+                <div className="pointer-events-auto">
+                    <h3 onClick={handleUserClick} className="font-bold text-white text-base mb-1.5 hover:text-pink-400 cursor-pointer inline-block drop-shadow-md">
+                        @{item.author}
+                    </h3>
+                    <p className="text-sm text-gray-100 line-clamp-3 leading-snug drop-shadow-md max-w-[85%] mb-2">
+                        {item.description}
+                    </p>
+                    {item.tags && item.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                            {item.tags.slice(0, 3).map(tag => (
+                                <span key={tag} className="text-xs text-pink-400 font-bold drop-shadow-md hover:underline cursor-pointer">#{tag}</span>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
 
         {shareAnchorEl && (
