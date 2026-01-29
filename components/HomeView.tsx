@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Hero from './Hero';
 import MediaGrid from './MediaGrid';
 import FeedView from './FeedView';
@@ -81,6 +81,10 @@ const HomeView: React.FC<HomeViewProps> = ({
   } = useGalleryFilters(itemsToDisplay);
 
   useEffect(() => {
+    // Smart view switch: Default to Feed for videos and Grid for photos
+    if (activeTab === 'videos') setViewMode('feed');
+    else setViewMode('grid');
+    
     clearFilters();
     setSelectedItemIndex(null);
   }, [activeTab]);
@@ -94,7 +98,7 @@ const HomeView: React.FC<HomeViewProps> = ({
           loadMore();
         }
       },
-      { threshold: 0.1, rootMargin: '400px' }
+      { threshold: 0.1, rootMargin: '600px' }
     );
 
     if (observerTarget.current) {
@@ -106,7 +110,7 @@ const HomeView: React.FC<HomeViewProps> = ({
 
   const handleRefresh = async () => {
      onDataChange();
-     await new Promise(r => setTimeout(r, 1000));
+     await new Promise(r => setTimeout(r, 1200));
   };
 
   const scrollToTop = () => {
@@ -116,9 +120,9 @@ const HomeView: React.FC<HomeViewProps> = ({
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <Hero />
-      <main className="container mx-auto px-4 py-4 min-h-screen relative">
+      <main className={`container mx-auto px-4 py-4 min-h-screen relative ${viewMode === 'feed' ? 'max-w-none px-0' : ''}`}>
         <div 
-            className={`sticky z-40 py-2 -mx-4 px-4 bg-gradient-to-b from-[#050505] via-[#050505]/95 to-transparent backdrop-blur-sm transition-[top] duration-300 ease-in-out`}
+            className={`sticky z-40 py-3 -mx-4 px-4 bg-gradient-to-b from-[#050505] via-[#050505]/95 to-transparent backdrop-blur-xl transition-[top] duration-300 ease-in-out border-b border-white/5`}
             style={{ top: scrollDirection === 'down' ? '0px' : '56px' }}
         >
              <GalleryTabs activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -144,51 +148,52 @@ const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         {activeTab === 'following' && !session ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-gray-800 rounded-3xl bg-gray-900/20 max-w-2xl mx-auto mt-10">
-                <div className="w-20 h-20 rounded-full bg-gray-800 flex items-center justify-center mb-6">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-gray-500">
+            <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-white/10 rounded-[3rem] bg-gray-900/40 max-w-2xl mx-auto mt-20 backdrop-blur-md">
+                <div className="w-24 h-24 rounded-full bg-pink-500/10 flex items-center justify-center mb-8 border border-pink-500/20 shadow-[0_0_30px_rgba(236,72,153,0.2)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 text-pink-500">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                     </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-3 font-orbitron">Join the Community</h2>
-                <button onClick={signInWithGoogle} className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors shadow-lg">Sign In with Google</button>
+                <h2 className="text-3xl font-black text-white mb-4 font-orbitron uppercase tracking-widest">Connect with Creators</h2>
+                <p className="text-gray-400 mb-8 max-w-xs">Follow your favorite artists and never miss an update in your personalized feed.</p>
+                <button onClick={signInWithGoogle} className="px-10 py-4 bg-white text-black font-black uppercase tracking-widest rounded-2xl hover:bg-pink-500 hover:text-white transition-all shadow-xl active:scale-95">Sign In with Google</button>
             </div>
         ) : (
             <>
                 {itemsToDisplay.length > 0 || isCurrentLoading ? (
                   sortedItems.length > 0 || isCurrentLoading ? (
-                    <div className="animate-fade-in space-y-12 mt-4">
+                    <div className={`animate-fade-in space-y-12 ${viewMode === 'grid' ? 'mt-8 px-4' : 'mt-0'}`}>
                         {viewMode === 'grid' ? (
                             <MediaGrid items={visibleItems} onUserClick={onUserClick} session={session} onDataChange={onDataChange} isLoading={isCurrentLoading} onItemClick={setSelectedItemIndex} />
                         ) : (
                             <FeedView items={visibleItems} session={session} onUserClick={onUserClick} onDataChange={onDataChange} isLoading={isCurrentLoading} onItemClick={setSelectedItemIndex} />
                         )}
-                        {visibleCount < sortedItems.length && !isCurrentLoading && <div ref={observerTarget} className="flex justify-center py-8 w-full"><LoadingSpinner className="w-8 h-8 text-pink-500/50" /></div>}
-                        {!isCurrentLoading && <div className="text-center text-xs text-gray-600">Showing {Math.min(visibleCount, sortedItems.length)} of {sortedItems.length} results</div>}
+                        {visibleCount < sortedItems.length && !isCurrentLoading && <div ref={observerTarget} className="flex justify-center py-12 w-full"><LoadingSpinner className="w-12 h-12 text-pink-500/30" /></div>}
+                        {!isCurrentLoading && viewMode === 'grid' && <div className="text-center text-xs text-gray-700 uppercase tracking-widest pb-20">Transmission End // {sortedItems.length} Records Found</div>}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-[40vh] text-center border border-dashed border-gray-800 rounded-3xl bg-gray-900/20 m-4">
-                        <div className="w-16 h-16 mb-4 text-gray-700"><SearchIcon className="w-full h-full" /></div>
-                        <h2 className="text-2xl font-bold text-gray-400 mb-2">No Results Found</h2>
-                        <button onClick={clearFilters} className="px-6 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg transition-colors font-medium">Clear all filters</button>
+                    <div className="flex flex-col items-center justify-center h-[50vh] text-center border border-dashed border-white/5 rounded-[3rem] bg-gray-900/10 m-8">
+                        <div className="w-20 h-20 mb-6 text-gray-800"><SearchIcon className="w-full h-full" /></div>
+                        <h2 className="text-3xl font-black text-gray-700 mb-4 font-orbitron uppercase tracking-widest">Zero Frequency</h2>
+                        <button onClick={clearFilters} className="px-10 py-3 border border-pink-500/50 text-pink-500 hover:bg-pink-500 hover:text-white rounded-xl transition-all font-black uppercase tracking-widest text-xs">Reset Neural Filters</button>
                     </div>
                 )
                 ) : (
                 <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-                    <h2 className="text-xl font-bold text-gray-500 uppercase tracking-widest font-orbitron">No content available</h2>
+                    <h2 className="text-xl font-bold text-gray-700 uppercase tracking-[0.3em] font-orbitron animate-pulse">Initializing Feed...</h2>
                 </div>
                 )}
             </>
         )}
         
         {/* Floating Back to Top Button */}
-        {showScrollTop && (
+        {showScrollTop && viewMode === 'grid' && (
             <button 
                 onClick={scrollToTop}
-                className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 md:left-auto md:right-32 z-[55] p-3 rounded-full bg-pink-500/10 backdrop-blur-md border border-pink-500/30 text-pink-500 shadow-lg hover:bg-pink-500 hover:text-white transition-all transform active:scale-90 animate-fade-in"
-                title="Back to Top"
+                className="fixed bottom-24 md:bottom-12 left-1/2 -translate-x-1/2 md:left-auto md:right-12 z-[55] p-4 rounded-full bg-pink-600/20 backdrop-blur-xl border border-pink-500/40 text-pink-500 shadow-2xl hover:bg-pink-500 hover:text-white transition-all transform active:scale-90 animate-fade-in"
+                title="Return to Peak"
             >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7"/></svg>
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
             </button>
         )}
         
