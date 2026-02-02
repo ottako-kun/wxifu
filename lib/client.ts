@@ -99,12 +99,13 @@ export const supabase: any = {
     };
     return chain;
   },
-  channel: (name: string) => ({
-    on: (event: string, filter: any, callback: any) => ({
-      subscribe: () => ({})
-    }),
-    subscribe: () => ({})
-  }),
+  channel: (name: string) => {
+    const channelObj: any = {
+      on: (event: string, filter: any, callback: any) => channelObj,
+      subscribe: () => ({ unsubscribe: () => {} })
+    };
+    return channelObj;
+  },
   removeChannel: (channel: any) => {},
   functions: {
     invoke: async (name: string, options: any) => ({ data: null, error: null })
