@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { MediaItem, MediaType, Session } from '../types';
 import HeartIcon from './icons/HeartIcon';
@@ -123,16 +122,14 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   return (
     <div 
       ref={cardRef}
-      className="w-full h-[100dvh] bg-black overflow-hidden relative flex flex-col group/feed"
+      className="w-full h-[100dvh] md:h-[90vh] bg-black md:bg-gray-950 md:rounded-3xl overflow-hidden mb-0 md:mb-8 shadow-2xl relative flex flex-col group/feed snap-start"
     >
-        {/* Cinematic Backdrop for Desktop */}
-        <div className="hidden lg:block absolute inset-0 z-0 pointer-events-none">
-            <img src={item.src} className="w-full h-full object-cover opacity-10 blur-[100px] scale-110" alt="" />
+        <div className="hidden md:block absolute inset-0 z-0 pointer-events-none">
+            <img src={item.src} className="w-full h-full object-cover opacity-25 blur-3xl scale-110" alt="" />
         </div>
 
-        {/* Content Container */}
         <div 
-            className="flex-grow relative w-full h-full flex items-center justify-center overflow-hidden bg-black cursor-pointer md:max-w-[500px] md:mx-auto md:shadow-[0_0_50px_rgba(0,0,0,0.5)] z-10"
+            className="flex-grow relative w-full h-full flex items-center justify-center overflow-hidden bg-black cursor-pointer md:aspect-[9/16] md:h-full md:w-auto md:mx-auto md:shadow-2xl z-10"
             onClick={onItemClick}
             onMouseDown={handleTapInteraction}
             onTouchEnd={handleTapInteraction}
@@ -143,14 +140,16 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                 </div>
             )}
 
+            {!isImageLoaded && item.type === MediaType.Photo && <div className="absolute inset-0 animate-pulse-bg" />}
+
             {!isUnlocked ? (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/80 backdrop-blur-3xl">
-                    <div className="relative z-20 flex flex-col items-center text-center p-8 bg-gray-900/60 rounded-[2.5rem] border border-white/10 shadow-2xl backdrop-blur-md">
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/70 backdrop-blur-3xl pointer-events-auto">
+                    <div className="relative z-20 flex flex-col items-center text-center p-8 bg-black/40 rounded-[2.5rem] border border-white/10 shadow-2xl backdrop-blur-md">
                         <div className="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center mb-6 border border-yellow-500/20 shadow-[0_0_20px_rgba(234,179,8,0.2)]">
                             <LockIcon className="w-10 h-10 text-yellow-500" />
                         </div>
                         <h3 className="text-white font-black text-2xl mb-2 font-orbitron tracking-tight uppercase">Premium Vault</h3>
-                        <p className="text-gray-400 text-sm mb-8 leading-relaxed max-w-[200px]">Unlock high-fidelity artwork by <span className="text-pink-400 font-bold">@{item.author}</span></p>
+                        <p className="text-gray-400 text-sm mb-8 leading-relaxed max-w-[200px]">Unlock to view full content by <span className="text-pink-400 font-bold">@{item.author}</span></p>
                         <button 
                             onClick={handleUnlock}
                             disabled={isWalletLoading}
@@ -168,7 +167,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                                 {!iframeLoaded && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-20">
                                         <LoadingSpinner className="w-10 h-10 text-pink-500 mb-4" />
-                                        <p className="text-[10px] text-gray-500 uppercase tracking-widest animate-pulse">Initializing Neural Link</p>
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-widest animate-pulse">Initializing Drive Link</p>
                                     </div>
                                 )}
                                 <iframe 
@@ -193,7 +192,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                                     className="w-full h-full object-contain z-10"
                                 />
                                 {!isPlaying && (
-                                    <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/20 pointer-events-none">
+                                    <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/20 pointer-events-none transition-opacity duration-300">
                                         <div className="p-6 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
                                             <PlayIcon className="w-10 h-10 text-white" />
                                         </div>
@@ -201,12 +200,12 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                                 )}
                                 <button 
                                     onClick={handleMuteToggle}
-                                    className="absolute top-6 right-6 z-30 p-3 bg-black/50 backdrop-blur-xl rounded-full border border-white/10 text-white hover:bg-black/70 transition-all active:scale-90"
+                                    className="absolute top-4 right-4 z-30 p-2.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 text-white hover:bg-black/60 transition-all"
                                 >
                                     {isGlobalMuted ? (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path strokeLinecap="round" d="M15.54 8.46l5.66 5.66m0-5.66l-5.66 5.66"/></svg>
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path strokeLinecap="round" d="M15.54 8.46l5.66 5.66m0-5.66l-5.66 5.66"/></svg>
                                     ) : (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
                                     )}
                                 </button>
                             </>
@@ -216,29 +215,29 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                     <img 
                       src={item.src} 
                       alt={item.description} 
-                      className={`w-full h-full object-contain z-10 transition-opacity duration-700 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`} 
+                      className="w-full h-full object-contain z-10 transition-opacity duration-500" 
                       onLoad={() => setIsImageLoaded(true)}
                     />
                 )
             )}
 
-            {/* Side Interaction Actions */}
-            <div className="absolute bottom-28 right-4 z-30 flex flex-col items-center gap-7">
+            {/* Interaction Bar */}
+            <div className="absolute bottom-24 right-4 z-30 flex flex-col items-center gap-6">
                 <div className="flex flex-col items-center">
-                    <div className="relative group/avatar" onClick={handleUserClick}>
+                    <div className="relative" onClick={handleUserClick}>
                         <Avatar 
                            src={item.author_avatar} 
                            alt={item.author} 
                            size="md"
                            isVerified={true}
-                           className="cursor-pointer border-2 border-white/20 shadow-2xl group-hover/avatar:scale-110 transition-transform"
+                           className="cursor-pointer border-2 border-white/30 shadow-xl"
                         />
                         {session && !isOwner && !isFollowing && (
                             <button 
                                 onClick={(e) => { e.stopPropagation(); toggleFollow(item.author || ''); }}
-                                className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center text-white z-40 border-2 border-black shadow-lg"
+                                className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-pink-500 rounded-full flex items-center justify-center text-white z-40 border border-black shadow-lg"
                             >
-                                <span className="text-[14px] font-black">+</span>
+                                <span className="text-xs font-bold">+</span>
                             </button>
                         )}
                     </div>
@@ -249,61 +248,71 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                         onClick={(e) => { e.stopPropagation(); handleLikeAction(); }}
                         className={`p-2 transition-all active:scale-50 ${isLiked ? 'text-pink-500' : 'text-white'}`}
                     >
-                        <HeartIcon filled={isLiked} className={`w-8 h-8 drop-shadow-[0_0_10px_rgba(0,0,0,0.8)] ${isLiked ? 'filter drop-shadow-[0_0_8px_#ec4899]' : ''}`} />
+                        <HeartIcon filled={isLiked} className="w-8 h-8 drop-shadow-lg" />
                     </button>
-                    <span className="text-[11px] font-black text-white mt-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] uppercase tracking-tighter">
-                        {likeCount > 999 ? (likeCount/1000).toFixed(1) + 'k' : likeCount}
-                    </span>
+                    <span className="text-[10px] font-bold text-white mt-0.5 drop-shadow-md">{likeCount > 999 ? (likeCount/1000).toFixed(1) + 'k' : likeCount}</span>
                 </div>
 
                 <div className="flex flex-col items-center">
                     <button onClick={(e) => { e.stopPropagation(); onItemClick(); }} className="p-2 text-white transition-all active:scale-50">
-                        <ChatIcon className="w-8 h-8 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
+                        <ChatIcon className="w-8 h-8 drop-shadow-lg" />
                     </button>
-                    <span className="text-[11px] font-black text-white mt-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] uppercase tracking-tighter">Art</span>
+                    <span className="text-[10px] font-bold text-white mt-0.5 drop-shadow-md">Art</span>
                 </div>
 
                 <div className="flex flex-col items-center">
                     <button onClick={(e) => { e.stopPropagation(); setIsTipModalOpen(true); }} className="p-2 text-yellow-500 transition-all active:scale-50">
-                        <GiftIcon className="w-8 h-8 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
+                        <GiftIcon className="w-8 h-8 drop-shadow-lg" />
                     </button>
-                    <span className="text-[11px] font-black text-white mt-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] uppercase tracking-tighter">Gift</span>
+                    <span className="text-[10px] font-bold text-white mt-0.5 drop-shadow-md">Gift</span>
                 </div>
 
                 <div className="flex flex-col items-center">
                     <button onClick={handleShareClick} className="p-2 text-white transition-all active:scale-50">
-                        <ShareIcon className="w-8 h-8 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
+                        <ShareIcon className="w-8 h-8 drop-shadow-lg" />
                     </button>
-                    <span className="text-[11px] font-black text-white mt-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] uppercase tracking-tighter">Link</span>
+                    <span className="text-[10px] font-bold text-white mt-0.5 drop-shadow-md">Link</span>
                 </div>
+                
+                {isPlaying && !isDriveVideo && (
+                    <div className="relative w-10 h-10 flex items-center justify-center mt-2">
+                        <div className="absolute top-0 right-0 animate-float-note opacity-0">
+                            <svg className="w-3 h-3 text-pink-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                        </div>
+                        <div className="w-full h-full rounded-full bg-gradient-to-tr from-gray-800 to-black p-1 animate-vinyl border-2 border-gray-700">
+                             <div className="w-full h-full rounded-full bg-pink-500/10 flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-pink-500 shadow-[0_0_8px_#ec4899]"></div>
+                             </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {/* Caption Overlay */}
-            <div className="absolute bottom-0 inset-x-0 p-6 pt-24 pb-12 bg-gradient-to-t from-black via-black/60 to-transparent z-20 pointer-events-none">
-                <div className="pointer-events-auto max-w-[80%]">
-                    <h3 onClick={handleUserClick} className="font-black text-white text-lg mb-1.5 hover:text-pink-400 cursor-pointer inline-flex items-center gap-2 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] uppercase tracking-wide">
+            {/* Bottom Info Area */}
+            <div className="absolute bottom-0 inset-x-0 p-5 pt-20 pb-8 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-20 pointer-events-none">
+                <div className="pointer-events-auto max-w-[85%]">
+                    <h3 onClick={handleUserClick} className="font-bold text-white text-base mb-1 hover:text-pink-400 cursor-pointer inline-flex items-center gap-1.5 drop-shadow-lg">
                         @{item.author}
-                        <div className="w-3.5 h-3.5 bg-cyan-500 rounded-full flex items-center justify-center border border-black shadow-[0_0_8px_#06b6d4]">
+                        <div className="w-3 h-3 bg-cyan-500 rounded-full flex items-center justify-center border border-black shadow-[0_0_5px_#06b6d4]">
                              <svg viewBox="0 0 24 24" fill="currentColor" className="w-[80%] h-[80%] text-white">
                                 <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                              </svg>
                         </div>
                     </h3>
-                    <p className="text-sm text-gray-200 line-clamp-2 leading-relaxed drop-shadow-[0_1px_2px_rgba(0,0,0,1)] font-light">
+                    <p className="text-sm text-gray-200 line-clamp-2 leading-snug drop-shadow-lg font-light">
                         {item.description}
                     </p>
-                    <div className="flex flex-wrap gap-2 mt-3">
+                    <div className="flex flex-wrap gap-2 mt-2">
                         {item.tags?.slice(0, 3).map(tag => (
-                            <span key={tag} className="text-[10px] text-pink-400 font-black uppercase tracking-widest drop-shadow-[0_1px_2px_rgba(0,0,0,1)] bg-pink-900/10 px-2 py-0.5 rounded border border-pink-500/10">#{tag}</span>
+                            <span key={tag} className="text-xs text-pink-400 font-bold drop-shadow-md">#{tag}</span>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* Video Progress Line */}
             {item.type === MediaType.Video && isUnlocked && !isDriveVideo && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/5 z-50">
-                    <div className="h-full bg-pink-500 shadow-[0_0_12px_#ec4899] transition-all duration-300 ease-linear" style={{ width: `${progress}%` }} />
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10 z-50">
+                    <div className="h-full bg-pink-500 shadow-[0_0_10px_#ec4899] transition-all duration-300 ease-linear" style={{ width: `${progress}%` }} />
                 </div>
             )}
         </div>

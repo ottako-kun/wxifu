@@ -20,7 +20,7 @@ const GalleryTabs: React.FC<GalleryTabsProps> = ({ activeTab, setActiveTab }) =>
 
   return (
     <div className="flex justify-center items-center mb-6">
-      <div className="flex bg-gray-900/40 backdrop-blur-3xl p-1 rounded-2xl border border-white/5 shadow-2xl max-w-full relative overflow-hidden">
+      <div className="flex bg-gray-900/40 backdrop-blur-3xl p-1 rounded-2xl border border-white/5 shadow-2xl max-w-full relative">
         {tabs.map((tab) => {
            const Icon = tab.icon;
            const isActive = activeTab === tab.id;
@@ -39,12 +39,12 @@ const GalleryTabs: React.FC<GalleryTabsProps> = ({ activeTab, setActiveTab }) =>
               title={tab.label}
             >
               {isActive && (
-                 <div className="absolute inset-0 bg-pink-600/60 rounded-xl opacity-100 shadow-[0_0_20px_rgba(236,72,153,0.5)] animate-fade-in border border-pink-500/50"></div>
+                 <div className="absolute inset-0 bg-pink-600/80 rounded-xl opacity-100 shadow-[0_0_15px_rgba(236,72,153,0.4)] animate-fade-in"></div>
               )}
               
               <div className="relative z-10 flex items-center gap-2">
                   <Icon className={`w-5 h-5 ${isActive ? 'scale-110' : ''} transition-transform duration-300`} />
-                  <span className={`text-[11px] font-black uppercase tracking-[0.2em] hidden sm:block ${isActive ? 'glow-pink' : ''}`}>
+                  <span className={`text-[11px] font-black uppercase tracking-[0.15em] hidden sm:block ${isActive ? 'text-white' : ''}`}>
                       {tab.label}
                   </span>
               </div>
