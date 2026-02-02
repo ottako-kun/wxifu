@@ -53,7 +53,7 @@ function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheets = {
     'profiles': ['id', 'name', 'avatar', 'bio', 'coins', 'frame', 'updated_at'],
-    'media': ['id', 'created_at', 'user_id', 'type', 'src', 'videoSrc', 'description', 'category', 'tags', 'is_premium', 'price'],
+    'media': ['id', 'created_at', 'user_id', 'type', 'src', 'videoSrc', 'description', 'category', 'tags', 'is_premium', 'price', 'author', 'author_avatar'],
     'likes': ['id', 'media_id', 'user_id', 'created_at'],
     'comments': ['id', 'media_id', 'user_id', 'content', 'author_name', 'author_avatar', 'created_at'],
     'follows': ['id', 'follower_id', 'following_id', 'created_at'],

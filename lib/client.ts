@@ -74,7 +74,7 @@ export const supabase: any = {
             }
 
             const mockUser = {
-              id: payload.sub, // Unique Google ID
+              id: payload.sub,
               email: payload.email,
               user_metadata: {
                 full_name: payload.name,
@@ -87,13 +87,12 @@ export const supabase: any = {
             localStorage.setItem('gas_auth_session', JSON.stringify(session));
             window.dispatchEvent(new Event('storage'));
             
-            // Auto-upsert profile on login to Google Sheet
             await gasRequest('UPSERT_PROFILE', {
                 id: mockUser.id,
                 name: mockUser.user_metadata.full_name,
                 avatar: mockUser.user_metadata.avatar_url,
                 bio: '',
-                coins: 100, // New users get starter coins
+                coins: 100,
                 frame: 'none',
                 updated_at: new Date().toISOString()
             });
@@ -102,30 +101,14 @@ export const supabase: any = {
           },
         });
 
-        // Trigger the real Google Sign-In popup
-        client.prompt((notification: any) => {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                // If one-tap is not available or skipped, use the standard picker
-                (window as any).google.accounts.id.renderButton(
-                    document.createElement('div'), // dummy element
-                    { theme: 'outline', size: 'large' }
-                );
-                // We actually prefer using the direct prompt for a single click flow
-                // but since GIS doesn't have a direct "openPopup" method for OIDC anymore, 
-                // we rely on prompt() or rendering a button. 
-                // However, 'requestCode' flow is also an option for a cleaner popup.
-            }
-        });
-        
-        // For the custom button in Header.tsx, we'll use a hidden button trick or 
-        // fallback to the official popup flow.
+        // Use standard button render for reliability
         const parentElement = document.createElement('div');
         parentElement.style.display = 'none';
         document.body.appendChild(parentElement);
         (window as any).google.accounts.id.renderButton(parentElement, { theme: 'outline', size: 'large' });
         const button = parentElement.querySelector('div[role="button"]') as HTMLElement;
         if (button) button.click();
-        setTimeout(() => document.body.removeChild(parentElement), 1000);
+        setTimeout(() => { if (parentElement.parentNode) document.body.removeChild(parentElement); }, 1000);
       });
     },
     signOut: async () => {
@@ -149,14 +132,39 @@ export const supabase: any = {
     }
   },
   from: (table: string) => {
+    let _table = table;
+    let _select: string | null = null;
+    let _filters: any[] = [];
+    
     const chain: any = {
-      select: () => chain,
-      order: () => chain,
-      eq: () => chain,
-      in: () => chain,
-      update: () => chain,
-      single: () => Promise.resolve({ data: null, error: null }),
-      then: (resolve: any) => Promise.resolve({ data: [], error: null }).then(resolve)
+      select: (cols: string) => { _select = cols; return chain; },
+      order: (col: string, opts: any) => chain,
+      eq: (col: string, val: any) => { _filters.push({ col, val }); return chain; },
+      in: (col: string, vals: any[]) => chain,
+      update: (updates: any) => chain,
+      single: () => {
+          // Returning a promise that resolves with data from GAS
+          return chain.then((res: any) => {
+              const data = Array.isArray(res.data) ? res.data[0] : res.data;
+              return { data: data || null, error: res.error };
+          });
+      },
+      // This is the magic part: make the chain awaitable
+      then: async (onfulfilled: any) => {
+        const cmd = `GET_${_table.toUpperCase()}`;
+        const res = await gasRequest(cmd);
+        
+        let filteredData = res.data || [];
+        // Basic filter support for the mock
+        if (_filters.length > 0) {
+            filteredData = filteredData.filter((row: any) => 
+                _filters.every(f => row[f.col] === f.val)
+            );
+        }
+        
+        const result = { data: filteredData, error: res.error ? { message: res.error } : null };
+        return onfulfilled ? Promise.resolve(onfulfilled(result)) : result;
+      }
     };
     return chain;
   },

@@ -1,17 +1,15 @@
+// @ts-nocheck
 /**
  * WXIFU BACKEND (GOOGLE APPS SCRIPT)
  * 1. Create a new Google Sheet.
  * 2. Go to Extensions > Apps Script.
- * 3. Paste this code.
+ * 3. Paste THIS code (Pure JavaScript).
  * 4. Run the 'setup' function once.
  * 5. Deploy > New Deployment > Web App (Execute as Me, Access as Anyone).
  * 6. Copy the URL and paste it into lib/client.ts in your project.
  */
 
-// Fixed: Added declarations for GAS globals
-declare var SpreadsheetApp: any;
-declare var Utilities: any;
-declare var ContentService: any;
+// Note: Globals like SpreadsheetApp and Utilities are automatically provided by the environment.
 
 const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
 
@@ -19,7 +17,7 @@ function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheets = {
     'profiles': ['id', 'name', 'avatar', 'bio', 'coins', 'frame', 'updated_at'],
-    'media': ['id', 'created_at', 'user_id', 'type', 'src', 'videoSrc', 'description', 'category', 'tags', 'is_premium', 'price'],
+    'media': ['id', 'created_at', 'user_id', 'type', 'src', 'videoSrc', 'description', 'category', 'tags', 'is_premium', 'price', 'author', 'author_avatar'],
     'likes': ['id', 'media_id', 'user_id', 'created_at'],
     'comments': ['id', 'media_id', 'user_id', 'content', 'author_name', 'author_avatar', 'created_at'],
     'follows': ['id', 'follower_id', 'following_id', 'created_at'],
@@ -34,13 +32,21 @@ function setup() {
       sheet.appendRow(headers);
       sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#f3f3f3");
       sheet.setFrozenRows(1);
+    } else {
+      // If sheet exists, ensure author columns exist (for legacy sheets)
+      const currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      headers.forEach(h => {
+        if (currentHeaders.indexOf(h) === -1) {
+          sheet.getRange(1, sheet.getLastColumn() + 1).setValue(h).setFontWeight("bold").setBackground("#f3f3f3");
+        }
+      });
     }
   }
   return "Setup Complete. WXIFU Tables Initialized.";
 }
 
-function doPost(e: any) {
-  const response: any = { success: false, data: null, error: null };
+function doPost(e) {
+  const response = { success: false, data: null, error: null };
   try {
     const params = JSON.parse(e.postData.contents);
     const cmd = params.command;
@@ -74,13 +80,13 @@ function doPost(e: any) {
         response.success = true;
         break;
       case 'GET_LIKES':
-        response.data = getRows('likes').filter((r: any) => r.media_id === payload.media_id);
+        response.data = getRows('likes').filter(r => r.media_id === payload.media_id);
         response.success = true;
         break;
       case 'TOGGLE_LIKE':
-        const existing = getRows('likes').find((r: any) => r.media_id === payload.media_id && r.user_id === payload.user_id);
-        if (existing) {
-          deleteRow('likes', 'id', (existing as any).id);
+        const existingLike = getRows('likes').find(r => r.media_id === payload.media_id && r.user_id === payload.user_id);
+        if (existingLike) {
+          deleteRow('likes', 'id', existingLike.id);
           response.data = { liked: false };
         } else {
           const newLike = { id: Utilities.getUuid(), ...payload, created_at: new Date().toISOString() };
@@ -90,7 +96,7 @@ function doPost(e: any) {
         response.success = true;
         break;
       case 'GET_COMMENTS':
-        response.data = getRows('comments').filter((r: any) => r.media_id === payload.media_id);
+        response.data = getRows('comments').filter(r => r.media_id === payload.media_id);
         response.success = true;
         break;
       case 'ADD_COMMENT':
@@ -113,12 +119,12 @@ function doPost(e: any) {
         response.success = true;
         break;
       case 'UNFOLLOW_USER':
-        const follow = getRows('follows').find((r: any) => r.follower_id === payload.follower_id && r.following_id === payload.following_id);
-        if (follow) deleteRow('follows', 'id', (follow as any).id);
+        const follow = getRows('follows').find(r => r.follower_id === payload.follower_id && r.following_id === payload.following_id);
+        if (follow) deleteRow('follows', 'id', follow.id);
         response.success = true;
         break;
       case 'GET_MESSAGES':
-        response.data = getRows('messages').filter((r: any) => 
+        response.data = getRows('messages').filter(r => 
           (r.sender_id === payload.user1 && r.receiver_id === payload.user2) ||
           (r.sender_id === payload.user2 && r.receiver_id === payload.user1)
         );
@@ -132,7 +138,7 @@ function doPost(e: any) {
         response.success = true;
         break;
       case 'GET_UNLOCKED':
-        response.data = getRows('unlocked_media').filter((r: any) => r.user_id === payload.user_id);
+        response.data = getRows('unlocked_media').filter(r => r.user_id === payload.user_id);
         response.success = true;
         break;
       case 'UNLOCK_MEDIA':
@@ -143,7 +149,7 @@ function doPost(e: any) {
       default:
         throw new Error("Unknown command: " + cmd);
     }
-  } catch (err: any) {
+  } catch (err) {
     response.error = err.message;
   }
 
@@ -152,22 +158,20 @@ function doPost(e: any) {
 
 // --- HELPER FUNCTIONS ---
 
-function getRows(sheetName: string) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+function getRows(sheetName) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
   if (!sheet) return [];
   const data = sheet.getDataRange().getValues();
   const headers = data.shift();
-  return data.map((row: any) => {
-    const obj: any = {};
-    headers.forEach((h: string, i: number) => {
+  return data.map(row => {
+    const obj = {};
+    headers.forEach((h, i) => {
       let val = row[i];
-      // Handle tags array (stored as JSON string)
       if (h === 'tags' && typeof val === 'string' && val.startsWith('[')) {
         try { val = JSON.parse(val); } catch(e) {}
       }
-      // Handle numeric coins
       if (h === 'coins' || h === 'price') val = Number(val) || 0;
-      // Handle boolean
       if (h === 'is_premium' || h === 'is_read') val = (val === true || val === "TRUE" || val === 1);
       obj[h] = val;
     });
@@ -175,10 +179,11 @@ function getRows(sheetName: string) {
   });
 }
 
-function appendRow(sheetName: string, obj: any) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+function appendRow(sheetName, obj) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  const row = headers.map((h: string) => {
+  const row = headers.map(h => {
     let val = obj[h];
     if (Array.isArray(val)) return JSON.stringify(val);
     return val !== undefined ? val : "";
@@ -187,8 +192,9 @@ function appendRow(sheetName: string, obj: any) {
   return obj;
 }
 
-function upsertRow(sheetName: string, keyCol: string, obj: any) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+function upsertRow(sheetName, keyCol, obj) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
   const data = sheet.getDataRange().getValues();
   const headers = data.shift();
   const keyIdx = headers.indexOf(keyCol);
@@ -196,12 +202,12 @@ function upsertRow(sheetName: string, keyCol: string, obj: any) {
   let rowIdx = -1;
   for (let i = 0; i < data.length; i++) {
     if (data[i][keyIdx] == obj[keyCol]) {
-      rowIdx = i + 2; // +1 for header, +1 for 1-based index
+      rowIdx = i + 2; 
       break;
     }
   }
 
-  const row = headers.map((h: string) => {
+  const row = headers.map(h => {
     let val = obj[h];
     if (Array.isArray(val)) return JSON.stringify(val);
     return val !== undefined ? val : "";
@@ -215,8 +221,9 @@ function upsertRow(sheetName: string, keyCol: string, obj: any) {
   return obj;
 }
 
-function deleteRow(sheetName: string, keyCol: string, keyValue: any) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+function deleteRow(sheetName, keyCol, keyValue) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
   const keyIdx = headers.indexOf(keyCol);
@@ -228,8 +235,9 @@ function deleteRow(sheetName: string, keyCol: string, keyValue: any) {
   }
 }
 
-function updateRow(sheetName: string, keyCol: string, keyValue: any, updates: any) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+function updateRow(sheetName, keyCol, keyValue, updates) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
   const keyIdx = headers.indexOf(keyCol);
