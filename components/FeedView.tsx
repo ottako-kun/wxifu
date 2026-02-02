@@ -1,6 +1,5 @@
 
 import React from 'react';
-// Fixed: Import Session from local types
 import { MediaItem, Session } from '../types';
 import FeedCard from './FeedCard';
 import LoadingSpinner from './icons/LoadingSpinner';
@@ -16,10 +15,10 @@ interface FeedViewProps {
 
 const FeedView: React.FC<FeedViewProps> = ({ items, session, onUserClick, onDataChange, isLoading, onItemClick }) => {
   return (
-    <div className="w-full flex flex-col h-full overflow-y-auto snap-y snap-mandatory hide-scrollbar">
-        <div className="flex flex-col md:space-y-4">
+    <div className="w-full flex flex-col snap-y-strict hide-scrollbar bg-black">
+        <div className="flex flex-col">
             {items.map((item, index) => (
-                <div key={item.id} className="snap-start snap-always w-full">
+                <div key={item.id} className="snap-start w-full h-full flex-shrink-0">
                     <FeedCard
                         item={item}
                         session={session}
@@ -38,9 +37,9 @@ const FeedView: React.FC<FeedViewProps> = ({ items, session, onUserClick, onData
         )}
         
         {items.length === 0 && !isLoading && (
-            <div className="text-center py-20 text-gray-500 snap-center">
-                <p className="text-lg font-bold">End of the line.</p>
-                <p className="text-sm mt-2">Follow more creators to fill your feed!</p>
+            <div className="text-center py-20 text-gray-500 snap-center flex flex-col items-center justify-center min-h-[50vh]">
+                <p className="text-lg font-bold text-white">End of Transmission</p>
+                <p className="text-sm mt-2">Follow more creators to fill your neural feed.</p>
             </div>
         )}
     </div>

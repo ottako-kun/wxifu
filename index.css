@@ -1,4 +1,11 @@
 
+:root {
+  --neon-pink: #ec4899;
+  --neon-cyan: #06b6d4;
+  --neon-purple: #a855f7;
+  --neon-yellow: #eab308;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background-color: #020202;
@@ -137,7 +144,7 @@ h1, h2, h3, h4, h5, h6 {
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #ec4899;
+  background: var(--neon-pink);
 }
 
 .hide-scrollbar::-webkit-scrollbar {
@@ -160,9 +167,23 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Snap Scrolling */
-.snap-y {
+.snap-y-strict {
   scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  height: 100dvh;
+  overflow-y: auto;
 }
 .snap-start {
   scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* Utility for text glows */
+.glow-pink { text-shadow: 0 0 10px var(--neon-pink); }
+.glow-cyan { text-shadow: 0 0 10px var(--neon-cyan); }
+.glow-yellow { text-shadow: 0 0 10px var(--neon-yellow); }
+
+/* Custom shadow for cards */
+.cyber-card-shadow {
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
 }

@@ -112,7 +112,7 @@ const AppContent: React.FC = () => {
   }, [photoMedia, videoMedia, activeProfile]);
 
   return (
-    <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative pb-20 md:pb-0">
+    <div className="min-h-screen bg-black text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative">
       
       <ToastContainer />
 
@@ -123,7 +123,7 @@ const AppContent: React.FC = () => {
         onNavigate={handleNavigate}
       />
       
-      <div className="flex-grow">
+      <div className={`flex-grow ${viewMode === 'feed' && currentView === 'home' ? '' : 'pb-24 md:pb-0'}`}>
         {currentView === 'home' ? (
           <HomeView 
              photoMedia={photoMedia}
@@ -164,7 +164,8 @@ const AppContent: React.FC = () => {
         )}
       </div>
       
-      <Footer />
+      {/* Conditional Footer - Hide in Feed Mode */}
+      {!(viewMode === 'feed' && currentView === 'home') && <Footer />}
       
       <BottomNav 
         currentView={currentView}
