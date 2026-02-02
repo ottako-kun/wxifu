@@ -112,7 +112,7 @@ const AppContent: React.FC = () => {
   }, [photoMedia, videoMedia, activeProfile]);
 
   return (
-    <div className="min-h-screen bg-transparent text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative pb-20 md:pb-0">
+    <div className="min-h-screen bg-[#020202] text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative pb-16 md:pb-0 overflow-x-hidden">
       
       <ToastContainer />
 
@@ -123,7 +123,7 @@ const AppContent: React.FC = () => {
         onNavigate={handleNavigate}
       />
       
-      <div className="flex-grow">
+      <div className={`flex-grow ${viewMode === 'feed' && currentView === 'home' ? 'pt-0' : 'pt-0'}`}>
         {currentView === 'home' ? (
           <HomeView 
              photoMedia={photoMedia}
@@ -141,7 +141,7 @@ const AppContent: React.FC = () => {
              onViewModeChange={setViewMode}
           />
         ) : currentView === 'profile' ? (
-           <div className="pt-24">
+           <div className="pt-16 md:pt-24 min-h-screen">
                {activeProfile && (
                    <ProfileView 
                       session={session} 
@@ -154,7 +154,7 @@ const AppContent: React.FC = () => {
                )}
            </div>
         ) : (
-            <div className="pt-24">
+            <div className="pt-16 md:pt-24 min-h-screen">
                 {session && (
                     <InboxView 
                         currentUserId={session.user.id}
@@ -164,7 +164,7 @@ const AppContent: React.FC = () => {
         )}
       </div>
       
-      <Footer />
+      {currentView !== 'home' || viewMode === 'grid' ? <Footer /> : null}
       
       <BottomNav 
         currentView={currentView}
