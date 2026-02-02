@@ -1,7 +1,8 @@
 import { MediaItem, MediaType } from '../types';
 import { getDriveId, getGoogleDriveImageUrl, getGoogleDriveVideoPreviewUrl, isGoogleDriveLink } from './googleDrive';
 
-export const DEFAULT_THUMB_URL = '/favicon.svg';
+// Default thumbnail for videos if none is provided
+export const DEFAULT_THUMB_URL = 'https://lh3.googleusercontent.com/d/1Qcdu24M-ArsEeqTTLqSY1OzDx8NM14gM';
 
 // Simple string hash for stable IDs
 export const generateHash = (str: string) => {
