@@ -2,7 +2,7 @@
  * WXIFU CLIENT (GAS VERSION)
  * Replace the GAS_WEBAPP_URL with your actual URL after deploying the script.
  */
-const GAS_WEBAPP_URL = 'PASTE_YOUR_GAS_WEBAPP_URL_HERE';
+const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzYyxn3Qv9qg3MBZxpt-iZo8OsHQMSdsNpRBK4AW1lOTfXOzvIJ30_htzAgJogtBKwVfA/exec';
 
 export const gasRequest = async (command: string, payload: any = {}) => {
   if (GAS_WEBAPP_URL.includes('PASTE_YOUR')) {
