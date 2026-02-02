@@ -1,5 +1,5 @@
 import { MediaItem, MediaType } from '../types';
-import { getDriveId, getGoogleDriveImageUrl, getGoogleDriveVideoPreviewUrl } from './googleDrive';
+import { getDriveId, getGoogleDriveImageUrl, getGoogleDriveVideoPreviewUrl, isGoogleDriveLink } from './googleDrive';
 
 export const DEFAULT_THUMB_URL = '/favicon.svg';
 

@@ -1,7 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { MediaItem, MediaType, Session } from '../types';
-// Fixed: Import Session from local types
 import HeartIcon from './icons/HeartIcon';
 import ChatIcon from './icons/ChatIcon';
 import ShareIcon from './icons/ShareIcon';
@@ -17,6 +15,7 @@ import LoadingSpinner from './icons/LoadingSpinner';
 import { useDoubleTap } from '../hooks/useDoubleTap';
 import { useUI } from '../context/UIContext';
 import Avatar from './Avatar';
+import { isGoogleDriveLink } from '../lib/googleDrive';
 
 interface FeedCardProps {
   item: MediaItem;
@@ -33,6 +32,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -40,10 +40,11 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   const { isLiked, likeCount, toggleLike } = useMediaLikes(item.id, session?.user.id, item.id.startsWith('static'));
   const { isUnlocked: checkIsUnlocked, unlockContent, isLoading: isWalletLoading } = useWallet();
   const { isFollowing, toggleFollow } = useFollow(session?.user.id, item.user_id || '');
-  const { isGlobalMuted, toggleGlobalMute, showVolumeHUD } = useUI();
+  const { isGlobalMuted, toggleGlobalMute } = useUI();
 
   const isOwner = session?.user.id === item.user_id;
   const isUnlocked = isOwner || !item.is_premium || checkIsUnlocked(item.id);
+  const isDriveVideo = item.type === MediaType.Video && isGoogleDriveLink(item.videoSrc);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -52,7 +53,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   }, [isGlobalMuted]);
 
   useEffect(() => {
-    if (item.type !== MediaType.Video || !isUnlocked) return;
+    if (item.type !== MediaType.Video || !isUnlocked || isDriveVideo) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -74,7 +75,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
     }
 
     return () => observer.disconnect();
-  }, [item.type, isUnlocked]);
+  }, [item.type, isUnlocked, isDriveVideo]);
 
   const handleTimeUpdate = () => {
     if (videoRef.current && videoRef.current.duration) {
@@ -139,7 +140,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                 </div>
             )}
 
-            {!isImageLoaded && <div className="absolute inset-0 animate-pulse-bg" />}
+            {!isImageLoaded && item.type === MediaType.Photo && <div className="absolute inset-0 animate-pulse-bg" />}
 
             {!isUnlocked ? (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/70 backdrop-blur-3xl pointer-events-auto">
@@ -161,35 +162,54 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
             ) : (
                 item.type === MediaType.Video ? (
                     <div className="w-full h-full relative group/player">
-                        <video 
-                            ref={videoRef}
-                            src={item.videoSrc}
-                            loop
-                            muted={isGlobalMuted}
-                            playsInline
-                            poster={item.src}
-                            onTimeUpdate={handleTimeUpdate}
-                            onPlay={() => setIsPlaying(true)}
-                            onPause={() => setIsPlaying(false)}
-                            className="w-full h-full object-contain z-10"
-                        />
-                        {!isPlaying && (
-                             <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/20 pointer-events-none transition-opacity duration-300">
-                                <div className="p-6 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-                                    <PlayIcon className="w-10 h-10 text-white" />
-                                </div>
-                             </div>
+                        {isDriveVideo ? (
+                            <div className="w-full h-full relative">
+                                {!iframeLoaded && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-20">
+                                        <LoadingSpinner className="w-10 h-10 text-pink-500 mb-4" />
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-widest animate-pulse">Initializing Drive Link</p>
+                                    </div>
+                                )}
+                                <iframe 
+                                    src={item.videoSrc}
+                                    className="w-full h-full border-0 z-10"
+                                    allow="autoplay"
+                                    onLoad={() => setIframeLoaded(true)}
+                                />
+                            </div>
+                        ) : (
+                            <>
+                                <video 
+                                    ref={videoRef}
+                                    src={item.videoSrc}
+                                    loop
+                                    muted={isGlobalMuted}
+                                    playsInline
+                                    poster={item.src}
+                                    onTimeUpdate={handleTimeUpdate}
+                                    onPlay={() => setIsPlaying(true)}
+                                    onPause={() => setIsPlaying(false)}
+                                    className="w-full h-full object-contain z-10"
+                                />
+                                {!isPlaying && (
+                                    <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/20 pointer-events-none transition-opacity duration-300">
+                                        <div className="p-6 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                                            <PlayIcon className="w-10 h-10 text-white" />
+                                        </div>
+                                    </div>
+                                )}
+                                <button 
+                                    onClick={handleMuteToggle}
+                                    className="absolute top-4 right-4 z-30 p-2.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 text-white hover:bg-black/60 transition-all"
+                                >
+                                    {isGlobalMuted ? (
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path strokeLinecap="round" d="M15.54 8.46l5.66 5.66m0-5.66l-5.66 5.66"/></svg>
+                                    ) : (
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
+                                    )}
+                                </button>
+                            </>
                         )}
-                        <button 
-                            onClick={handleMuteToggle}
-                            className="absolute top-4 right-4 z-30 p-2.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 text-white hover:bg-black/60 transition-all"
-                        >
-                            {isGlobalMuted ? (
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path strokeLinecap="round" d="M15.54 8.46l5.66 5.66m0-5.66l-5.66 5.66"/></svg>
-                            ) : (
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
-                            )}
-                        </button>
                     </div>
                 ) : (
                     <img 
@@ -254,7 +274,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                     <span className="text-[10px] font-bold text-white mt-0.5 drop-shadow-md">Link</span>
                 </div>
                 
-                {isPlaying && (
+                {isPlaying && !isDriveVideo && (
                     <div className="relative w-10 h-10 flex items-center justify-center mt-2">
                         <div className="absolute top-0 right-0 animate-float-note opacity-0">
                             <svg className="w-3 h-3 text-pink-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
@@ -290,7 +310,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                 </div>
             </div>
 
-            {item.type === MediaType.Video && isUnlocked && (
+            {item.type === MediaType.Video && isUnlocked && !isDriveVideo && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10 z-50">
                     <div className="h-full bg-pink-500 shadow-[0_0_10px_#ec4899] transition-all duration-300 ease-linear" style={{ width: `${progress}%` }} />
                 </div>

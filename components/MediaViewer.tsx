@@ -5,6 +5,7 @@ import LockIcon from './icons/LockIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
 import PlayIcon from './icons/PlayIcon';
 import { useUI } from '../context/UIContext';
+import { isGoogleDriveLink } from '../lib/googleDrive';
 
 interface MediaViewerProps {
   item: MediaItem;
@@ -39,6 +40,8 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
 
   const isDirectVideo = (url?: string) => {
     if (!url) return false;
+    // Drive links are never "direct" for <video> tags
+    if (isGoogleDriveLink(url)) return false;
     return /\.(mp4|webm|ogg|mov)($|\?)/i.test(url);
   };
 
