@@ -1,10 +1,12 @@
+
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Session } from '@supabase/supabase-js';
+// Fixed: Import Session from local types
 import { supabase } from '../lib/supabaseClient';
 import { UserProfileData } from '../components/ProfileView';
 import { useToast } from '../context/ToastContext';
 import { useUI } from '../context/UIContext';
 import { useMediaLibrary } from './useMediaLibrary';
+import { Session } from '../types';
 
 export type ViewState = 'home' | 'profile' | 'inbox';
 
@@ -28,13 +30,13 @@ export const useAppNavigation = () => {
 
   // Handle Auth Session
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: any) => {
       setSession(session);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setSession(session);
       // If user logs out while on protected views
       if (!session) {

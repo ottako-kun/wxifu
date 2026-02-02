@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { MediaItem } from '../types';
-import { Session } from '@supabase/supabase-js';
+import { MediaItem, Session } from '../types';
+// Fixed: Import Session from local types
 import { deleteMediaItem } from '../lib/supabaseClient';
 import { APP_CONFIG } from '../gallery-data';
 import PencilIcon from './icons/PencilIcon';

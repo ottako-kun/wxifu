@@ -27,6 +27,7 @@ export const useInbox = (currentUserId: string) => {
     fetchConversations();
 
     // Subscribe to real-time message updates
+    // Fixed: Mock client properly supports channel() chain now
     const channel = supabase
       .channel('inbox_updates')
       .on(
@@ -36,7 +37,7 @@ export const useInbox = (currentUserId: string) => {
           schema: 'public',
           table: 'messages',
         },
-        (payload) => {
+        (payload: any) => {
            // Type assertion to access ids safely
            const newMsg = payload.new as { sender_id?: string; receiver_id?: string } | null;
            const oldMsg = payload.old as { sender_id?: string; receiver_id?: string } | null;

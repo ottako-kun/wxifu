@@ -1,8 +1,8 @@
 
 import React, { useMemo } from 'react';
-import { MediaItem } from '../types';
+import { MediaItem, Session } from '../types';
 import MediaCard from './MediaCard';
-import { Session } from '@supabase/supabase-js';
+// Fixed: Session import already moved to types.ts above
 import MediaGridSkeleton from './skeletons/MediaGridSkeleton';
 import { useUI } from '../context/UIContext';
 

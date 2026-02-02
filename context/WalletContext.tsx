@@ -1,7 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, getUserBalance, getUnlockedMedia, unlockMedia } from '../lib/supabaseClient';
-import { Session } from '@supabase/supabase-js';
+// Fixed: Import Session from local types
+import { Session } from '../types';
 import { useToast } from './ToastContext';
 
 interface WalletContextType {
@@ -31,11 +32,11 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const toast = useToast();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: any) => {
       setSession(session);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setSession(session);
     });
 
@@ -111,6 +112,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               }
 
               // Deduct coins via API
+              // Fixed: Mock from().update().eq() chain supported in lib/client.ts
               const { error: deductError } = await supabase
                   .from('profiles')
                   .update({ coins: balance - price })
@@ -148,6 +150,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (!session) return false;
       try {
           const newBalance = balance + amount;
+          // Fixed: Mock from().update().eq() chain supported
           const { error } = await supabase
               .from('profiles')
               .update({ coins: newBalance })
@@ -178,6 +181,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       try {
           // 1. Deduct from Sender
           const newSenderBalance = balance - amount;
+          // Fixed: Mock from().update().eq() chain supported
           const { error: senderError } = await supabase
               .from('profiles')
               .update({ coins: newSenderBalance })
@@ -191,7 +195,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               if (recipientData) {
                    await supabase
                   .from('profiles')
-                  .update({ coins: (recipientData.coins || 0) + amount })
+                  .update({ coins: ((recipientData as any).coins || 0) + amount })
                   .eq('id', recipientId);
               }
           }
@@ -223,6 +227,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       try {
            const newBalance = balance - price;
+           // Fixed: Mock from().update().eq() chain supported
            const { error } = await supabase
               .from('profiles')
               .update({ coins: newBalance })
@@ -252,6 +257,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       setIsLoading(true);
       try {
+          // Fixed: functions.invoke is supported in updated mock
           const { data, error } = await supabase.functions.invoke('create-checkout-session', {
               body: { 
                   packageId, 

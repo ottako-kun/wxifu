@@ -6,6 +6,22 @@ export enum MediaType {
 
 export type DensityType = 'compact' | 'standard' | 'large';
 
+// Added Session interface to resolve import errors
+export interface Session {
+  user: {
+    id: string;
+    email?: string;
+    user_metadata: {
+      full_name?: string;
+      avatar_url?: string;
+      bio?: string;
+      [key: string]: any;
+    };
+  };
+  access_token?: string;
+  refresh_token?: string;
+}
+
 export interface MediaItem {
   id: string;
   type: MediaType;

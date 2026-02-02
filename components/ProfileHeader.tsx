@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { UserProfileData } from '../types';
-import { Session } from '@supabase/supabase-js';
+import { UserProfileData, Session } from '../types';
+// Fixed: Import Session from local types
 import Avatar from './Avatar';
 import GiftIcon from './icons/GiftIcon';
 import ChatIcon from './icons/ChatIcon';

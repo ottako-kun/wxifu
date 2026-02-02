@@ -22,6 +22,7 @@ export const useProfileStats = (userId: string) => {
     fetchStats();
 
     // Realtime Subscription to update counts when someone follows/unfollows
+    // Fixed: Mock client now supports properly chained channel definitions
     const channel = supabase
       .channel(`public:follows:${userId}`)
       .on(

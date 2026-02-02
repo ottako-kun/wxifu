@@ -1,7 +1,9 @@
+
 import { useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../context/ToastContext';
-import { Session } from '@supabase/supabase-js';
+import { Session } from '../types';
+// Fixed: Import Session from local types
 
 export const useNotifications = (session: Session | null) => {
   const { info } = useToast();
@@ -12,6 +14,7 @@ export const useNotifications = (session: Session | null) => {
     const userId = session.user.id;
 
     // 1. Subscribe to New Messages
+    // Fixed: Mock client properly supports channel().on().subscribe() now
     const messageChannel = supabase
       .channel('global_messages')
       .on(
@@ -22,7 +25,7 @@ export const useNotifications = (session: Session | null) => {
           table: 'messages',
           filter: `receiver_id=eq.${userId}`,
         },
-        async (payload) => {
+        async (payload: any) => {
           const newMsg = payload.new;
           // Ideally fetch sender name, but for speed we just show a generic alert or try to fetch
           const { data: senderProfile } = await supabase
@@ -31,7 +34,7 @@ export const useNotifications = (session: Session | null) => {
              .eq('id', newMsg.sender_id)
              .single();
              
-          const senderName = senderProfile?.name || 'Someone';
+          const senderName = (senderProfile as any)?.name || 'Someone';
           info(`New message from ${senderName}: ${newMsg.content.substring(0, 30)}${newMsg.content.length > 30 ? '...' : ''}`);
         }
       )
@@ -49,7 +52,7 @@ export const useNotifications = (session: Session | null) => {
           schema: 'public',
           table: 'comments',
         },
-        async (payload) => {
+        async (payload: any) => {
           const newComment = payload.new;
           
           // Don't notify if I commented on my own post
@@ -62,8 +65,8 @@ export const useNotifications = (session: Session | null) => {
             .eq('id', newComment.media_id)
             .single();
 
-          if (mediaItem && mediaItem.user_id === userId) {
-             info(`New comment on "${mediaItem.description?.substring(0, 20) || 'your post'}": ${newComment.content}`);
+          if (mediaItem && (mediaItem as any).user_id === userId) {
+             info(`New comment on "${(mediaItem as any).description?.substring(0, 20) || 'your post'}": ${newComment.content}`);
           }
         }
       )

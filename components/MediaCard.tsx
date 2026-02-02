@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { MediaItem, MediaType } from '../types';
+import { MediaItem, MediaType, Session } from '../types';
 import PlayIcon from './icons/PlayIcon';
 import ShareIcon from './icons/ShareIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -8,7 +8,7 @@ import SharePopover from './SharePopover';
 import VideoIcon from './icons/VideoIcon';
 import LockIcon from './icons/LockIcon';
 import HeartIcon from './icons/HeartIcon';
-import { Session } from '@supabase/supabase-js';
+// Fixed: Import Session from local types
 import { deleteMediaItem } from '../lib/supabaseClient';
 import { useConfirm } from '../context/ConfirmationContext';
 import { useToast } from '../context/ToastContext';

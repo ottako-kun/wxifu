@@ -1,105 +1,78 @@
 
-# 🌸 Ottako-X Platform
+# 🌸 Ottako-X Ultra Platform
 
-Welcome to **Ottako-X** — The premier social stage for adult anime artwork, cosplay, and digital assets.
+Welcome to **Ottako-X** — The premier social stage for anime artwork, cosplay, and digital assets. Now powered by a lightweight, high-performance **Google Sheets + Apps Script** backend.
 
 ## ✨ About
-Ottako-X has evolved from a simple gallery into a fully-featured **Social Media Platform**. It allows creators to upload, manage, and monetize their content while enabling fans to follow, chat, and interact in real-time. Built with a cyberpunk aesthetic, it prioritizes a premium user experience for high-resolution art and video consumption.
+Ottako-X is a fully-featured **Social Media Platform** built for artists and fans. It allows creators to upload, manage, and monetize their content while enabling fans to follow, chat, and interact in real-time. Built with a cyberpunk aesthetic, it prioritizes a premium user experience for high-resolution art and video consumption.
 
 ## 🚀 Key Features
 
 ### 🎨 **Immersive Gallery**
 *   **Masonry Grid**: Optimized layout for mixed portrait/landscape artwork.
+*   **TikTok-Style Feed**: Vertical scroll mode with immersive video playback and floating interaction HUD.
 *   **Zoom & Pan**: Deep zoom capabilities for high-resolution illustrations.
-*   **Video Support**: Native playback for AMVs and clips.
 *   **Smart Filtering**: Filter by tags, categories, or search authors.
 
-### 📁 **Google Drive Integration (via Supabase)**
+### 📁 **Google Drive Integration**
 The platform supports Google Drive links for both images and videos. 
 1.  **Sign In** to the app.
 2.  Click the **Upload Button** (Plus icon).
 3.  Paste a **Google Drive Link** (ensure it is shared as "Anyone with the link").
-    *   *Images*: Converted to high-performance CDN links.
+    *   *Images*: Automatically converted to direct streamable links.
     *   *Videos*: Embedded via Google Drive preview player for seamless streaming.
-4.  The content is stored in the Supabase database and served dynamically.
+4.  The content metadata is stored in your private **Google Sheet**.
 
 ### 👥 **Social & Community**
 *   **User Profiles**: Customizable profiles with avatars, bios, and stat counters.
-*   **Follow System**: Follow your favorite creators and see their posts in a dedicated feed.
-*   **Real-time Chat**: Instant direct messaging between users (powered by Supabase Realtime).
+*   **Follow System**: Follow your favorite creators and see their posts in a dedicated "Following" tab.
+*   **Instant Messaging**: Direct messaging between users.
 *   **Interactions**: Like and Comment on posts to engage with the community.
 *   **Avatar Frames**: Users can equip special frames (Neon, Gold, Glitch) to stand out.
 
-### 🛠 **Creator Tools**
-*   **Content Management**: Upload, edit, and delete your own media posts.
-*   **Premium Locking**: Mark content as "Premium" (simulated locking UI) for monetization.
-*   **Google Drive Integration**: Seamlessly link content stored on Google Drive.
-
-### 🛡 **Safety & Moderation**
-*   **Age Verification**: Strict 18+ entry gate.
-*   **Reporting System**: Users can flag inappropriate content.
-*   **Legal**: Integrated Privacy Policy and Terms of Service modals.
-
 ### 💰 **Monetization (Coin System)**
 *   **Wallet**: Users have a coin balance stored in the database.
-*   **Shop**: Users can purchase coins via Stripe (requires backend setup) or by watching ads.
-*   **Unlocking**: Users spend coins to unlock premium content.
-*   **Cosmetics**: Users spend coins on Avatar Frames.
+*   **Shop**: Users can purchase coins or watch short ads to earn free credits.
+*   **Unlocking**: Users spend coins to unlock "Premium" vault content.
+*   **Cosmetics**: Users spend coins on collectible Avatar Frames.
 
 ## 💻 Tech Stack
 
 *   **Frontend**: React 19, TypeScript, Vite
-*   **Styling**: Tailwind CSS (Dark Mode / Cyberpunk Theme)
-*   **Backend as a Service**: Supabase
-    *   **Auth**: Google OAuth & Session Management
-    *   **Database**: PostgreSQL
-    *   **Realtime**: WebSocket subscriptions for Chat & Notifications
-    *   **Edge Functions**: Serverless functions for Stripe integration.
+*   **Styling**: Tailwind CSS (Cyberpunk Dark Theme)
+*   **Backend**: Google Apps Script (GAS)
+*   **Database**: Google Sheets (NoSQL-style implementation)
+*   **Auth**: Local Session Management (Mock OAuth)
 
-## 🗄 Database Schema (Supabase)
+## 🛠 Backend Setup (Google Sheets)
 
-To run this project, your Supabase project requires the following tables. Run the SQL in the SQL Editor.
+To run this project, you must set up your own database in Google Sheets.
 
-```sql
--- Profiles: Stores user info and COIN BALANCE
-create table public.profiles (
-  id uuid references auth.users not null primary key,
-  name text,
-  avatar text,
-  bio text,
-  coins integer default 0,
-  frame text default 'none', -- New column for avatar frames
-  updated_at timestamp with time zone default timezone('utc'::text, now())
-);
-
--- Media: Stores posts
-create table public.media (
-  id uuid default gen_random_uuid() primary key,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  user_id uuid references public.profiles(id),
-  type text,
-  src text,
-  description text,
-  category text,
-  tags text[],
-  is_premium boolean default false,
-  price integer default 0
-);
-
--- Unlocked Media: Tracks who bought what
-create table public.unlocked_media (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references public.profiles(id),
-  media_id uuid references public.media(id),
-  created_at timestamp with time zone default timezone('utc'::text, now())
-);
-
--- Other tables: likes, comments, follows, messages, reports (standard schemas)
-```
+1.  **Create a New Sheet**: Go to [sheets.new](https://sheets.new) and create a blank spreadsheet.
+2.  **Open Apps Script**: Go to **Extensions > Apps Script**.
+3.  **Copy Code**: Copy the contents of `BackEndCode.ts` from this project into the Apps Script editor.
+4.  **Initial Setup**:
+    *   In the editor, select the `setup` function from the dropdown.
+    *   Click **Run**. This will create all necessary tabs (`profiles`, `media`, `likes`, etc.) and headers in your sheet.
+5.  **Deploy**:
+    *   Click **Deploy > New Deployment**.
+    *   Select Type: **Web App**.
+    *   Description: `Otaku-X Backend`.
+    *   Execute as: **Me**.
+    *   Who has access: **Anyone**. (Required for the frontend to communicate).
+6.  **Connect Frontend**:
+    *   Copy the **Web App URL** provided after deployment.
+    *   Open `lib/client.ts` in your frontend project.
+    *   Replace `PASTE_YOUR_GAS_WEBAPP_URL_HERE` with your new URL.
 
 ## ⚡ Setup Local Dev
 
-1.  Clone the repository.
-2.  Install dependencies: `npm install`
-3.  Configure `lib/supabaseClient.ts` with your Supabase URL and Anon Key.
-4.  Run development server: `npm run dev`
+1.  **Clone the repository**.
+2.  **Install dependencies**: `npm install`
+3.  **Run development server**: `npm run dev`
+4.  **Authentication**: The app uses a mock authentication layer. Clicking "Sign In" will simulate a Google Login and create a profile in your Google Sheet automatically.
+
+## 🛡 Safety & Moderation
+*   **Age Verification**: Strict 18+ entry gate (stored in local storage).
+*   **Reporting**: Integrated flagging system for inappropriate content.
+*   **Privacy**: Minimal data collection (Public Name, Email, Avatar).

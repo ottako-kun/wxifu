@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
 import ProfileView from './components/ProfileView';
@@ -28,9 +29,7 @@ import { UIProvider, useUI } from './context/UIContext';
 // App Logic Hooks
 import { useAppNavigation } from './hooks/useAppNavigation';
 
-// Inner component to use hooks that require Context
 const AppContent: React.FC = () => {
-  // Use Navigation Logic Hook
   const {
       currentView,
       setCurrentView,
@@ -50,11 +49,12 @@ const AppContent: React.FC = () => {
       refresh
   } = useAppNavigation();
 
-  // UI Context Access
   const { openDailyReward } = useUI();
   const { checkIfRewardAvailable } = useWallet();
+  
+  // Layout State: Grid vs TikTok-style Feed
+  const [viewMode, setViewMode] = useState<'grid' | 'feed'>('grid');
 
-  // Upload State (via Custom Hook) - Kept here to trigger 'refresh'
   const { 
     isModalOpen, 
     isUploading, 
@@ -66,13 +66,10 @@ const AppContent: React.FC = () => {
       onUploadSuccess: refresh 
   });
   
-  // Age Verification State
   const [isAgeVerified, setIsAgeVerified] = useState(false);
   
-  // Initialize Global Notifications
   useNotifications(session);
 
-  // Handle Age Verification
   useEffect(() => {
     const verified = localStorage.getItem('age-verified');
     if (verified === 'true') {
@@ -85,11 +82,8 @@ const AppContent: React.FC = () => {
       setIsAgeVerified(true);
   };
 
-  // Check Daily Reward on Session Load
   useEffect(() => {
-      // DAILY REWARD CHECK
       if (session && isAgeVerified) {
-          // Small delay to let app load
           const timer = setTimeout(() => {
               if (checkIfRewardAvailable()) {
                   openDailyReward();
@@ -99,24 +93,21 @@ const AppContent: React.FC = () => {
       }
   }, [session, isAgeVerified, checkIfRewardAvailable, openDailyReward]);
 
-  // Wrapped in useCallback to allow children to be memoized
   const onUploadSubmitWrapper = useCallback(async (data: any) => {
       const type = await handleUploadSubmit(data);
       if (type) {
-         // Switch tab to the type uploaded so user sees it immediately
          if (type === MediaType.Video) {
             setActiveTab('videos');
+            setViewMode('feed'); // Auto-switch to feed for videos
         } else {
             setActiveTab('photos');
         }
       }
   }, [handleUploadSubmit, setActiveTab]);
 
-  // Media for Profile (Combine both photo and video)
   const profileMedia = React.useMemo(() => {
     if (!activeProfile) return [];
     const all = [...photoMedia, ...videoMedia];
-    // Filter items belonging to the active profile ID
     return all.filter(item => item.user_id === activeProfile.id);
   }, [photoMedia, videoMedia, activeProfile]);
 
@@ -125,7 +116,6 @@ const AppContent: React.FC = () => {
       
       <ToastContainer />
 
-      {/* Age Gate Overlay */}
       {!isAgeVerified && <AgeVerificationModal onVerify={handleVerifyAge} />}
 
       <Header 
@@ -147,6 +137,8 @@ const AppContent: React.FC = () => {
              activeTab={activeTab}
              setActiveTab={setActiveTab}
              searchInputRef={searchInputRef}
+             viewMode={viewMode}
+             onViewModeChange={setViewMode}
           />
         ) : currentView === 'profile' ? (
            <div className="pt-24">
@@ -162,7 +154,6 @@ const AppContent: React.FC = () => {
                )}
            </div>
         ) : (
-            // INBOX VIEW
             <div className="pt-24">
                 {session && (
                     <InboxView 
@@ -175,7 +166,6 @@ const AppContent: React.FC = () => {
       
       <Footer />
       
-      {/* Mobile Bottom Navigation */}
       <BottomNav 
         currentView={currentView}
         onNavigate={handleNavigate}
@@ -184,10 +174,8 @@ const AppContent: React.FC = () => {
         session={session}
       />
       
-      {/* Global Modals */}
       <GlobalModalLayer 
           session={session}
-          // Upload specifics managed here
           isUploading={isUploading}
           isUploadModalOpen={isModalOpen}
           onUploadClick={handleUploadClick}

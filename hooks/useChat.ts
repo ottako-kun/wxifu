@@ -28,6 +28,7 @@ export const useChat = ({ currentUserId, targetUserId }: UseChatProps) => {
     fetchHistory();
 
     // Subscribe to real-time changes
+    // Fixed: Mock client properly supports channel() chain now
     const channel = supabase
       .channel(`chat:${currentUserId}-${targetUserId}`)
       .on(
@@ -37,7 +38,7 @@ export const useChat = ({ currentUserId, targetUserId }: UseChatProps) => {
           schema: 'public',
           table: 'messages',
         },
-        (payload) => {
+        (payload: any) => {
            // Handle Insert
            if (payload.eventType === 'INSERT') {
                const newMsg = payload.new as Message;

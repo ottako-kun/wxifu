@@ -1,8 +1,8 @@
 
 import { useState } from 'react';
-import { Session } from '@supabase/supabase-js';
+// Fixed: Import Session from local types
+import { MediaType, Session } from '../types';
 import { insertMediaItem } from '../lib/supabaseClient';
-import { MediaType } from '../types';
 import { useToast } from '../context/ToastContext';
 
 interface UseMediaUploadProps {

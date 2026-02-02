@@ -5,8 +5,8 @@ import MediaGrid from './MediaGrid';
 import FeedView from './FeedView';
 import SearchIcon from './icons/SearchIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
-import { MediaItem } from '../types';
-import { Session } from '@supabase/supabase-js';
+import { MediaItem, Session } from '../types';
+// Fixed: Import Session from local types
 import { useGalleryFilters } from '../hooks/useGalleryFilters';
 import { signInWithGoogle } from '../lib/supabaseClient';
 import GalleryControls from './GalleryControls';
@@ -27,6 +27,8 @@ interface HomeViewProps {
   activeTab: 'photos' | 'videos' | 'following';
   setActiveTab: (tab: 'photos' | 'videos' | 'following') => void;
   searchInputRef: React.RefObject<HTMLInputElement>;
+  viewMode: 'grid' | 'feed';
+  onViewModeChange: (mode: 'grid' | 'feed') => void;
 }
 
 const HomeView: React.FC<HomeViewProps> = ({
@@ -40,11 +42,12 @@ const HomeView: React.FC<HomeViewProps> = ({
   onDataChange,
   activeTab,
   setActiveTab,
-  searchInputRef
+  searchInputRef,
+  viewMode,
+  onViewModeChange
 }) => {
   
   const scrollDirection = useScrollDirection();
-  const [viewMode, setViewMode] = useState<'grid' | 'feed'>('grid');
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -83,8 +86,12 @@ const HomeView: React.FC<HomeViewProps> = ({
 
   useEffect(() => {
     // Standard social experience defaults:
-    if (activeTab === 'videos' || activeTab === 'following') setViewMode('feed');
-    else setViewMode('grid');
+    // If user switches to videos/following, the feed is usually a better fit
+    if (activeTab === 'videos' || activeTab === 'following') {
+        onViewModeChange('feed');
+    } else {
+        onViewModeChange('grid');
+    }
     
     clearFilters();
     setSelectedItemIndex(null);
@@ -123,8 +130,6 @@ const HomeView: React.FC<HomeViewProps> = ({
       <Hero />
       <main className={`container mx-auto py-6 min-h-screen relative ${viewMode === 'feed' ? 'max-w-none px-0' : 'px-4'}`}>
         
-        {/* Sync error banner removed for cleaner UX - the app handles sync failures gracefully in useMediaLibrary */}
-
         <div 
             className={`sticky z-40 py-4 -mx-4 px-4 bg-gradient-to-b from-[#020202] via-[#020202]/95 to-transparent backdrop-blur-2xl transition-[top] duration-500 ease-in-out border-b border-white/5`}
             style={{ top: scrollDirection === 'down' ? '0px' : '56px' }}
@@ -146,7 +151,7 @@ const HomeView: React.FC<HomeViewProps> = ({
                     availableTags={availableTags}
                     clearFilters={clearFilters}
                     viewMode={viewMode}
-                    onViewModeChange={setViewMode}
+                    onViewModeChange={onViewModeChange}
                 />
              )}
         </div>

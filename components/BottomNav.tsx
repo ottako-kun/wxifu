@@ -4,7 +4,8 @@ import HomeIcon from './icons/HomeIcon';
 import SearchIcon from './icons/SearchIcon';
 import UploadIcon from './icons/UploadIcon';
 import InboxIcon from './icons/InboxIcon';
-import { Session } from '@supabase/supabase-js';
+// Fixed: Import Session from local types
+import { Session } from '../types';
 
 interface BottomNavProps {
   currentView: 'home' | 'profile' | 'inbox';

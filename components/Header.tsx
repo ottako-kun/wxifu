@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { Session } from '@supabase/supabase-js';
+// Fixed: Import Session from local types instead of supabase
+import { Session } from '../types';
 import { signInWithGoogle, signOut } from '../lib/supabaseClient';
 import GoogleIcon from './icons/GoogleIcon';
 import InboxIcon from './icons/InboxIcon';

@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { MediaItem, MediaType } from '../types';
+import { MediaItem, MediaType, Session } from '../types';
 import CloseIcon from './icons/CloseIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import ChevronRightIcon from './icons/ChevronRightIcon';
 import SharePopover from './SharePopover';
 import ReportModal from './ReportModal';
-import { Session } from '@supabase/supabase-js';
+// Fixed: Import Session from local types
 import { useToast } from '../context/ToastContext';
 import MediaSidebar from './MediaSidebar';
 import MediaViewer from './MediaViewer';

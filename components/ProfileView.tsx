@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Session } from '@supabase/supabase-js';
-import { MediaItem } from '../types';
+// Fixed: Import Session from local types
+import { MediaItem, Session } from '../types';
 import MediaGrid from './MediaGrid';
 import FeedView from './FeedView';
 import UploadIcon from './icons/UploadIcon';

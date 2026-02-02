@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { MediaItem } from '../types';
-import { Session } from '@supabase/supabase-js';
+// Fixed: Import Session from local types
+import { MediaItem, Session } from '../types';
 import FeedCard from './FeedCard';
 import LoadingSpinner from './icons/LoadingSpinner';
 

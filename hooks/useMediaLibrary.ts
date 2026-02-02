@@ -3,8 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase, getFollowedMedia } from '../lib/supabaseClient';
 import { fallbackPhotoMedia, fallbackVideoMedia } from '../gallery-data';
 import { processMediaItem } from '../lib/utils';
-import { MediaItem, MediaType } from '../types';
-import { Session } from '@supabase/supabase-js';
+import { MediaItem, MediaType, Session } from '../types';
+// Fixed: Import Session from local types
 
 export const useMediaLibrary = (session: Session | null) => {
   const [photoMedia, setPhotoMedia] = useState<MediaItem[]>([]);
@@ -20,6 +20,7 @@ export const useMediaLibrary = (session: Session | null) => {
       let fetchedData: any[] = [];
 
       // Attempt 1: Efficient Join (Requires Foreign Key)
+      // Fixed: The chain is now properly thenable in lib/client.ts mock
       const { data: joinData, error: joinError } = await supabase
         .from('media')
         .select('*, profiles(name, avatar)')
@@ -48,7 +49,7 @@ export const useMediaLibrary = (session: Session | null) => {
               .select('id, name, avatar')
               .in('id', userIds as string[]);
               
-           const profileMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+           const profileMap = new Map(profilesData?.map((p: any) => [p.id, p]) || []);
            
            fetchedData = mediaData.map(m => ({
                ...m,

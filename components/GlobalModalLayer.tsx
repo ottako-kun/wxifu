@@ -1,5 +1,7 @@
+
 import React from 'react';
-import { Session } from '@supabase/supabase-js';
+// Fixed: Import Session from local types
+import { Session } from '../types';
 import { APP_CONFIG } from '../gallery-data';
 import UploadButton from './UploadButton';
 import UploadModal from './UploadModal';

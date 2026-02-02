@@ -1,65 +1,33 @@
 
-import { supabase } from '../client';
+import { gasRequest } from '../client';
 
 export const getUserBalance = async (userId: string) => {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('coins')
-        .eq('id', userId)
-        .single();
-    return { coins: data?.coins ?? 100, error };
+    const res = await gasRequest('GET_PROFILES');
+    const profile = res.data ? res.data.find((p: any) => p.id === userId) : null;
+    return { coins: profile?.coins ?? 100, error: res.error };
 };
 
 export const getUnlockedMedia = async (userId: string) => {
-    const { data, error } = await supabase
-        .from('unlocked_media')
-        .select('media_id')
-        .eq('user_id', userId);
-        
-    return { unlockedIds: data?.map((r: any) => r.media_id) || [], error };
+    const res = await gasRequest('GET_UNLOCKED', { user_id: userId });
+    return { unlockedIds: res.data ? res.data.map((r: any) => r.media_id) : [], error: res.error };
 };
 
 export const unlockMedia = async (userId: string, mediaId: string, price: number, authorId?: string) => {
-    const { data: userProfile, error: balanceError } = await supabase
-        .from('profiles')
-        .select('coins')
-        .eq('id', userId)
-        .single();
-        
-    if (balanceError) throw new Error("Failed to fetch balance");
-    const currentCoins = userProfile?.coins ?? 100;
+    // 1. Check Balance
+    const { coins } = await getUserBalance(userId);
+    if (coins < price) throw new Error("Insufficient coins");
 
-    if (currentCoins < price) {
-        throw new Error("Insufficient coins");
+    // 2. Deduct Balance
+    await gasRequest('UPSERT_PROFILE', { id: userId, coins: coins - price });
+
+    // 3. Record Unlock
+    await gasRequest('UNLOCK_MEDIA', { user_id: userId, media_id: mediaId });
+
+    // 4. Pay Author (If applicable)
+    if (authorId && !authorId.startsWith('static')) {
+        const aBal = await getUserBalance(authorId);
+        await gasRequest('UPSERT_PROFILE', { id: authorId, coins: (aBal.coins || 0) + price });
     }
 
-    const { error: deductError } = await supabase
-        .from('profiles')
-        .update({ coins: currentCoins - price })
-        .eq('id', userId);
-
-    if (deductError) throw new Error("Transaction failed");
-
-    if (authorId && authorId !== userId) {
-        const { data: authorProfile } = await supabase
-            .from('profiles')
-            .select('coins')
-            .eq('id', authorId)
-            .single();
-            
-        if (authorProfile) {
-            await supabase.from('profiles').update({ coins: (authorProfile.coins || 0) + price }).eq('id', authorId);
-        }
-    }
-
-    const { error: unlockError } = await supabase
-        .from('unlocked_media')
-        .insert({ user_id: userId, media_id: mediaId });
-        
-    if (unlockError) {
-        console.error("Unlock record failed after payment:", unlockError);
-        throw new Error("Failed to unlock content");
-    }
-
-    return { success: true, newBalance: currentCoins - price };
+    return { success: true, newBalance: coins - price };
 };

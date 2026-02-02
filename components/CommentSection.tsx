@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { Session } from '@supabase/supabase-js';
-import { Comment } from '../types';
+// Fixed: Import Session from local types
+import { Comment, Session } from '../types';
 import TrashIcon from './icons/TrashIcon';
 import PencilIcon from './icons/PencilIcon';
 import SendIcon from './icons/SendIcon';

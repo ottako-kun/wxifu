@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MediaItem, MediaType } from '../types';
-import { Session } from '@supabase/supabase-js';
+import { MediaItem, MediaType, Session } from '../types';
+// Fixed: Import Session from local types
 import HeartIcon from './icons/HeartIcon';
 import ChatIcon from './icons/ChatIcon';
 import ShareIcon from './icons/ShareIcon';

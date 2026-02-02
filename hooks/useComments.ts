@@ -1,9 +1,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, getComments, addComment, deleteComment, updateComment } from '../lib/supabaseClient';
-import { Comment } from '../types';
+import { Comment, Session } from '../types';
+// Fixed: Import Session from local types
 import { useToast } from '../context/ToastContext';
-import { Session } from '@supabase/supabase-js';
 
 export const useComments = (mediaId: string, session: Session | null) => {
   const [comments, setComments] = useState<Comment[]>([]);
@@ -27,6 +27,7 @@ export const useComments = (mediaId: string, session: Session | null) => {
 
     fetchComments();
 
+    // Fixed: Mock client properly supports channel() chain now
     const channel = supabase
       .channel(`comments:${mediaId}`)
       .on(
@@ -37,7 +38,7 @@ export const useComments = (mediaId: string, session: Session | null) => {
           table: 'comments',
           filter: `media_id=eq.${mediaId}`,
         },
-        (payload) => {
+        (payload: any) => {
            if (!mounted) return;
            
            if (payload.eventType === 'INSERT') {
