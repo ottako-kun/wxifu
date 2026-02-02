@@ -116,7 +116,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
 
   return (
     <div 
-      className="w-full h-full animate-fade-in flex items-center justify-center relative bg-transparent select-none p-2 md:p-4"
+      className="w-full h-full animate-fade-in flex items-center justify-center relative bg-transparent select-none"
       onMouseMove={handleInteraction}
       onClick={handleInteraction}
     >
@@ -124,7 +124,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
         {isPhoto && isUnlocked && (
             <button 
                 onClick={handleDownload}
-                className="absolute top-20 right-4 z-[95] bg-black/60 hover:bg-pink-600 text-white p-3 rounded-full backdrop-blur-md border border-white/10 transition-all active:scale-90 pointer-events-auto shadow-xl"
+                className="absolute top-0 right-0 z-[95] bg-white/5 hover:bg-pink-600 text-white p-3 rounded-2xl backdrop-blur-3xl border border-white/10 transition-all active:scale-90 pointer-events-auto shadow-2xl"
                 title="Save High Resolution"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -134,19 +134,19 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
         )}
 
         {!isUnlocked && (
-            <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/60 backdrop-blur-xl pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-                <div className="bg-gray-900/90 border border-yellow-500/30 rounded-[2.5rem] p-8 md:p-10 text-center shadow-[0_0_60px_rgba(234,179,8,0.2)] max-w-sm mx-4 backdrop-blur-md ring-1 ring-white/10">
+            <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/60 backdrop-blur-3xl rounded-[3rem] pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+                <div className="bg-gray-900/95 border border-yellow-500/30 rounded-[3rem] p-10 text-center shadow-2xl max-w-sm mx-4 backdrop-blur-xl ring-1 ring-white/10">
                     <div className="w-24 h-24 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-yellow-500/20 animate-pulse">
                         <LockIcon className="w-12 h-12 text-yellow-500" />
                     </div>
-                    <h3 className="text-2xl font-black text-white mb-3 uppercase tracking-widest font-orbitron">Premium Asset</h3>
-                    <p className="text-gray-400 text-sm mb-8 leading-relaxed">
-                        Unlock high-fidelity access to this work by <span className="text-pink-400 font-bold">{item.author}</span>.
+                    <h3 className="text-2xl font-black text-white mb-4 uppercase tracking-widest font-orbitron">Premium Asset</h3>
+                    <p className="text-gray-400 text-sm mb-10 leading-relaxed font-medium">
+                        Unlock high-fidelity access to this work by <span className="text-pink-400 font-bold">@{item.author}</span>.
                     </p>
                     <button 
                         onClick={onUnlockClick}
                         disabled={isUnlocking}
-                        className="w-full py-5 bg-gradient-to-r from-yellow-600 to-yellow-400 hover:from-yellow-500 hover:to-yellow-300 text-black font-black uppercase tracking-widest rounded-2xl shadow-xl transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-3"
+                        className="w-full py-5 bg-gradient-to-r from-yellow-600 to-yellow-400 hover:from-yellow-500 hover:to-yellow-300 text-black font-black uppercase tracking-widest rounded-3xl shadow-2xl shadow-yellow-900/40 transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-3"
                     >
                         {isUnlocking ? <LoadingSpinner className="w-6 h-6 text-black" /> : (
                             <>
@@ -160,25 +160,27 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
         )}
 
         {isPhoto ? (
-            <ZoomableImage 
-                src={item.src} 
-                alt={item.description || 'Art Detail'} 
-                isUnlocked={isUnlocked} 
-                onZoomChange={onZoomChange}
-            />
+            <div className="w-full h-full max-h-[85vh] md:max-h-[80vh] flex items-center justify-center overflow-hidden">
+                <ZoomableImage 
+                    src={item.src} 
+                    alt={item.description || 'Art Detail'} 
+                    isUnlocked={isUnlocked} 
+                    onZoomChange={onZoomChange}
+                />
+            </div>
         ) : (
-            <div className="w-full h-full relative flex items-center justify-center overflow-hidden">
+            <div className="w-full h-full max-h-[85vh] md:max-h-[80vh] relative flex items-center justify-center overflow-hidden">
                 {isUnlocked ? (
                     videoError ? (
-                        <div className="flex flex-col items-center text-center p-12 bg-gray-900/80 rounded-3xl border border-gray-800 border-dashed backdrop-blur-md">
-                            <p className="text-gray-300 mb-6 font-medium">Codec Error or Invalid Source.</p>
+                        <div className="flex flex-col items-center text-center p-12 bg-gray-900/80 rounded-[3rem] border border-gray-800 border-dashed backdrop-blur-md">
+                            <p className="text-gray-300 mb-8 font-black uppercase tracking-widest">Codec Error</p>
                             <a 
                                 href={item.videoSrc} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="px-10 py-4 bg-pink-600 hover:bg-pink-500 text-white font-black rounded-2xl transition-all shadow-xl active:scale-95 uppercase tracking-widest text-xs"
+                                className="px-12 py-5 bg-pink-600 hover:bg-pink-500 text-white font-black rounded-3xl transition-all shadow-2xl active:scale-95 uppercase tracking-widest text-xs"
                             >
-                                View Externally
+                                Open Externally
                             </a>
                         </div>
                     ) : (
@@ -198,23 +200,23 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                     }}
                                     onPlay={() => setIsPlaying(true)}
                                     onPause={() => setIsPlaying(false)}
-                                    className="max-w-full max-h-full w-auto h-auto outline-none shadow-2xl z-10 object-contain rounded-lg md:rounded-2xl"
+                                    className="max-w-full max-h-full w-auto h-auto outline-none shadow-2xl z-10 object-contain rounded-3xl"
                                     onError={() => setVideoError(true)}
                                 />
                                 
                                 <div className={`absolute inset-0 flex items-center justify-center z-20 transition-opacity duration-300 pointer-events-none ${!isPlaying ? 'opacity-100' : 'opacity-0'}`}>
-                                    <div className="bg-black/50 backdrop-blur-md p-8 rounded-full border border-white/10 shadow-2xl">
+                                    <div className="bg-black/60 backdrop-blur-2xl p-10 rounded-full border border-white/10 shadow-2xl">
                                         <PlayIcon className="w-16 h-16 text-white" />
                                     </div>
                                 </div>
 
-                                {/* Dynamic Video HUD */}
+                                {/* Video HUD Controls */}
                                 <div 
-                                    className={`absolute bottom-0 inset-x-0 z-[110] p-6 pb-24 md:pb-10 bg-gradient-to-t from-black/90 to-transparent transition-opacity duration-300 flex flex-col gap-4 pointer-events-auto ${showControls ? 'opacity-100' : 'opacity-0'}`}
+                                    className={`absolute bottom-0 inset-x-0 z-[110] p-8 pb-12 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-opacity duration-300 flex flex-col gap-6 pointer-events-auto ${showControls ? 'opacity-100' : 'opacity-0'}`}
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <div className="w-full flex items-center gap-4">
-                                        <span className="text-[10px] text-white/80 font-mono w-12 text-right">
+                                    <div className="w-full flex items-center gap-6">
+                                        <span className="text-[10px] text-white/60 font-black tracking-widest w-12 text-right">
                                             {formatTime(currentTime)}
                                         </span>
                                         <div className="flex-grow relative h-1.5 flex items-center group/seek">
@@ -227,25 +229,25 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                                 onChange={handleSeek}
                                                 onMouseDown={() => setIsSeeking(true)}
                                                 onMouseUp={() => setIsSeeking(false)}
-                                                className="w-full h-full bg-white/20 rounded-full appearance-none cursor-pointer accent-pink-500 relative z-20"
+                                                className="w-full h-full bg-white/10 rounded-full appearance-none cursor-pointer accent-pink-500 relative z-20"
                                             />
-                                            <div className="absolute left-0 top-0 h-full bg-pink-500 rounded-full shadow-[0_0_10px_#ec4899] z-10 pointer-events-none" style={{ width: `${(currentTime/duration)*100}%` }}></div>
+                                            <div className="absolute left-0 top-0 h-full bg-pink-500 rounded-full shadow-[0_0_15px_#ec4899] z-10 pointer-events-none" style={{ width: `${(currentTime/duration)*100}%` }}></div>
                                         </div>
-                                        <span className="text-[10px] text-white/80 font-mono w-12">
+                                        <span className="text-[10px] text-white/60 font-black tracking-widest w-12">
                                             {formatTime(duration)}
                                         </span>
                                     </div>
 
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-6">
-                                            <button onClick={togglePlay} className="text-white hover:text-pink-500 transition-colors transform active:scale-90">
+                                        <div className="flex items-center gap-8">
+                                            <button onClick={togglePlay} className="text-white hover:text-pink-500 transition-all transform active:scale-75">
                                                 {isPlaying ? (
                                                     <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                                                 ) : (
                                                     <PlayIcon className="w-8 h-8" />
                                                 )}
                                             </button>
-                                            <button onClick={toggleMute} className="text-white hover:text-pink-500 transition-colors transform active:scale-90">
+                                            <button onClick={toggleMute} className="text-white hover:text-pink-500 transition-all transform active:scale-75">
                                                 {isGlobalMuted ? (
                                                     <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path strokeLinecap="round" d="M15.54 8.46l5.66 5.66m0-5.66l-5.66 5.66"/></svg>
                                                 ) : (
@@ -257,18 +259,18 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                 </div>
                             </div>
                         ) : (
-                            <div className="w-full h-full relative overflow-hidden flex items-center justify-center md:max-w-4xl md:aspect-video md:max-h-[85%] mx-auto">
+                            <div className="w-full h-full max-w-6xl aspect-video mx-auto relative overflow-hidden rounded-[3rem] shadow-2xl border border-white/5">
                                 {!iframeLoaded && (
-                                     <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-black/20 backdrop-blur-md rounded-2xl">
-                                         <LoadingSpinner className="w-14 h-14 text-pink-500 mb-4" />
-                                         <p className="text-[10px] text-gray-500 uppercase tracking-[0.3em]">Opening Secure Link</p>
+                                     <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-black/40 backdrop-blur-2xl">
+                                         <LoadingSpinner className="w-16 h-16 text-pink-500 mb-4" />
+                                         <p className="text-[10px] text-gray-500 uppercase font-black tracking-[0.4em]">Establishing Neural Link</p>
                                      </div>
                                 )}
                                 <iframe 
                                     src={item.videoSrc}
                                     allow="autoplay; encrypted-media; picture-in-picture"
                                     allowFullScreen
-                                    className={`w-full h-full border-0 transition-all duration-700 rounded-lg md:rounded-2xl shadow-2xl ${iframeLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+                                    className={`w-full h-full border-0 transition-all duration-1000 ${iframeLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
                                     title={item.description || 'Video content'}
                                     onLoad={() => setIframeLoaded(true)}
                                     onError={() => setVideoError(true)}
@@ -277,11 +279,11 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                         )
                     )
                 ) : (
-                    <div className="relative w-full h-full flex items-center justify-center">
-                        <div className="absolute inset-0 bg-black/40 backdrop-blur-2xl"></div>
+                    <div className="relative w-full h-full flex items-center justify-center rounded-[3rem] overflow-hidden">
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-[100px]"></div>
                         <img 
                             src={item.src} 
-                            className="max-w-[70%] max-h-[70%] object-contain rounded-2xl shadow-2xl grayscale blur-md opacity-40" 
+                            className="max-w-[80%] max-h-[80%] object-contain rounded-[3rem] shadow-2xl grayscale blur-2xl opacity-20" 
                             alt="Locked Placeholder"
                         />
                     </div>
