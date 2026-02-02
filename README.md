@@ -1,10 +1,11 @@
+# 🌸 wxifu Immersive Platform
 
-# 🌸 Ottako-X Ultra Platform
+Welcome to **wxifu** — The premier social stage for anime artwork, cosplay, and digital assets. Powered by a lightweight, high-performance **Google Sheets + Apps Script** backend.
 
-Welcome to **Ottako-X** — The premier social stage for anime artwork, cosplay, and digital assets. Now powered by a lightweight, high-performance **Google Sheets + Apps Script** backend.
+Official URL: [https://wxifu.vercel.app/](https://wxifu.vercel.app/)
 
 ## ✨ About
-Ottako-X is a fully-featured **Social Media Platform** built for artists and fans. It allows creators to upload, manage, and monetize their content while enabling fans to follow, chat, and interact in real-time. Built with a cyberpunk aesthetic, it prioritizes a premium user experience for high-resolution art and video consumption.
+wxifu is a fully-featured **Social Media Platform** built for artists and fans. It allows creators to upload, manage, and monetize their content while enabling fans to follow, chat, and interact in real-time. Built with a cyberpunk aesthetic, it prioritizes a premium user experience for high-resolution art and video consumption.
 
 ## 🚀 Key Features
 
@@ -57,7 +58,7 @@ To run this project, you must set up your own database in Google Sheets.
 5.  **Deploy**:
     *   Click **Deploy > New Deployment**.
     *   Select Type: **Web App**.
-    *   Description: `Otaku-X Backend`.
+    *   Description: `wxifu Backend`.
     *   Execute as: **Me**.
     *   Who has access: **Anyone**. (Required for the frontend to communicate).
 6.  **Connect Frontend**:

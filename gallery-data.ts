@@ -1,27 +1,26 @@
-
 import { MediaItem, MediaType } from './types';
 import { processMediaItem } from './lib/utils';
 
 // --- SITE CONFIGURATION ---
 export const APP_CONFIG = {
-  name: 'OTAKU',
-  nameSuffix: '-X',
-  subtitle: 'The Premier Anime & Art Gallery',
+  name: 'WXI',
+  nameSuffix: 'FU',
+  subtitle: 'Immersive Anime & Digital Art',
   itemsPerPage: 24,
   hero: {
-    badge: 'v2.6 PLATINUM',
-    description: 'The definitive social stage for anime aesthetics. Explore 4K artwork, immersive AMVs, and exclusive creator content.',
-    tags: ['4K Illustrations', 'AMVs', 'Motion Art', 'Premium Assets']
+    badge: 'v3.0 NEURAL',
+    description: 'The definitive social stage for anime aesthetics. Explore high-fidelity illustrations, immersive AMVs, and exclusive content.',
+    tags: ['Neural Art', 'AMVs', 'Motion Visuals', 'Elite Assets']
   },
   footer: {
-    brand: 'OTAKU-X',
-    tagline: 'Celebrating Otaku Culture',
+    brand: 'WXIFU',
+    tagline: 'The Aesthetic Frontier',
     disclaimer: 'All content belongs to their respective artists.'
   },
   social: {
-    twitter: 'https://x.com/ottakokun',
-    reddit: 'https://www.reddit.com/r/OTTAKOKUN/',
-    telegram: 'https://t.me/OTTAKOKUN'
+    twitter: 'https://x.com/wxifu',
+    reddit: 'https://www.reddit.com/r/wxifu/',
+    telegram: 'https://t.me/wxifu'
   }
 };
 

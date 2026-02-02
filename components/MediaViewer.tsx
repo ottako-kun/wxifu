@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MediaItem, MediaType } from '../types';
 import ZoomableImage from './ZoomableImage';
@@ -109,7 +108,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
     if (!isUnlocked) return;
     const link = document.createElement('a');
     link.href = item.src;
-    link.download = `otaku-x-${item.id}.png`;
+    link.download = `wxifu-${item.id}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

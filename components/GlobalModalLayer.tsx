@@ -1,4 +1,3 @@
-
 import React from 'react';
 // Fixed: Import Session from local types
 import { Session } from '../types';
@@ -83,11 +82,11 @@ const GlobalModalLayer: React.FC<GlobalModalLayerProps> = ({
       {activeLegalModal === 'privacy' && (
         <LegalModal title="Privacy Policy" onClose={closeLegal}>
             <div className="space-y-4">
-                <p><strong className="text-white block mb-1">1. Introduction</strong>Welcome to {APP_CONFIG.name}. We are committed to protecting your privacy and ensuring you have a safe experience on our platform.</p>
+                <p><strong className="text-white block mb-1">1. Introduction</strong>Welcome to {APP_CONFIG.name}{APP_CONFIG.nameSuffix}. We are committed to protecting your privacy and ensuring you have a safe experience on our platform.</p>
                 <p><strong className="text-white block mb-1">2. Data Collection</strong>We collect minimal data required for authentication via Google (email, name, avatar). We also store the media files you upload and any metadata associated with them (descriptions, tags). We do not collect real names unless provided.</p>
                 <p><strong className="text-white block mb-1">3. Data Usage</strong>Your data is used solely to provide the gallery service, display your public profile, and facilitate social interactions (likes, comments, messages). We do not sell your personal data to third parties.</p>
                 <p><strong className="text-white block mb-1">4. Cookies & Storage</strong>We use cookies and local storage for session management to keep you logged in and to remember your preferences (e.g., age verification status).</p>
-                <p><strong className="text-white block mb-1">5. Third-Party Services</strong>We use Supabase for database and authentication services, and Google for user login. Please refer to their respective privacy policies for how they handle data.</p>
+                <p><strong className="text-white block mb-1">5. Third-Party Services</strong>We use Google Apps Script for database services and Google for user login. Please refer to their respective privacy policies for how they handle data.</p>
                 <p><strong className="text-white block mb-1">6. Content Visibility</strong>Please be aware that any content you upload or comments you make are public and viewable by other users of the site.</p>
             </div>
         </LegalModal>
@@ -97,7 +96,7 @@ const GlobalModalLayer: React.FC<GlobalModalLayerProps> = ({
         <LegalModal title="Terms of Service" onClose={closeLegal}>
             <div className="space-y-4">
                 <p><strong className="text-white block mb-1">1. Age Requirement</strong>You must be at least 18 years old (or the age of majority in your jurisdiction) to access this site. By entering and using this service, you legally confirm you are an adult.</p>
-                <p><strong className="text-white block mb-1">2. User Generated Content</strong>You retain full ownership of the content you upload. By uploading content to {APP_CONFIG.name}, you grant us a worldwide, non-exclusive, royalty-free license to display, reproduce, and distribute your content on this platform.</p>
+                <p><strong className="text-white block mb-1">2. User Generated Content</strong>You retain full ownership of the content you upload. By uploading content to {APP_CONFIG.name}{APP_CONFIG.nameSuffix}, you grant us a worldwide, non-exclusive, royalty-free license to display, reproduce, and distribute your content on this platform.</p>
                 <p><strong className="text-white block mb-1">3. Prohibited Content</strong>We have a <span className="text-red-400 font-bold">zero-tolerance policy</span> for illegal content. You may not upload content that depicts non-consensual sexual acts, child sexual abuse material (CSAM), real-world violence, or any content illegal under US or international law.</p>
                 <p><strong className="text-white block mb-1">4. Conduct</strong>Harassment, hate speech, and spamming are strictly prohibited. We aim to foster a respectful community for artists and enthusiasts.</p>
                 <p><strong className="text-white block mb-1">5. Account Termination</strong>We reserve the right to suspend or ban any account found violating these terms, at our sole discretion, without prior notice.</p>

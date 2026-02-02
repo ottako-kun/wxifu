@@ -1,6 +1,5 @@
-
 /**
- * OTAKU-X CLIENT (GAS VERSION)
+ * WXIFU CLIENT (GAS VERSION)
  * Replace the GAS_WEBAPP_URL with your actual URL after deploying the script.
  */
 const GAS_WEBAPP_URL = 'PASTE_YOUR_GAS_WEBAPP_URL_HERE';
@@ -24,8 +23,7 @@ export const gasRequest = async (command: string, payload: any = {}) => {
   }
 };
 
-// Mock the supabase interface for minimal friction in refactoring
-// Fixed: Expanded mock to include missing methods like channel, in, update, etc.
+// Mock the compatibility layer for minimal friction in refactoring
 export const supabase: any = {
   auth: {
     // We maintain a local mock of the auth session
@@ -42,15 +40,14 @@ export const supabase: any = {
       return { data: { subscription: { unsubscribe: () => window.removeEventListener('storage', handleAuth) } } };
     },
     signInWithOAuth: async ({ provider }: any) => {
-      // In a real GAS app, you'd use Google Identity Services. 
-      // For this prototype, we simulate a successful login.
+      // Simulation of a successful login
       const mockUser = {
         id: 'user-' + Math.random().toString(36).substring(2, 10),
-        email: 'otaku_user@example.com',
+        email: 'user@wxifu.app',
         user_metadata: {
-          full_name: 'Otaku Operative',
+          full_name: 'Wxifu User',
           avatar_url: 'https://images.unsplash.com/photo-1560343090-f0409e92791a?q=80&w=100&auto=format&fit=crop',
-          bio: 'A true aesthetic seeker.'
+          bio: 'Wxifu aesthetic lover.'
         }
       };
       const session = { user: mockUser };
@@ -90,7 +87,6 @@ export const supabase: any = {
       return { data: { user: stored ? JSON.parse(stored).user : null } };
     }
   },
-  // Expanded dummy functions to satisfy modules that might still call standard supabase chains
   from: (table: string) => {
     const chain: any = {
       select: () => chain,
@@ -99,7 +95,6 @@ export const supabase: any = {
       in: () => chain,
       update: () => chain,
       single: () => Promise.resolve({ data: null, error: null }),
-      // Makes the chain awaitable
       then: (resolve: any) => Promise.resolve({ data: [], error: null }).then(resolve)
     };
     return chain;

@@ -1,6 +1,5 @@
-
 /**
- * OTAKU-X API BRIDGE
+ * WXIFU API BRIDGE
  * This file acts as a compatibility layer, re-exporting GAS-backed modules
  * to maintain existing component imports without massive refactoring.
  */

@@ -1,6 +1,5 @@
-
 /**
- * OTAKU-X BACKEND (GOOGLE APPS SCRIPT)
+ * WXIFU BACKEND (GOOGLE APPS SCRIPT)
  * 1. Create a new Google Sheet.
  * 2. Go to Extensions > Apps Script.
  * 3. Paste this code.
@@ -37,7 +36,7 @@ function setup() {
       sheet.setFrozenRows(1);
     }
   }
-  return "Setup Complete. All tables created.";
+  return "Setup Complete. WXIFU Tables Initialized.";
 }
 
 function doPost(e: any) {
