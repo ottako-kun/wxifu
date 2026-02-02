@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MediaItem, MediaType, Session } from '../types';
 import CloseIcon from './icons/CloseIcon';
@@ -6,7 +5,6 @@ import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import ChevronRightIcon from './icons/ChevronRightIcon';
 import SharePopover from './SharePopover';
 import ReportModal from './ReportModal';
-// Fixed: Import Session from local types
 import { useToast } from '../context/ToastContext';
 import MediaSidebar from './MediaSidebar';
 import MediaViewer from './MediaViewer';
@@ -112,81 +110,112 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
+        {/* Dynamic Blurred Backdrop for Cinema Feel */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+            <img 
+                src={item.src} 
+                className="w-full h-full object-cover scale-110 blur-3xl opacity-30 brightness-[0.3]" 
+                alt="" 
+            />
+            <div className="absolute inset-0 bg-black/40"></div>
+        </div>
+
         {/* Top Actions */}
-        <div className="absolute top-0 inset-x-0 z-[1100] flex items-center justify-between p-6 bg-gradient-to-b from-black/80 to-transparent">
-            <button onClick={handleClose} className="p-2 text-white/70 hover:text-white bg-black/20 backdrop-blur-md rounded-full transition-colors border border-white/5">
+        <div className="absolute top-0 inset-x-0 z-[1100] flex items-center justify-between p-4 md:p-6 bg-gradient-to-b from-black/80 to-transparent">
+            <button 
+                onClick={handleClose} 
+                className="p-2.5 text-white/70 hover:text-white bg-black/40 backdrop-blur-md rounded-full transition-all border border-white/10 active:scale-90"
+            >
                 <CloseIcon className="w-6 h-6" />
             </button>
             <div className="flex items-center gap-3">
-                 <button onClick={() => setIsReportModalOpen(true)} className="p-2 text-white/40 hover:text-red-400 bg-black/20 backdrop-blur-md rounded-full transition-colors border border-white/5">
+                 <button 
+                    onClick={() => setIsReportModalOpen(true)} 
+                    className="p-2.5 text-white/40 hover:text-red-400 bg-black/40 backdrop-blur-md rounded-full transition-all border border-white/10 active:scale-90"
+                 >
                      <FlagIcon className="w-5 h-5" />
                  </button>
             </div>
         </div>
 
-        {/* Full Screen Viewer */}
-        <div className="flex-grow w-full h-full relative overflow-hidden">
+        {/* Full Screen Viewer (Optimized Container) */}
+        <div className="flex-grow w-full h-full relative overflow-hidden z-10 flex items-center justify-center">
             <MediaViewer 
                 item={item} 
                 isUnlocked={isUnlocked} 
-                onUnlockClick={() => unlockContent(item.id, item.price || 0)} 
+                onUnlockClick={() => unlockContent(item.id, item.price || 0, item.user_id)} 
                 isUnlocking={isWalletLoading} 
                 onMediaEnded={goToNext}
                 onZoomChange={setIsZoomed} 
             />
         </div>
 
-        {/* TikTok Interaction Overlay */}
+        {/* Interaction Overlay - Designed for reachability */}
         <div className="absolute inset-0 pointer-events-none z-[1050] flex flex-col justify-end">
-            <div className="flex items-end justify-between p-6 pb-12 gap-6 bg-gradient-to-t from-black/90 via-black/20 to-transparent">
+            <div className="flex items-end justify-between p-4 md:p-8 pb-12 md:pb-12 gap-6 bg-gradient-to-t from-black/90 via-black/20 to-transparent">
                 
                 {/* Meta Info (Bottom Left) */}
-                <div className="flex-grow max-w-[70%] pointer-events-auto flex flex-col gap-3 animate-slide-up">
-                    <div className="flex items-center gap-3 cursor-pointer group" onClick={() => onUserClick?.({ id: item.user_id!, name: item.author!, avatar: item.author_avatar || '' })}>
-                        <Avatar src={item.author_avatar} alt={item.author} size="md" className="ring-2 ring-pink-500 group-hover:scale-105 transition-transform" />
+                <div className="flex-grow max-w-[75%] md:max-w-[60%] pointer-events-auto flex flex-col gap-3 animate-slide-up">
+                    <div 
+                        className="flex items-center gap-3 cursor-pointer group w-fit" 
+                        onClick={() => onUserClick?.({ id: item.user_id!, name: item.author!, avatar: item.author_avatar || '' })}
+                    >
+                        <Avatar src={item.author_avatar} alt={item.author} size="md" className="ring-2 ring-pink-500 group-hover:scale-105 transition-transform shadow-xl" />
                         <div>
-                            <h3 className="text-white font-bold text-base drop-shadow-md">@{item.author}</h3>
-                            <span className="text-cyan-400 text-[10px] font-bold uppercase tracking-widest bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-500/20">{item.category}</span>
+                            <h3 className="text-white font-bold text-base drop-shadow-lg">@{item.author}</h3>
+                            <span className="text-cyan-400 text-[10px] font-bold uppercase tracking-widest bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-500/20">{item.category}</span>
                         </div>
                     </div>
                     
-                    <p className="text-white/90 text-sm line-clamp-2 leading-snug drop-shadow-md font-light italic">
+                    <p className="text-white/90 text-sm line-clamp-2 md:line-clamp-3 leading-snug drop-shadow-lg font-light italic max-w-xl">
                         {item.description}
                     </p>
                     
                     <div className="flex flex-wrap gap-2">
-                        {item.tags?.map(tag => (
-                            <span key={tag} className="text-pink-400 font-bold text-xs drop-shadow-md">#{tag}</span>
+                        {item.tags?.slice(0, 5).map(tag => (
+                            <span key={tag} className="text-pink-400 font-bold text-xs drop-shadow-md bg-pink-900/20 px-2 py-0.5 rounded">#{tag}</span>
                         ))}
                     </div>
                 </div>
 
-                {/* Side Action HUD (Bottom Right) */}
-                <div className="flex flex-col items-center gap-7 mb-4 pointer-events-auto animate-fade-in">
+                {/* Side Action HUD (Bottom Right) - Standard Social Alignment */}
+                <div className="flex flex-col items-center gap-5 md:gap-7 mb-4 pointer-events-auto animate-fade-in">
                     <div className="flex flex-col items-center">
-                        <button onClick={handleLikeAction} className={`p-3 rounded-full bg-black/20 backdrop-blur-xl border border-white/10 transition-all active:scale-75 ${isLiked ? 'text-pink-500' : 'text-white'}`}>
-                            <HeartIcon filled={isLiked} className="w-8 h-8 drop-shadow-lg" />
+                        <button 
+                            onClick={handleLikeAction} 
+                            className={`p-3 md:p-4 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 transition-all active:scale-50 ${isLiked ? 'text-pink-500 border-pink-500/50' : 'text-white'}`}
+                        >
+                            <HeartIcon filled={isLiked} className="w-7 h-7 md:w-8 md:h-8 drop-shadow-lg" />
                         </button>
-                        <span className="text-[11px] font-bold text-white mt-1.5 drop-shadow-md">{likeCount}</span>
+                        <span className="text-[11px] font-bold text-white mt-1.5 drop-shadow-md">{likeCount > 999 ? (likeCount/1000).toFixed(1) + 'k' : likeCount}</span>
                     </div>
 
                     <div className="flex flex-col items-center">
-                        <button onClick={() => setIsDrawerOpen(true)} className="p-3 rounded-full bg-black/20 backdrop-blur-xl border border-white/10 text-white transition-all active:scale-75">
-                            <ChatIcon className="w-8 h-8 drop-shadow-lg" />
+                        <button 
+                            onClick={() => setIsDrawerOpen(true)} 
+                            className="p-3 md:p-4 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-white transition-all active:scale-75"
+                        >
+                            <ChatIcon className="w-7 h-7 md:w-8 md:h-8 drop-shadow-lg" />
                         </button>
                         <span className="text-[11px] font-bold text-white mt-1.5 drop-shadow-md">Details</span>
                     </div>
 
                     <div className="flex flex-col items-center">
-                        <button onClick={() => setIsTipModalOpen(true)} className="p-3 rounded-full bg-black/20 backdrop-blur-xl border border-white/10 text-yellow-500 transition-all active:scale-75">
-                            <GiftIcon className="w-8 h-8 drop-shadow-lg" />
+                        <button 
+                            onClick={() => setIsTipModalOpen(true)} 
+                            className="p-3 md:p-4 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-yellow-500 transition-all active:scale-75"
+                        >
+                            <GiftIcon className="w-7 h-7 md:w-8 md:h-8 drop-shadow-lg" />
                         </button>
-                        <span className="text-[11px] font-bold text-white mt-1.5 drop-shadow-md">Support</span>
+                        <span className="text-[11px] font-bold text-white mt-1.5 drop-shadow-md">Gift</span>
                     </div>
 
                     <div className="flex flex-col items-center">
-                        <button onClick={(e) => setShareAnchorEl(e.currentTarget as HTMLElement)} className="p-3 rounded-full bg-black/20 backdrop-blur-xl border border-white/10 text-white transition-all active:scale-75">
-                            <ShareIcon className="w-8 h-8 drop-shadow-lg" />
+                        <button 
+                            onClick={(e) => setShareAnchorEl(e.currentTarget as HTMLElement)} 
+                            className="p-3 md:p-4 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-white transition-all active:scale-75"
+                        >
+                            <ShareIcon className="w-7 h-7 md:w-8 md:h-8 drop-shadow-lg" />
                         </button>
                         <span className="text-[11px] font-bold text-white mt-1.5 drop-shadow-md">Share</span>
                     </div>
@@ -194,17 +223,14 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
             </div>
         </div>
 
-        {/* Slide-out Sidebar/Drawer (Right/Bottom) */}
+        {/* Slide-out Sidebar/Drawer */}
         {isDrawerOpen && (
             <div className="fixed inset-0 z-[1200] flex animate-fade-in">
-                {/* Backdrop overlay */}
                 <div className="flex-grow bg-black/60 backdrop-blur-sm" onClick={() => setIsDrawerOpen(false)}></div>
-                
-                {/* Content Panel */}
                 <div className="w-full md:w-[450px] bg-[#050505] h-full shadow-[-20px_0_50px_rgba(0,0,0,0.5)] border-l border-white/10 overflow-y-auto custom-scrollbar animate-slide-left">
-                    <div className="sticky top-0 z-50 p-6 bg-[#050505]/80 backdrop-blur-md flex items-center justify-between border-b border-white/5">
-                        <h3 className="text-white font-bold uppercase tracking-widest text-sm">Engagement Panel</h3>
-                        <button onClick={() => setIsDrawerOpen(false)} className="p-2 text-gray-400 hover:text-white"><CloseIcon className="w-5 h-5" /></button>
+                    <div className="sticky top-0 z-50 p-6 bg-[#050505]/90 backdrop-blur-md flex items-center justify-between border-b border-white/5">
+                        <h3 className="text-white font-bold uppercase tracking-widest text-sm">Artwork Context</h3>
+                        <button onClick={() => setIsDrawerOpen(false)} className="p-2 text-gray-400 hover:text-white transition-colors"><CloseIcon className="w-5 h-5" /></button>
                     </div>
                     <MediaSidebar 
                         item={item} 
