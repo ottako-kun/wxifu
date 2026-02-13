@@ -35,7 +35,7 @@ export const APP_CONFIG = {
 const CUSTOM_MEDIA_COLLECTION: any[] = [
   {
     type: 'PHOTO',
-    link: 'https://drive.google.com/file/d/1X5l_9o5-rN_XmYk_w2O-A5p7vP1Z9N5S/view', // Sample Drive ID
+    link: 'https://drive.google.com/file/d/121YszgbPGcwOJwsSwJgH0ROAe65-u8D0/view?usp=sharing', // Sample Drive ID
     description: 'Cyberpunk Oni - Ultra Detailed Illustration. Exploring the synthesis of traditional Japanese folklore and futuristic neon aesthetics.',
     category: 'Illustration',
     author: 'NeuralRonin',
