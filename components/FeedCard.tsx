@@ -30,6 +30,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const [showPulse, setShowPulse] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -87,7 +88,11 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
 
   const handleLikeAction = async () => {
     setShowHeartAnimation(true);
-    setTimeout(() => setShowHeartAnimation(false), 800);
+    setShowPulse(true);
+    setTimeout(() => {
+        setShowHeartAnimation(false);
+        setShowPulse(false);
+    }, 1000);
     await toggleLike();
   };
 
@@ -123,7 +128,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   return (
     <div 
       ref={cardRef}
-      className="w-full h-[100dvh] md:h-[90vh] bg-black md:bg-gray-950 md:rounded-3xl overflow-hidden mb-0 md:mb-8 shadow-2xl relative flex flex-col group/feed snap-start"
+      className="w-full h-[100dvh] md:h-[90vh] bg-black md:bg-gray-950 md:rounded-3xl overflow-hidden mb-0 md:mb-8 shadow-2xl relative flex flex-col group/feed snap-start snap-always"
     >
         <div className="hidden md:block absolute inset-0 z-0 pointer-events-none">
             <img src={item.src} className="w-full h-full object-cover opacity-25 blur-[100px] scale-110" alt="" />
@@ -135,6 +140,8 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
             onMouseDown={handleTapInteraction}
             onTouchEnd={handleTapInteraction}
         >
+            {showPulse && <div className="neural-pulse-ring"></div>}
+            
             {showHeartAnimation && (
                 <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
                     <HeartIcon filled className="w-36 h-36 text-pink-500 drop-shadow-[0_0_20px_#ec4899] animate-heart-burst" />
@@ -154,7 +161,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                         <button 
                             onClick={handleUnlock}
                             disabled={isWalletLoading}
-                            className="w-full py-5 bg-gradient-to-r from-yellow-600 to-yellow-400 hover:from-yellow-500 hover:to-yellow-300 text-black font-black rounded-[1.5rem] shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 uppercase text-[11px] tracking-widest"
+                            className="w-full py-5 bg-gradient-to-r from-yellow-600 to-yellow-400 hover:from-yellow-500 hover:to-yellow-300 text-black font-black rounded-[1.5rem] shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 uppercase text-[11px] tracking-widest font-orbitron"
                         >
                             {isWalletLoading ? <LoadingSpinner className="w-5 h-5 text-black"/> : `${item.price || 5} Coins to View`}
                         </button>
@@ -168,7 +175,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                                 {!iframeLoaded && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-20">
                                         <LoadingSpinner className="w-12 h-12 text-pink-500 mb-4" />
-                                        <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] animate-pulse">Establishing Signal</p>
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] animate-pulse font-orbitron">Establishing Signal</p>
                                     </div>
                                 )}
                                 <iframe 
@@ -201,7 +208,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                                 )}
                                 <button 
                                     onClick={handleMuteToggle}
-                                    className="absolute top-6 right-6 z-30 p-3 bg-black/30 backdrop-blur-3xl rounded-2xl border border-white/5 text-white hover:bg-black/60 transition-all active:scale-90"
+                                    className="absolute top-6 right-6 z-30 p-4 bg-black/30 backdrop-blur-3xl rounded-2xl border border-white/5 text-white hover:bg-black/60 transition-all active:scale-90"
                                 >
                                     {isGlobalMuted ? (
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path strokeLinecap="round" d="M15.54 8.46l5.66 5.66m0-5.66l-5.66 5.66"/></svg>
@@ -222,10 +229,10 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                 )
             )}
 
-            {/* Interaction Bar - Optimized spacing */}
-            <div className="absolute bottom-24 right-4 z-30 flex flex-col items-center gap-7">
-                <div className="flex flex-col items-center">
-                    <div className="relative" onClick={handleUserClick}>
+            {/* Interaction Bar - Enhanced hit targets for mobile */}
+            <div className="absolute bottom-24 right-4 z-30 flex flex-col items-center gap-2">
+                <div className="p-2" onClick={handleUserClick}>
+                    <div className="relative">
                         <Avatar 
                            src={item.author_avatar} 
                            alt={item.author} 
@@ -236,7 +243,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                         {session && !isOwner && !isFollowing && (
                             <button 
                                 onClick={(e) => { e.stopPropagation(); toggleFollow(item.author || ''); }}
-                                className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center text-white z-40 border-2 border-black shadow-xl"
+                                className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center text-white z-40 border-2 border-black shadow-xl"
                             >
                                 <span className="text-[10px] font-black">+</span>
                             </button>
@@ -247,49 +254,52 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                 <div className="flex flex-col items-center">
                     <button 
                         onClick={(e) => { e.stopPropagation(); handleLikeAction(); }}
-                        className={`p-2 transition-all active:scale-50 ${isLiked ? 'text-pink-500' : 'text-white'}`}
+                        className={`p-4 transition-all active:scale-50 ${isLiked ? 'text-pink-500' : 'text-white'}`}
+                        aria-label="Like"
                     >
-                        <HeartIcon filled={isLiked} className="w-9 h-9 drop-shadow-2xl" />
+                        <HeartIcon filled={isLiked} className="w-8 h-8 drop-shadow-2xl" />
                     </button>
-                    <span className="text-[10px] font-black text-white mt-1 drop-shadow-xl">{likeCount > 999 ? (likeCount/1000).toFixed(1) + 'k' : likeCount}</span>
+                    <span className="text-[10px] font-black text-white -mt-2 drop-shadow-xl font-orbitron">{likeCount > 999 ? (likeCount/1000).toFixed(1) + 'k' : likeCount}</span>
                 </div>
 
                 <div className="flex flex-col items-center">
-                    <button onClick={(e) => { e.stopPropagation(); onItemClick(); }} className="p-2 text-white transition-all active:scale-50">
-                        <ChatIcon className="w-9 h-9 drop-shadow-2xl" />
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); onItemClick(); }} 
+                      className="p-4 text-white transition-all active:scale-50"
+                      aria-label="Info"
+                    >
+                        <ChatIcon className="w-8 h-8 drop-shadow-2xl" />
                     </button>
-                    <span className="text-[10px] font-black text-white mt-1 drop-shadow-xl">Art</span>
+                    <span className="text-[10px] font-black text-white -mt-2 drop-shadow-xl font-orbitron">Info</span>
                 </div>
 
                 <div className="flex flex-col items-center">
-                    <button onClick={(e) => { e.stopPropagation(); setIsTipModalOpen(true); }} className="p-2 text-yellow-500 transition-all active:scale-50">
-                        <GiftIcon className="w-9 h-9 drop-shadow-2xl" />
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setIsTipModalOpen(true); }} 
+                      className="p-4 text-yellow-500 transition-all active:scale-50"
+                      aria-label="Gift"
+                    >
+                        <GiftIcon className="w-8 h-8 drop-shadow-2xl" />
                     </button>
-                    <span className="text-[10px] font-black text-white mt-1 drop-shadow-xl">Gift</span>
+                    <span className="text-[10px] font-black text-white -mt-2 drop-shadow-xl font-orbitron">Gift</span>
                 </div>
 
                 <div className="flex flex-col items-center">
-                    <button onClick={handleShareClick} className="p-2 text-white transition-all active:scale-50">
-                        <ShareIcon className="w-9 h-9 drop-shadow-2xl" />
+                    <button 
+                      onClick={handleShareClick} 
+                      className="p-4 text-white transition-all active:scale-50"
+                      aria-label="Share"
+                    >
+                        <ShareIcon className="w-8 h-8 drop-shadow-2xl" />
                     </button>
-                    <span className="text-[10px] font-black text-white mt-1 drop-shadow-xl">Link</span>
+                    <span className="text-[10px] font-black text-white -mt-2 drop-shadow-xl font-orbitron">Link</span>
                 </div>
-                
-                {isPlaying && !isDriveVideo && (
-                    <div className="relative w-11 h-11 flex items-center justify-center mt-3">
-                        <div className="absolute top-0 right-0 animate-float-note opacity-0">
-                            <svg className="w-4 h-4 text-pink-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-                        </div>
-                        <div className="w-full h-full rounded-full bg-gradient-to-tr from-gray-900 to-black p-1 animate-vinyl border border-white/10 shadow-2xl">
-                             <div className="w-full h-full rounded-full bg-pink-500/10 flex items-center justify-center">
-                                <div className="w-2.5 h-2.5 rounded-full bg-pink-500 shadow-[0_0_10px_#ec4899]"></div>
-                             </div>
-                        </div>
-                    </div>
-                )}
             </div>
 
-            {/* Bottom Info Area - Grassy transparent bg */}
+            {/* Scroll Hint for mobile */}
+            <div className="scroll-hint md:hidden"></div>
+
+            {/* Bottom Info Area */}
             <div className="absolute bottom-0 inset-x-0 p-6 pt-32 pb-10 bg-gradient-to-t from-black via-black/30 to-transparent z-20 pointer-events-none">
                 <div className="pointer-events-auto max-w-[80%] flex flex-col gap-2 animate-slide-up">
                     <h3 onClick={handleUserClick} className="font-black text-white text-lg mb-1 hover:text-pink-400 cursor-pointer inline-flex items-center gap-2 drop-shadow-2xl font-orbitron tracking-tight">
@@ -305,7 +315,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                     </p>
                     <div className="flex flex-wrap gap-2 mt-1">
                         {item.tags?.slice(0, 4).map(tag => (
-                            <span key={tag} className="text-[10px] text-pink-400 font-black tracking-widest uppercase bg-pink-950/20 px-2 py-0.5 rounded border border-pink-500/10">#{tag}</span>
+                            <span key={tag} className="text-[10px] text-pink-400 font-black tracking-widest uppercase bg-pink-950/20 px-2 py-0.5 rounded border border-pink-500/10 hover:bg-pink-900/40 transition-colors">#{tag}</span>
                         ))}
                     </div>
                 </div>

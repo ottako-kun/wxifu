@@ -5,7 +5,6 @@ import ZoomableImage from './ZoomableImage';
 import LockIcon from './icons/LockIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
 import PlayIcon from './icons/PlayIcon';
-// Fixed: Added missing CoinIcon import
 import CoinIcon from './icons/CoinIcon';
 import { useUI } from '../context/UIContext';
 import { isGoogleDriveLink } from '../lib/googleDrive';
@@ -30,6 +29,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
   const isPhoto = item.type === MediaType.Photo;
   const [videoError, setVideoError] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [showMetadataToast, setShowMetadataToast] = useState(false);
   const { isGlobalMuted, toggleGlobalMute } = useUI();
 
   // Video State
@@ -53,7 +53,13 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
-  }, [item.id]);
+    
+    if (!isPhoto && isUnlocked) {
+        setShowMetadataToast(true);
+        const timer = setTimeout(() => setShowMetadataToast(false), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [item.id, isPhoto, isUnlocked]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -117,12 +123,38 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
     document.body.removeChild(link);
   };
 
+  // Render segmented progress bar
+  const renderProgressBar = () => {
+    const segments = 40;
+    const progressVal = (currentTime / (duration || 1)) * segments;
+    return (
+        <div className="flex gap-[2px] w-full h-1 mt-2">
+            {Array.from({ length: segments }).map((_, i) => (
+                <div 
+                    key={i} 
+                    className={`flex-grow h-full rounded-[1px] transition-all duration-300 ${i < progressVal ? 'bg-pink-500 shadow-[0_0_8px_#ec4899]' : 'bg-white/10'}`}
+                />
+            ))}
+        </div>
+    );
+  };
+
   return (
     <div 
-      className="w-full h-full animate-fade-in flex items-center justify-center relative bg-transparent select-none"
+      className="w-full h-full flex items-center justify-center relative bg-transparent select-none"
       onMouseMove={handleInteraction}
       onClick={handleInteraction}
     >
+        {/* Technical Metadata Toast */}
+        {showMetadataToast && !isPhoto && isUnlocked && (
+            <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[150] bg-black/60 backdrop-blur-xl border border-pink-500/30 px-6 py-2 rounded-full animate-fade-in pointer-events-none">
+                <p className="text-[10px] font-bold text-pink-400 font-orbitron uppercase tracking-[0.2em] flex items-center gap-3">
+                    <span className="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></span>
+                    Neural Stream: {isDirectVideo(item.videoSrc) ? 'Direct/RAW' : 'Drive/Emulated'} // UHD // 60fps
+                </p>
+            </div>
+        )}
+
         {/* Detail View Tools */}
         {isPhoto && isUnlocked && (
             <button 
@@ -176,12 +208,12 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                 {isUnlocked ? (
                     videoError ? (
                         <div className="flex flex-col items-center text-center p-12 bg-gray-950 rounded-[3rem] border border-gray-800 border-dashed backdrop-blur-md">
-                            <p className="text-gray-400 mb-8 font-black uppercase tracking-widest text-xs">Codec establishing failure</p>
+                            <p className="text-gray-400 mb-8 font-black uppercase tracking-widest text-xs font-orbitron">Codec establishing failure</p>
                             <a 
                                 href={item.videoSrc} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="px-12 py-5 bg-pink-600 hover:bg-pink-500 text-white font-black rounded-3xl transition-all shadow-2xl active:scale-95 uppercase tracking-widest text-[10px]"
+                                className="px-12 py-5 bg-pink-600 hover:bg-pink-500 text-white font-black rounded-3xl transition-all shadow-2xl active:scale-95 uppercase tracking-widest text-[10px] font-orbitron"
                             >
                                 External Link View
                             </a>
@@ -190,6 +222,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                         isDirectVideo(item.videoSrc) ? (
                             <div className="relative w-full h-full flex items-center justify-center group/player" onClick={togglePlay}>
                                 <video 
+                                    key={item.id} // Forces re-render on item change to reset state
                                     ref={videoRef}
                                     src={item.videoSrc}
                                     autoPlay
@@ -213,16 +246,22 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                     </div>
                                 </div>
 
-                                {/* Video HUD Controls */}
+                                {/* Futuristic Video HUD Controls */}
                                 <div 
-                                    className={`absolute bottom-0 inset-x-0 z-[110] p-6 pb-12 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 flex flex-col gap-5 pointer-events-auto ${showControls ? 'opacity-100' : 'opacity-0'}`}
+                                    className={`absolute bottom-0 inset-x-0 z-[110] p-6 pb-12 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 flex flex-col gap-4 pointer-events-auto ${showControls ? 'opacity-100' : 'opacity-0'}`}
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <div className="w-full flex items-center gap-5">
-                                        <span className="text-[9px] text-white/50 font-black tracking-widest w-10 text-right font-mono">
-                                            {formatTime(currentTime)}
-                                        </span>
-                                        <div className="flex-grow relative h-1.5 flex items-center group/seek">
+                                    <div className="w-full flex flex-col gap-2">
+                                        <div className="flex justify-between items-center px-1">
+                                            <span className="text-[9px] text-white/50 font-black tracking-widest font-mono">
+                                                {formatTime(currentTime)}
+                                            </span>
+                                            <span className="text-[9px] text-white/50 font-black tracking-widest font-mono">
+                                                {formatTime(duration)}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="relative h-6 flex items-center group/seek">
                                             <input 
                                                 type="range"
                                                 min="0"
@@ -232,13 +271,12 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                                 onChange={handleSeek}
                                                 onMouseDown={() => setIsSeeking(true)}
                                                 onMouseUp={() => setIsSeeking(false)}
-                                                className="w-full h-full bg-white/5 rounded-full appearance-none cursor-pointer accent-pink-500 relative z-20"
+                                                className="w-full h-2 bg-transparent appearance-none cursor-pointer accent-pink-500 relative z-20 opacity-0"
                                             />
-                                            <div className="absolute left-0 top-0 h-full bg-pink-500 rounded-full shadow-[0_0_15px_#ec4899] z-10 pointer-events-none" style={{ width: `${(currentTime/duration)*100}%` }}></div>
+                                            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 pointer-events-none z-10">
+                                                {renderProgressBar()}
+                                            </div>
                                         </div>
-                                        <span className="text-[9px] text-white/50 font-black tracking-widest w-10 font-mono">
-                                            {formatTime(duration)}
-                                        </span>
                                     </div>
 
                                     <div className="flex items-center justify-between px-2">
@@ -258,18 +296,25 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                                 )}
                                             </button>
                                         </div>
+                                        
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-[9px] font-bold text-gray-500 font-orbitron uppercase tracking-widest hidden sm:block">
+                                                Neural // {((currentTime/(duration||1))*100).toFixed(0)}%
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="w-full h-full max-w-6xl aspect-video mx-auto relative overflow-hidden rounded-[2.5rem] shadow-2xl border border-white/5">
+                            <div className="w-full h-full max-w-6xl aspect-video mx-auto relative overflow-hidden rounded-[2.5rem] shadow-2xl border border-white/5 bg-black">
                                 {!iframeLoaded && (
-                                     <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-black/40 backdrop-blur-3xl">
+                                     <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-black/80 backdrop-blur-3xl">
                                          <LoadingSpinner className="w-14 h-14 text-pink-500 mb-4" />
-                                         <p className="text-[9px] text-gray-500 uppercase font-black tracking-[0.4em]">Establishing Drive Stream</p>
+                                         <p className="text-[9px] text-gray-500 uppercase font-black tracking-[0.4em] font-orbitron animate-pulse">Establishing Signal</p>
                                      </div>
                                 )}
                                 <iframe 
+                                    key={item.id}
                                     src={item.videoSrc}
                                     allow="autoplay; encrypted-media; picture-in-picture"
                                     allowFullScreen
