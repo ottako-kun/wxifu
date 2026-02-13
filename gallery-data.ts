@@ -27,26 +27,26 @@ export const APP_CONFIG = {
 
 /**
  * --- STATIC GALLERY DATA ---
- * To add Google Drive content:
- * 1. Set type to 'PHOTO' or 'VIDEO'
- * 2. Paste the "Share" link into the 'link' property.
- * 3. Add a thumbnail if it's a video (use a direct image link or another Drive link).
+ * TO ADD GOOGLE DRIVE CONTENT:
+ * 1. Go to Google Drive, right-click your file -> Share -> Copy Link.
+ * 2. Ensure "Anyone with the link" can view.
+ * 3. Paste the link into the 'link' property below.
  */
 const CUSTOM_MEDIA_COLLECTION: any[] = [
   {
     type: 'PHOTO',
-    link: 'https://drive.google.com/file/d/121YszgbPGcwOJwsSwJgH0ROAe65-u8D0/view?usp=sharing', // Sample Drive ID
-    description: 'Cyberpunk Oni - Ultra Detailed Illustration. Exploring the synthesis of traditional Japanese folklore and futuristic neon aesthetics.',
+    link: 'https://drive.google.com/file/d/121YszgbPGcwOJwsSwJgH0ROAe65-u8D0/view?usp=sharing', 
+    description: 'Cyberpunk Oni - Neural Synthesis Study. High-resolution illustration exploring futuristic folklore.',
     category: 'Illustration',
     author: 'NeuralRonin',
-    tags: ['Cyberpunk', 'Oni', '4K', 'Character'],
+    tags: ['Cyberpunk', 'Oni', '4K', 'Art'],
     is_premium: false
   },
   {
     type: 'VIDEO',
     link: 'https://drive.google.com/file/d/1sILwvb70QBKknRuhk0fJLwnO7kmdEywQ/view',
     thumbnail: 'https://images.unsplash.com/photo-1614728263952-84ea206f99b6?q=80&w=1974&auto=format&fit=crop',
-    description: 'Neon Dreams AMV - High Energy Edit. A synchronized visual journey through Neo-Tokyo nightlife.',
+    description: 'Neon Dreams AMV - Dynamic Visual Edit. A synchronized journey through Neo-Tokyo.',
     category: 'AMV',
     author: 'VibeEditor',
     tags: ['AMV', 'Action', 'Edit', 'Hype'],
@@ -55,18 +55,17 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
   },
   {
     type: 'PHOTO',
-    link: 'https://images.unsplash.com/photo-1541562232579-512a21360020?q=80&w=1974&auto=format&fit=crop',
-    description: 'Midnight Samurai - Digital Painting. Fusing feudal Japan with modern digital techniques.',
+    link: 'https://drive.google.com/file/d/1X5l_9o5-rN_XmYk_w2O-A5p7vP1Z9N5S/view',
+    description: 'Midnight Samurai - Traditional vs Digital Synth.',
     category: 'Fanart',
     author: 'RoninArt',
-    tags: ['Samurai', 'Dark', 'Art', 'Traditional'],
+    tags: ['Samurai', 'Dark', 'Art'],
     is_premium: false
   },
   {
     type: 'VIDEO',
     link: 'https://drive.google.com/file/d/1_9vL0yq4z8t-X7G2O_w-P5uK-L2oV1J/view',
-    thumbnail: 'https://images.unsplash.com/photo-1620336655055-088d06e76fb0?q=80&w=1974&auto=format&fit=crop',
-    description: 'Mecha Awakening - Motion Graphics. Procedural animation test for a larger cinematic project.',
+    description: 'Mecha Awakening - Experimental Motion Graphics.',
     category: 'Motion',
     author: 'MechaDesigner',
     tags: ['Mecha', 'SciFi', 'Animation'],
@@ -75,16 +74,16 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
   {
      type: 'PHOTO',
      link: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1974&auto=format&fit=crop',
-     description: 'Ethereal Forest - Background Art. Atmosphere and lighting study for an unannounced visual novel.',
+     description: 'Ethereal Forest - Background Concept Art.',
      category: 'Background',
      author: 'SceneryMaster',
-     tags: ['Nature', 'Peaceful', 'Anime', 'Scenery'],
+     tags: ['Nature', 'Anime', 'Scenery'],
      is_premium: true,
      price: 10
   }
 ];
 
-// Pre-process static items using the utility
+// Pre-process items using the utility (handles Google Drive ID extraction)
 const processedCustomItems = CUSTOM_MEDIA_COLLECTION.map((item, index) => 
   processMediaItem(item, index)
 );

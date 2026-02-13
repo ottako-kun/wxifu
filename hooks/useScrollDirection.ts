@@ -1,51 +1,47 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export const useScrollDirection = () => {
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
 
   useEffect(() => {
-    let lastScrollY = window.scrollY;
-    let ticking = false;
-
+    const threshold = 15; // Increased threshold for smoother feeling
+    
     const updateScrollDirection = () => {
       const scrollY = window.scrollY;
 
-      // Always show header at the very top (within 50px) to ensure visibility
-      if (scrollY < 50) {
+      // Always show header at the very top
+      if (scrollY < 80) {
         setScrollDirection('up');
-        lastScrollY = scrollY;
-        ticking = false;
+        lastScrollY.current = scrollY;
+        ticking.current = false;
         return;
       }
 
-      const diff = scrollY - lastScrollY;
-      const threshold = 10; // Minimum scroll distance to trigger a change
+      const diff = scrollY - lastScrollY.current;
 
-      // Only update direction if we've scrolled past the threshold
       if (Math.abs(diff) > threshold) {
         if (diff > 0) {
-          // Scrolling Down
           setScrollDirection('down');
         } else {
-          // Scrolling Up
           setScrollDirection('up');
         }
-        // Update reference point only when threshold is crossed
-        lastScrollY = scrollY;
+        lastScrollY.current = scrollY;
       }
       
-      ticking = false;
+      ticking.current = false;
     };
 
     const onScroll = () => {
-      if (!ticking) {
+      if (!ticking.current) {
         window.requestAnimationFrame(updateScrollDirection);
-        ticking = true;
+        ticking.current = true;
       }
     };
 
-    window.addEventListener('scroll', onScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
