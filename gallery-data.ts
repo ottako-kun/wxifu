@@ -55,7 +55,7 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
   },
   {
     type: 'PHOTO',
-    link: 'https://drive.google.com/file/d/1X5l_9o5-rN_XmYk_w2O-A5p7vP1Z9N5S/view',
+    link: 'https://pbs.twimg.com/media/HA_am5zbAAAE2y3?format=jpg&name=large',
     description: 'Midnight Samurai - Traditional vs Digital Synth.',
     category: 'Fanart',
     author: 'RoninArt',
