@@ -26,7 +26,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
     type: MediaType.Photo,
     src: '',
     description: '',
-    category: '',
+    category: 'Photos',
     tags: []
   });
   
@@ -106,38 +106,40 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
         
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
             
-          {/* Type Selection */}
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={() => handleChange('type', MediaType.Photo)}
-              className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-300 ${
-                formData.type === MediaType.Photo
-                  ? 'bg-pink-500/10 border-pink-500 text-pink-400'
-                  : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-600'
-              }`}
-            >
-              <PhotoIcon className="w-5 h-5" />
-              <span className="font-semibold">Photo</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleChange('type', MediaType.Video)}
-              className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-300 ${
-                formData.type === MediaType.Video
-                  ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400'
-                  : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-600'
-              }`}
-            >
-              <VideoIcon className="w-5 h-5" />
-              <span className="font-semibold">Video</span>
-            </button>
+          {/* Category Selection */}
+          <div className="space-y-4">
+            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">
+              Select Feed Category
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { id: 'Photos', type: MediaType.Photo, label: 'Photo', icon: PhotoIcon, color: 'pink' },
+                { id: 'Videos', type: MediaType.Video, label: 'Video', icon: VideoIcon, color: 'cyan' },
+                { id: 'GIFs', type: MediaType.Photo, label: 'GIF', icon: PlayIcon, color: 'purple' }
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, category: cat.id, type: cat.type }));
+                  }}
+                  className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all duration-300 ${
+                    formData.category === cat.id
+                      ? `bg-${cat.color}-500/10 border-${cat.color}-500 text-${cat.color}-400 shadow-[0_0_20px_rgba(236,72,153,0.1)]`
+                      : 'bg-white/5 border-white/10 text-gray-500 hover:border-white/20'
+                  }`}
+                >
+                  <cat.icon className="w-6 h-6" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">{cat.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* URL Input */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-              {isVideo ? 'Video Link (Google Drive / Direct)' : 'Image Link (Direct / Drive)'}
+              {isVideo ? 'Video Link (Google Drive / Direct)' : 'Source Link (Direct / Drive)'}
             </label>
             <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -159,20 +161,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
             </p>
           </div>
 
-          {/* Category */}
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-              Category
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.category}
-              onChange={(e) => handleChange('category', e.target.value)}
-              placeholder="e.g. Illustration, Fanart, AMV..."
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-            />
-          </div>
+
           
           {/* Tags - Dynamic Input */}
           <div>

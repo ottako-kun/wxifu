@@ -37,16 +37,16 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
     type: 'PHOTO',
     link: 'https://drive.google.com/file/d/121YszgbPGcwOJwsSwJgH0ROAe65-u8D0/view?usp=sharing', 
     description: 'Cyberpunk Oni - Neural Synthesis Study. High-resolution illustration exploring futuristic folklore.',
-    category: 'Illustration',
+    category: 'Photos',
     author: 'NeuralRonin',
-    tags: ['Cyberpunk', 'Oni', '4K', 'Art']
+    tags: ['Illustration', 'Cyberpunk', 'Oni', '4K', 'Art']
   },
   {
     type: 'VIDEO',
     link: 'https://drive.google.com/file/d/1sILwvb70QBKknRuhk0fJLwnO7kmdEywQ/view',
     thumbnail: 'https://images.unsplash.com/photo-1614728263952-84ea206f99b6?q=80&w=1974&auto=format&fit=crop',
     description: 'Neon Dreams AMV - Dynamic Visual Edit. A synchronized journey through Neo-Tokyo.',
-    category: 'AMV',
+    category: 'Videos',
     author: 'VibeEditor',
     tags: ['AMV', 'Action', 'Edit', 'Hype']
   },
@@ -54,25 +54,33 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
     type: 'PHOTO',
     link: 'https://pbs.twimg.com/media/HA_am5zbAAAE2y3?format=jpg&name=large',
     description: 'Midnight Samurai - Traditional vs Digital Synth.',
-    category: 'Fanart',
+    category: 'Photos',
     author: 'RoninArt',
-    tags: ['Samurai', 'Dark', 'Art']
+    tags: ['Fanart', 'Samurai', 'Dark', 'Art']
   },
   {
     type: 'VIDEO',
     link: 'https://drive.google.com/file/d/1_9vL0yq4z8t-X7G2O_w-P5uK-L2oV1J/view',
     description: 'Mecha Awakening - Experimental Motion Graphics.',
-    category: 'Motion',
+    category: 'Videos',
     author: 'MechaDesigner',
-    tags: ['Mecha', 'SciFi', 'Animation']
+    tags: ['Motion', 'Mecha', 'SciFi', 'Animation']
   },
   {
      type: 'PHOTO',
      link: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1974&auto=format&fit=crop',
      description: 'Ethereal Forest - Background Concept Art.',
-     category: 'Background',
+     category: 'Photos',
      author: 'SceneryMaster',
-     tags: ['Nature', 'Anime', 'Scenery']
+     tags: ['Background', 'Nature', 'Anime', 'Scenery']
+  },
+  {
+    type: 'PHOTO',
+    link: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHYyeHl4ZzR6NHR6NHR6NHR6NHR6NHR6NHR6NHR6NHR6NHR6NHR6JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKMGpxx6x4jYlfa/giphy.gif',
+    description: 'Glitch Distortion - Aesthetic Loop.',
+    category: 'GIFs',
+    author: 'GlitchArtist',
+    tags: ['Glitch', 'Loop', 'Aesthetic']
   }
 ];
 

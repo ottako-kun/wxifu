@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { MediaItem } from '../types';
+import { MediaItem, MediaType } from '../types';
 import { APP_CONFIG } from '../gallery-data';
 
 export const useGalleryFilters = (items: MediaItem[]) => {
@@ -11,9 +11,8 @@ export const useGalleryFilters = (items: MediaItem[]) => {
 
   // Derive available categories/tags from the dataset
   const availableCategories = useMemo(() => {
-    const cats = new Set(items.map(item => item.category).filter(Boolean) as string[]);
-    return ['All', ...Array.from(cats)];
-  }, [items]);
+    return ['All', 'GIFs', 'Photos', 'Videos'];
+  }, []);
 
   const availableTags = useMemo(() => {
     const tags = new Set(items.flatMap(item => item.tags || []));
@@ -34,7 +33,18 @@ export const useGalleryFilters = (items: MediaItem[]) => {
       const inAuthor = item.author?.toLowerCase().includes(query) ?? false;
       
       const matchesSearch = query === '' || inDescription || inCategory || inTags || inAuthor;
-      const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
+      
+      let matchesCategory = true;
+      if (selectedCategory !== 'All') {
+        if (selectedCategory === 'Photos') {
+          matchesCategory = item.type === MediaType.Photo && !item.src.toLowerCase().includes('.gif');
+        } else if (selectedCategory === 'Videos') {
+          matchesCategory = item.type === MediaType.Video;
+        } else if (selectedCategory === 'GIFs') {
+          matchesCategory = item.src.toLowerCase().includes('.gif');
+        }
+      }
+      
       const matchesTags = selectedTags.length === 0 || selectedTags.every(tag => item.tags?.includes(tag));
       
       return matchesSearch && matchesCategory && matchesTags;
