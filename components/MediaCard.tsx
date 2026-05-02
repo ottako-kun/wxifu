@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
 import { MediaItem, MediaType, Session } from '../types';
 import { cn } from '../lib/utils';
 import PlayIcon from './icons/PlayIcon';
@@ -228,12 +229,14 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
         <div className="relative aspect-auto">
           {isInView ? (
             <>
-                <img 
+                <motion.img 
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                     src={item.src} 
                     alt={item.description || "Gallery content"} 
                     className={cn(
-                        "w-full h-auto object-cover block transition-all duration-500 ease-in-out",
-                        isImageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105",
+                        "w-full h-auto object-cover block transition-opacity duration-500 ease-in-out",
+                        isImageLoaded ? "opacity-100" : "opacity-0",
                         isHovered && item.type === MediaType.Video ? "opacity-0" : "opacity-100"
                     )}
                     loading="lazy"

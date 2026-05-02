@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import MediaGrid from './MediaGrid';
 import FeedView from './FeedView';
@@ -135,7 +136,7 @@ const HomeView: React.FC<HomeViewProps> = ({
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <main className={cn(
-        "py-4 min-h-screen relative w-full",
+        "py-4 min-h-screen relative w-full flex flex-col",
         viewMode === 'feed' ? 'max-w-none px-0' : 'px-4 lg:px-6'
       )}>
         
@@ -180,7 +181,11 @@ const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         {activeTab === 'following' && !session ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center border border-white/5 rounded-[4rem] bg-gray-900/10 max-w-2xl mx-auto mt-16 backdrop-blur-xl">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center py-24 text-center border border-white/5 rounded-[4rem] bg-gray-900/10 max-w-2xl mx-auto mt-16 backdrop-blur-xl"
+            >
                 <div className="w-24 h-24 rounded-full bg-pink-500/10 flex items-center justify-center mb-10 border border-pink-500/20 shadow-[0_0_40px_rgba(236,72,153,0.15)]">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-14 h-14 text-pink-500">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -189,44 +194,61 @@ const HomeView: React.FC<HomeViewProps> = ({
                 <h2 className="text-4xl font-black text-white mb-4 font-orbitron uppercase tracking-widest">Connect with Artists</h2>
                 <p className="text-gray-500 mb-10 max-w-sm text-sm font-medium">Follow creators to build a custom feed tailored to your aesthetic.</p>
                 <button onClick={signInWithGoogle} className="px-12 py-5 bg-white text-black font-black uppercase tracking-[0.2em] rounded-3xl hover:bg-pink-600 hover:text-white transition-all shadow-2xl active:scale-95 text-xs">Authorize Link</button>
-            </div>
+            </motion.div>
         ) : (
-            <div className="relative">
-                {itemsToDisplay.length > 0 || isLoading ? (
-                  sortedItems.length > 0 || isLoading ? (
-                    <div className={`animate-fade-in ${viewMode === 'grid' ? 'mt-4' : 'mt-0'}`}>
-                        {viewMode === 'grid' ? (
-                            <MediaGrid items={visibleItems} onUserClick={onUserClick} session={session} onDataChange={onDataChange} isLoading={isLoading} onItemClick={setSelectedItemIndex} />
-                        ) : (
-                            <FeedView items={visibleItems} session={session} onUserClick={onUserClick} onDataChange={onDataChange} isLoading={isLoading} onItemClick={setSelectedItemIndex} />
-                        )}
-                        {visibleCount < sortedItems.length && !isLoading && <div ref={observerTarget} className="flex justify-center py-16 w-full"><LoadingSpinner className="w-12 h-12 text-pink-500/20" /></div>}
-                        {!isLoading && viewMode === 'grid' && <div className="text-center text-[10px] text-gray-700 uppercase tracking-[0.4em] pt-12 pb-24">Neural Index End // {sortedItems.length} Records</div>}
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center h-[60vh] text-center border border-white/5 rounded-[4rem] bg-gray-900/5 m-4">
-                        <div className="w-24 h-24 mb-10 text-gray-800 opacity-20"><SearchIcon className="w-full h-full" /></div>
-                        <h2 className="text-3xl font-black text-gray-700 mb-6 font-orbitron uppercase tracking-widest">No Matches Found</h2>
-                        <button onClick={clearFilters} className="px-12 py-4 border border-pink-500/40 text-pink-500 hover:bg-pink-600 hover:text-white rounded-2xl transition-all font-black uppercase tracking-widest text-xs">Reset Filters</button>
-                    </div>
-                )
-                ) : (
-                <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-                    <LoadingSpinner className="w-12 h-12 text-pink-500/30 mb-4" />
-                    <h2 className="text-xs font-black text-gray-700 uppercase tracking-[0.5em] font-orbitron">Mapping Neural Grid</h2>
-                </div>
-                )}
+            <div className="relative flex-grow">
+                <AnimatePresence mode="wait">
+                  {itemsToDisplay.length > 0 || isLoading ? (
+                    sortedItems.length > 0 || isLoading ? (
+                      <motion.div 
+                        key={viewMode}
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.02 }}
+                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                        className={cn("w-full h-full", viewMode === 'grid' ? 'mt-4' : 'mt-0')}
+                      >
+                          {viewMode === 'grid' ? (
+                              <MediaGrid items={visibleItems} onUserClick={onUserClick} session={session} onDataChange={onDataChange} isLoading={isLoading} onItemClick={setSelectedItemIndex} />
+                          ) : (
+                              <FeedView items={visibleItems} session={session} onUserClick={onUserClick} onDataChange={onDataChange} isLoading={isLoading} onItemClick={setSelectedItemIndex} />
+                          )}
+                          {visibleCount < sortedItems.length && !isLoading && <div ref={observerTarget} className="flex justify-center py-16 w-full"><LoadingSpinner className="w-12 h-12 text-pink-500/20" /></div>}
+                          {!isLoading && viewMode === 'grid' && <div className="text-center text-[10px] text-gray-700 uppercase tracking-[0.4em] pt-12 pb-24">Neural Index End // {sortedItems.length} Records</div>}
+                      </motion.div>
+                  ) : (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex flex-col items-center justify-center h-[60vh] text-center border border-white/5 rounded-[4rem] bg-gray-900/5 m-4"
+                      >
+                          <div className="w-24 h-24 mb-10 text-gray-800 opacity-20"><SearchIcon className="w-full h-full" /></div>
+                          <h2 className="text-3xl font-black text-gray-700 mb-6 font-orbitron uppercase tracking-widest">No Matches Found</h2>
+                          <button onClick={clearFilters} className="px-12 py-4 border border-pink-500/40 text-pink-500 hover:bg-pink-600 hover:text-white rounded-2xl transition-all font-black uppercase tracking-widest text-xs">Reset Filters</button>
+                      </motion.div>
+                  )
+                  ) : (
+                  <div className="flex flex-col items-center justify-center h-[50vh] text-center">
+                      <LoadingSpinner className="w-12 h-12 text-pink-500/30 mb-4" />
+                      <h2 className="text-xs font-black text-gray-700 uppercase tracking-[0.5em] font-orbitron">Mapping Neural Grid</h2>
+                  </div>
+                  )}
+                </AnimatePresence>
             </div>
         )}
         
         {showScrollTop && viewMode === 'grid' && (
-            <button 
+            <motion.button 
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={scrollToTop}
-                className="fixed bottom-24 md:bottom-12 right-6 md:right-12 z-[55] p-5 rounded-2xl bg-black/60 backdrop-blur-2xl border border-white/10 text-pink-500 shadow-2xl hover:bg-pink-600 hover:text-white transition-all transform active:scale-90 animate-fade-in"
+                className="fixed bottom-24 md:bottom-12 right-6 md:right-12 z-[55] p-5 rounded-2xl bg-black/60 backdrop-blur-2xl border border-white/10 text-pink-500 shadow-2xl hover:bg-pink-600 hover:text-white transition-all transform"
                 title="Return to Peak"
             >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
-            </button>
+            </motion.button>
         )}
         
         {selectedItemIndex !== null && (

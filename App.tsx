@@ -28,6 +28,8 @@ import { UIProvider } from './context/UIContext';
 // App Logic Hooks
 import { useAppNavigation } from './hooks/useAppNavigation';
 
+import { motion, AnimatePresence } from 'motion/react';
+
 const AppContent: React.FC = () => {
   const {
       currentView,
@@ -122,47 +124,58 @@ const AppContent: React.FC = () => {
         />
 
         <main className={cn(
-            "flex-grow transition-all duration-300 lg:pl-[260px] pt-14 md:pt-16",
+            "flex-grow transition-all duration-300 lg:pl-[260px] pt-14 md:pt-16 outline-none",
             viewMode === 'feed' && currentView === 'home' ? "pt-0 md:pt-0" : ""
         )}>
-          {currentView === 'home' ? (
-            <HomeView 
-               photoMedia={photoMedia}
-               videoMedia={videoMedia}
-               followedMedia={followedMedia}
-               isLoading={isLoading}
-               error={error}
-               session={session}
-               onUserClick={handleUserClick}
-               onDataChange={refresh}
-               activeTab={activeTab}
-               setActiveTab={setActiveTab}
-               searchInputRef={searchInputRef}
-               viewMode={viewMode}
-               onViewModeChange={setViewMode}
-            />
-          ) : currentView === 'profile' ? (
-             <div className="pt-16 md:pt-24 min-h-screen px-4 max-w-6xl mx-auto">
-                 {activeProfile && (
-                     <ProfileView 
-                        session={session} 
-                        profileData={activeProfile}
-                        userMedia={profileMedia} 
-                        onBack={() => setCurrentView('home')} 
-                        onUserClick={handleUserClick} 
-                        onDataChange={refresh}
-                     />
-                 )}
-             </div>
-          ) : (
-              <div className="pt-16 md:pt-24 min-h-screen px-4 max-w-4xl mx-auto">
-                  {session && (
-                      <InboxView 
-                          currentUserId={session.user.id}
-                      />
-                  )}
-              </div>
-          )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentView}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full flex-grow flex flex-col"
+            >
+              {currentView === 'home' ? (
+                <HomeView 
+                   photoMedia={photoMedia}
+                   videoMedia={videoMedia}
+                   followedMedia={followedMedia}
+                   isLoading={isLoading}
+                   error={error}
+                   session={session}
+                   onUserClick={handleUserClick}
+                   onDataChange={refresh}
+                   activeTab={activeTab}
+                   setActiveTab={setActiveTab}
+                   searchInputRef={searchInputRef}
+                   viewMode={viewMode}
+                   onViewModeChange={setViewMode}
+                />
+              ) : currentView === 'profile' ? (
+                 <div className="pt-16 md:pt-24 min-h-screen px-4 max-w-6xl mx-auto w-full">
+                     {activeProfile && (
+                         <ProfileView 
+                            session={session} 
+                            profileData={activeProfile}
+                            userMedia={profileMedia} 
+                            onBack={() => setCurrentView('home')} 
+                            onUserClick={handleUserClick} 
+                            onDataChange={refresh}
+                         />
+                     )}
+                 </div>
+              ) : (
+                  <div className="pt-16 md:pt-24 min-h-screen px-4 max-w-4xl mx-auto w-full">
+                      {session && (
+                          <InboxView 
+                              currentUserId={session.user.id}
+                          />
+                      )}
+                  </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
           
           {currentView !== 'home' || viewMode === 'grid' ? <Footer /> : null}
         </main>

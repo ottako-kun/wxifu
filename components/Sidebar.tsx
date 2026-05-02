@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { 
   Home, 
@@ -9,10 +10,6 @@ import {
   Image as ImageIcon, 
   Video as VideoIcon, 
   Hash, 
-  Star,
-  Clock,
-  ChevronRight,
-  Search,
   Plus
 } from 'lucide-react';
 
@@ -64,12 +61,17 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* Mobile Overlay */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] lg:hidden"
-          onClick={onClose}
-        />
-      )}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] lg:hidden"
+            onClick={onClose}
+          />
+        )}
+      </AnimatePresence>
 
       <aside className={cn(
         "fixed top-0 left-0 h-full w-[260px] bg-[#0A0A0A] border-r border-white/5 z-[80] transition-transform duration-300 ease-in-out lg:translate-x-0 pt-20 flex flex-col",
@@ -86,18 +88,29 @@ const Sidebar: React.FC<SidebarProps> = ({
                   key={item.id}
                   onClick={() => handleNavClick(item.id, item.view)}
                   className={cn(
-                    "w-full flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-bold transition-all group",
+                    "w-full flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-bold transition-all group relative overflow-hidden",
                     isActive 
-                      ? "bg-pink-500/10 text-pink-500" 
+                      ? "text-pink-500" 
                       : "text-gray-400 hover:text-white hover:bg-white/5"
                   )}
                 >
+                  {isActive && (
+                    <motion.div 
+                      layoutId="sidebar-active"
+                      className="absolute inset-0 bg-pink-500/10 z-0"
+                    />
+                  )}
                   <item.icon className={cn(
-                    "w-5 h-5",
+                    "w-5 h-5 relative z-10",
                     isActive ? "text-pink-500" : "group-hover:text-white"
                   )} />
-                  <span className="tracking-wide">{item.label}</span>
-                  {isActive && <div className="ml-auto w-1.5 h-1.5 bg-pink-500 rounded-full shadow-[0_0_10px_#ec4899]" />}
+                  <span className="tracking-wide relative z-10">{item.label}</span>
+                  {isActive && (
+                    <motion.div 
+                      layoutId="sidebar-dot"
+                      className="ml-auto w-1.5 h-1.5 bg-pink-500 rounded-full shadow-[0_0_10px_#ec4899] relative z-10" 
+                    />
+                  )}
                 </button>
               );
             })}
@@ -122,13 +135,15 @@ const Sidebar: React.FC<SidebarProps> = ({
           {/* Creator Tools */}
           <div className="mb-8">
             <h3 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4">Creators</h3>
-            <button 
+            <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={onUploadClick}
-                className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl bg-gradient-to-r from-pink-600 to-rose-600 text-white text-sm font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-pink-950/20 active:scale-95"
+                className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl bg-gradient-to-r from-pink-600 to-rose-600 text-white text-sm font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-pink-950/20"
             >
               <Plus className="w-5 h-5" />
               <span>Broadcast</span>
-            </button>
+            </motion.button>
           </div>
         </div>
 

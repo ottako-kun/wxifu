@@ -1,5 +1,6 @@
 
 import React, { useMemo } from 'react';
+import { motion } from 'motion/react';
 import { MediaItem, Session } from '../types';
 import MediaCard from './MediaCard';
 // Fixed: Session import already moved to types.ts above
@@ -14,6 +15,21 @@ interface MediaGridProps {
   isLoading?: boolean; 
   onItemClick?: (index: number) => void;
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, scale: 0.9, y: 20 },
+  show: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }
+};
 
 const MediaGrid: React.FC<MediaGridProps> = ({ items, onUserClick, session, onDataChange, isLoading, onItemClick }) => {
   const { density } = useUI();
@@ -38,18 +54,24 @@ const MediaGrid: React.FC<MediaGridProps> = ({ items, onUserClick, session, onDa
   }
 
   return (
-    <div className={`${columnClass} gap-2 md:gap-4 space-y-2 md:space-y-4 pb-20 transition-all duration-500`}>
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className={`${columnClass} gap-2 md:gap-4 space-y-2 md:space-y-4 pb-20 transition-all duration-500`}
+    >
     {items.map((item, index) => (
-        <MediaCard 
-            key={item.id} 
-            item={item} 
-            onClick={() => onItemClick && onItemClick(index)}
-            onUserClick={onUserClick}
-            session={session || null}
-            onDataChange={onDataChange}
-        />
+        <motion.div key={item.id} variants={itemVariants}>
+          <MediaCard 
+              item={item} 
+              onClick={() => onItemClick && onItemClick(index)}
+              onUserClick={onUserClick}
+              session={session || null}
+              onDataChange={onDataChange}
+          />
+        </motion.div>
     ))}
-    </div>
+    </motion.div>
   );
 };
 

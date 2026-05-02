@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { motion } from 'motion/react';
 import HomeIcon from './icons/HomeIcon';
 import SearchIcon from './icons/SearchIcon';
 import UploadIcon from './icons/UploadIcon';
@@ -44,7 +45,11 @@ const BottomNav: React.FC<BottomNavProps> = ({
           </div>
           <span className="text-[8px] uppercase tracking-[0.2em] font-black -mt-1">Home</span>
           {currentView === 'home' && (
-              <div className="absolute bottom-1 w-6 h-0.5 bg-pink-500 shadow-[0_0_10px_#ec4899] rounded-full animate-fade-in"></div>
+              <motion.div 
+                layoutId="nav-indicator"
+                className="absolute bottom-1 w-6 h-0.5 bg-pink-500 shadow-[0_0_10px_#ec4899] rounded-full"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
           )}
         </button>
 
@@ -62,13 +67,15 @@ const BottomNav: React.FC<BottomNavProps> = ({
 
         {/* Upload - Immersion Center */}
         <div className="relative -top-4">
-           <button 
+           <motion.button 
+             whileHover={{ scale: 1.1 }}
+             whileTap={{ scale: 0.9 }}
              onClick={onUploadClick}
              title="Upload Artwork"
-             className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-pink-600 to-purple-600 shadow-[0_0_25px_rgba(236,72,153,0.5)] border-2 border-[#020202] text-white transform active:scale-90 transition-all duration-200"
+             className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-pink-600 to-purple-600 shadow-[0_0_25px_rgba(236,72,153,0.5)] border-2 border-[#020202] text-white transition-all duration-200"
            >
              <UploadIcon className="w-7 h-7 stroke-[2.5]" />
-           </button>
+           </motion.button>
         </div>
 
         {/* Inbox */}
@@ -82,7 +89,11 @@ const BottomNav: React.FC<BottomNavProps> = ({
            </div>
           <span className="text-[8px] uppercase tracking-[0.2em] font-black -mt-1">Inbox</span>
           {currentView === 'inbox' && (
-              <div className="absolute bottom-1 w-6 h-0.5 bg-pink-500 shadow-[0_0_10px_#ec4899] rounded-full animate-fade-in"></div>
+              <motion.div 
+                layoutId="nav-indicator"
+                className="absolute bottom-1 w-6 h-0.5 bg-pink-500 shadow-[0_0_10px_#ec4899] rounded-full"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
           )}
         </button>
 
@@ -94,7 +105,8 @@ const BottomNav: React.FC<BottomNavProps> = ({
         >
           <div className="p-2">
             {session?.user.user_metadata.avatar_url ? (
-              <img 
+               <motion.img 
+                animate={currentView === 'profile' ? { scale: 1.2 } : { scale: 1 }}
                 src={session.user.user_metadata.avatar_url} 
                 alt="Profile" 
                 className={`w-6 h-6 rounded-full border-2 transition-all ${currentView === 'profile' ? 'border-pink-500 shadow-[0_0_10px_#ec4899]' : 'border-gray-700'}`}
@@ -107,7 +119,11 @@ const BottomNav: React.FC<BottomNavProps> = ({
           </div>
           <span className="text-[8px] uppercase tracking-[0.2em] font-black -mt-1">Profile</span>
           {currentView === 'profile' && (
-              <div className="absolute bottom-1 w-6 h-0.5 bg-pink-500 shadow-[0_0_10px_#ec4899] rounded-full animate-fade-in"></div>
+              <motion.div 
+                layoutId="nav-indicator"
+                className="absolute bottom-1 w-6 h-0.5 bg-pink-500 shadow-[0_0_10px_#ec4899] rounded-full"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
           )}
         </button>
 
