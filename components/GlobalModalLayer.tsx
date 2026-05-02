@@ -5,11 +5,8 @@ import { APP_CONFIG } from '../gallery-data';
 import UploadButton from './UploadButton';
 import UploadModal from './UploadModal';
 import ChatWindow from './ChatWindow';
-import CoinShopModal from './CoinShopModal';
-import DailyRewardModal from './DailyRewardModal';
 import LegalModal from './LegalModal';
 import { useUI } from '../context/UIContext';
-import { useWallet } from '../context/WalletContext';
 
 interface GlobalModalLayerProps {
   session: Session | null;
@@ -30,18 +27,9 @@ const GlobalModalLayer: React.FC<GlobalModalLayerProps> = ({
   onUploadSubmit,
 }) => {
   const { 
-    isShopOpen, closeShop,
     activeChatUser, closeChat,
-    isDailyRewardOpen, closeDailyReward,
     activeLegalModal, closeLegal
   } = useUI();
-
-  const { claimDailyReward } = useWallet();
-
-  const handleClaimReward = async () => {
-      await claimDailyReward();
-      closeDailyReward();
-  };
 
   return (
     <>
@@ -68,16 +56,6 @@ const GlobalModalLayer: React.FC<GlobalModalLayerProps> = ({
           />
       )}
       
-      {/* Coin Shop Modal */}
-      {isShopOpen && (
-          <CoinShopModal onClose={closeShop} />
-      )}
-      
-      {/* Daily Reward Modal */}
-      {isDailyRewardOpen && (
-          <DailyRewardModal onClaim={handleClaimReward} />
-      )}
-
       {/* Legal Modals */}
       {activeLegalModal === 'privacy' && (
         <LegalModal title="Privacy Policy" onClose={closeLegal}>

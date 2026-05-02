@@ -3,7 +3,6 @@ import React from 'react';
 import { UserProfileData, Session } from '../types';
 // Fixed: Import Session from local types
 import Avatar from './Avatar';
-import GiftIcon from './icons/GiftIcon';
 import ChatIcon from './icons/ChatIcon';
 
 interface ProfileHeaderProps {
@@ -19,7 +18,6 @@ interface ProfileHeaderProps {
     viewedUserFrame: string;
     onEditClick: () => void;
     onFollowToggle: () => void;
-    onTipClick: () => void;
     onMessageClick?: (user: UserProfileData) => void;
 }
 
@@ -36,7 +34,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     viewedUserFrame,
     onEditClick,
     onFollowToggle,
-    onTipClick,
     onMessageClick
 }) => {
     return (
@@ -81,15 +78,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                     {loadingSocial ? '...' : isFollowing ? 'Following' : 'Follow'}
                                 </button>
                                 
-                                <button
-                                     onClick={onTipClick}
-                                     className="px-4 py-2 bg-yellow-900/30 border border-yellow-500 text-yellow-400 rounded-full hover:bg-yellow-800/50 transition-all shadow-[0_0_10px_rgba(234,179,8,0.2)]"
-                                     aria-label="Send Tip"
-                                     title="Send Gift"
-                                >
-                                     <GiftIcon className="w-4 h-4" />
-                                </button>
-
                                 {isMutual && onMessageClick && (
                                     <button
                                         onClick={() => onMessageClick(profileData)}

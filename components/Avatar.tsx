@@ -2,32 +2,27 @@
 import React from 'react';
 
 // Frame Definitions
-export const FRAMES: Record<string, { css: string; label: string; price: number }> = {
-    'none': { css: '', label: 'Default', price: 0 },
+export const FRAMES: Record<string, { css: string; label: string }> = {
+    'none': { css: '', label: 'Default' },
     'neon-pink': { 
         css: 'ring-2 ring-pink-500 shadow-[0_0_10px_#ec4899]', 
-        label: 'Neon Pink', 
-        price: 100 
+        label: 'Neon Pink'
     },
     'cyber-cyan': { 
         css: 'ring-2 ring-cyan-500 shadow-[0_0_10px_#06b6d4,inset_0_0_5px_#06b6d4]', 
-        label: 'Cyber Cyan', 
-        price: 100 
+        label: 'Cyber Cyan'
     },
     'gold-rush': { 
         css: 'ring-4 ring-yellow-500 shadow-[0_0_15px_#eab308] border-2 border-yellow-200', 
-        label: 'Gold Rush', 
-        price: 500 
+        label: 'Gold Rush'
     },
     'glitch': { 
         css: 'ring-2 ring-white shadow-[2px_0_0_#ef4444,-2px_0_0_#3b82f6]', 
-        label: 'Glitch', 
-        price: 300 
+        label: 'Glitch'
     },
     'royal': {
         css: 'ring-4 ring-purple-600 shadow-[0_0_20px_#9333ea]',
-        label: 'Royal Void',
-        price: 1000
+        label: 'Royal Void'
     }
 };
 

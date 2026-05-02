@@ -1,8 +1,9 @@
 {
   "name": "wxifu",
-  "description": "Premium TikTok-inspired immersive gallery for high-resolution anime artwork and videos.",
+  "description": "Immersive, content-first masonry gallery for elite anime artwork and high-fidelity motion visuals. Optimized for discovery and aesthetic browsing.",
   "requestFramePermissions": [
     "camera",
     "microphone"
-  ]
+  ],
+  "majorCapabilities": []
 }

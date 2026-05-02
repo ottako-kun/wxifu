@@ -9,7 +9,9 @@ import AgeVerificationModal from './components/AgeVerificationModal';
 import GlobalModalLayer from './components/GlobalModalLayer';
 import { MediaType } from './types';
 import { useMediaUpload } from './hooks/useMediaUpload';
+import { cn } from './lib/utils';
 import HomeView from './components/HomeView';
+import Sidebar from './components/Sidebar';
 
 // Notification System
 import { ToastProvider } from './context/ToastContext';
@@ -20,11 +22,8 @@ import { useToast } from './context/ToastContext';
 // Confirmation System
 import { ConfirmationProvider } from './context/ConfirmationContext';
 
-// Wallet System
-import { WalletProvider, useWallet } from './context/WalletContext';
-
 // UI State System
-import { UIProvider, useUI } from './context/UIContext';
+import { UIProvider } from './context/UIContext';
 
 // App Logic Hooks
 import { useAppNavigation } from './hooks/useAppNavigation';
@@ -49,11 +48,9 @@ const AppContent: React.FC = () => {
       refresh
   } = useAppNavigation();
 
-  const { openDailyReward } = useUI();
-  const { checkIfRewardAvailable } = useWallet();
-  
   // Layout State: Grid vs TikTok-style Feed
   const [viewMode, setViewMode] = useState<'grid' | 'feed'>('grid');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const { 
     isModalOpen, 
@@ -81,17 +78,6 @@ const AppContent: React.FC = () => {
       localStorage.setItem('age-verified', 'true');
       setIsAgeVerified(true);
   };
-
-  useEffect(() => {
-      if (session && isAgeVerified) {
-          const timer = setTimeout(() => {
-              if (checkIfRewardAvailable()) {
-                  openDailyReward();
-              }
-          }, 1500);
-          return () => clearTimeout(timer);
-      }
-  }, [session, isAgeVerified, checkIfRewardAvailable, openDailyReward]);
 
   const onUploadSubmitWrapper = useCallback(async (data: any) => {
       const type = await handleUploadSubmit(data);
@@ -121,50 +107,66 @@ const AppContent: React.FC = () => {
       <Header 
         session={session} 
         onNavigate={handleNavigate}
+        onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
       />
       
-      <div className={`flex-grow ${viewMode === 'feed' && currentView === 'home' ? 'pt-0' : 'pt-0'}`}>
-        {currentView === 'home' ? (
-          <HomeView 
-             photoMedia={photoMedia}
-             videoMedia={videoMedia}
-             followedMedia={followedMedia}
-             isLoading={isLoading}
-             error={error}
-             session={session}
-             onUserClick={handleUserClick}
-             onDataChange={refresh}
-             activeTab={activeTab}
-             setActiveTab={setActiveTab}
-             searchInputRef={searchInputRef}
-             viewMode={viewMode}
-             onViewModeChange={setViewMode}
-          />
-        ) : currentView === 'profile' ? (
-           <div className="pt-16 md:pt-24 min-h-screen">
-               {activeProfile && (
-                   <ProfileView 
-                      session={session} 
-                      profileData={activeProfile}
-                      userMedia={profileMedia} 
-                      onBack={() => setCurrentView('home')} 
-                      onUserClick={handleUserClick} 
-                      onDataChange={refresh}
-                   />
-               )}
-           </div>
-        ) : (
-            <div className="pt-16 md:pt-24 min-h-screen">
-                {session && (
-                    <InboxView 
-                        currentUserId={session.user.id}
-                    />
-                )}
-            </div>
-        )}
+      <div className="flex flex-1 pt-0 overflow-hidden">
+        <Sidebar 
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          currentView={currentView}
+          onNavigate={handleNavigate}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          onUploadClick={handleUploadClick}
+        />
+
+        <main className={cn(
+            "flex-grow transition-all duration-300 lg:pl-[260px] pt-14 md:pt-16",
+            viewMode === 'feed' && currentView === 'home' ? "pt-0 md:pt-0" : ""
+        )}>
+          {currentView === 'home' ? (
+            <HomeView 
+               photoMedia={photoMedia}
+               videoMedia={videoMedia}
+               followedMedia={followedMedia}
+               isLoading={isLoading}
+               error={error}
+               session={session}
+               onUserClick={handleUserClick}
+               onDataChange={refresh}
+               activeTab={activeTab}
+               setActiveTab={setActiveTab}
+               searchInputRef={searchInputRef}
+               viewMode={viewMode}
+               onViewModeChange={setViewMode}
+            />
+          ) : currentView === 'profile' ? (
+             <div className="pt-16 md:pt-24 min-h-screen px-4 max-w-6xl mx-auto">
+                 {activeProfile && (
+                     <ProfileView 
+                        session={session} 
+                        profileData={activeProfile}
+                        userMedia={profileMedia} 
+                        onBack={() => setCurrentView('home')} 
+                        onUserClick={handleUserClick} 
+                        onDataChange={refresh}
+                     />
+                 )}
+             </div>
+          ) : (
+              <div className="pt-16 md:pt-24 min-h-screen px-4 max-w-4xl mx-auto">
+                  {session && (
+                      <InboxView 
+                          currentUserId={session.user.id}
+                      />
+                  )}
+              </div>
+          )}
+          
+          {currentView !== 'home' || viewMode === 'grid' ? <Footer /> : null}
+        </main>
       </div>
-      
-      {currentView !== 'home' || viewMode === 'grid' ? <Footer /> : null}
       
       <BottomNav 
         currentView={currentView}
@@ -189,13 +191,11 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ToastProvider>
-      <WalletProvider>
-        <ConfirmationProvider>
-          <UIProvider>
-            <AppContent />
-          </UIProvider>
-        </ConfirmationProvider>
-      </WalletProvider>
+      <ConfirmationProvider>
+        <UIProvider>
+          <AppContent />
+        </UIProvider>
+      </ConfirmationProvider>
     </ToastProvider>
   );
 };

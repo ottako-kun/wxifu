@@ -4,13 +4,10 @@ import { MediaItem, MediaType, Session } from '../types';
 import HeartIcon from './icons/HeartIcon';
 import ChatIcon from './icons/ChatIcon';
 import ShareIcon from './icons/ShareIcon';
-import GiftIcon from './icons/GiftIcon';
 import LockIcon from './icons/LockIcon';
 import PlayIcon from './icons/PlayIcon';
 import SharePopover from './SharePopover';
-import TipModal from './TipModal';
 import { useMediaLikes } from '../hooks/useMediaLikes';
-import { useWallet } from '../context/WalletContext';
 import { useFollow } from '../hooks/useFollow';
 import LoadingSpinner from './icons/LoadingSpinner';
 import { useDoubleTap } from '../hooks/useDoubleTap';
@@ -28,7 +25,6 @@ interface FeedCardProps {
 
 const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemClick, onDataChange }) => {
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
-  const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [showPulse, setShowPulse] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -40,12 +36,11 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   const cardRef = useRef<HTMLDivElement>(null);
 
   const { isLiked, likeCount, toggleLike } = useMediaLikes(item.id, session?.user.id, item.id.startsWith('static'));
-  const { isUnlocked: checkIsUnlocked, unlockContent, isLoading: isWalletLoading } = useWallet();
   const { isFollowing, toggleFollow } = useFollow(session?.user.id, item.user_id || '');
   const { isGlobalMuted, toggleGlobalMute } = useUI();
 
   const isOwner = session?.user.id === item.user_id;
-  const isUnlocked = isOwner || !item.is_premium || checkIsUnlocked(item.id);
+  const isUnlocked = true; // Simplified: everything is unlocked
   const isDriveVideo = item.type === MediaType.Video && isGoogleDriveLink(item.videoSrc);
 
   useEffect(() => {
@@ -114,12 +109,6 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
       }
   };
 
-  const handleUnlock = async (e: React.MouseEvent) => {
-      e.stopPropagation();
-      const success = await unlockContent(item.id, item.price || 0, item.user_id);
-      if (success && onDataChange) onDataChange();
-  };
-
   const handleMuteToggle = (e: React.MouseEvent) => {
       e.stopPropagation();
       toggleGlobalMute();
@@ -150,83 +139,64 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
 
             {!isImageLoaded && item.type === MediaType.Photo && <div className="absolute inset-0 animate-pulse-bg" />}
 
-            {!isUnlocked ? (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60 backdrop-blur-3xl pointer-events-auto">
-                    <div className="relative z-20 flex flex-col items-center text-center p-10 bg-black/50 rounded-[3rem] border border-white/10 shadow-2xl backdrop-blur-2xl">
-                        <div className="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center mb-6 border border-yellow-500/20 shadow-[0_0_20px_rgba(234,179,8,0.2)]">
-                            <LockIcon className="w-10 h-10 text-yellow-500" />
+            {item.type === MediaType.Video ? (
+                <div className="w-full h-full relative group/player">
+                    {isDriveVideo ? (
+                        <div className="w-full h-full relative">
+                            {!iframeLoaded && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-20">
+                                    <LoadingSpinner className="w-12 h-12 text-pink-500 mb-4" />
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] animate-pulse font-orbitron">Establishing Signal</p>
+                                </div>
+                            )}
+                            <iframe 
+                                src={item.videoSrc}
+                                className="w-full h-full border-0 z-10"
+                                allow="autoplay"
+                                onLoad={() => setIframeLoaded(true)}
+                            />
                         </div>
-                        <h3 className="text-white font-black text-2xl mb-2 font-orbitron tracking-tight uppercase">Neural Lock</h3>
-                        <p className="text-gray-400 text-sm mb-10 leading-relaxed max-w-[240px]">This creation by <span className="text-pink-400 font-bold">@{item.author}</span> requires authorization.</p>
-                        <button 
-                            onClick={handleUnlock}
-                            disabled={isWalletLoading}
-                            className="w-full py-5 bg-gradient-to-r from-yellow-600 to-yellow-400 hover:from-yellow-500 hover:to-yellow-300 text-black font-black rounded-[1.5rem] shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 uppercase text-[11px] tracking-widest font-orbitron"
-                        >
-                            {isWalletLoading ? <LoadingSpinner className="w-5 h-5 text-black"/> : `${item.price || 5} Coins to View`}
-                        </button>
-                    </div>
+                    ) : (
+                        <>
+                            <video 
+                                ref={videoRef}
+                                src={item.videoSrc}
+                                loop
+                                muted={isGlobalMuted}
+                                playsInline
+                                poster={item.src}
+                                onTimeUpdate={handleTimeUpdate}
+                                onPlay={() => setIsPlaying(true)}
+                                onPause={() => setIsPlaying(false)}
+                                className="w-full h-full object-contain z-10"
+                            />
+                            {!isPlaying && (
+                                <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/10 pointer-events-none transition-opacity duration-300">
+                                    <div className="p-8 bg-black/40 backdrop-blur-3xl rounded-full border border-white/10 shadow-2xl">
+                                        <PlayIcon className="w-12 h-12 text-white" />
+                                    </div>
+                                </div>
+                            )}
+                            <button 
+                                onClick={handleMuteToggle}
+                                className="absolute top-6 right-6 z-30 p-4 bg-black/30 backdrop-blur-3xl rounded-2xl border border-white/5 text-white hover:bg-black/60 transition-all active:scale-90"
+                            >
+                                {isGlobalMuted ? (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path strokeLinecap="round" d="M15.54 8.46l5.66 5.66m0-5.66l-5.66 5.66"/></svg>
+                                ) : (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
+                                )}
+                            </button>
+                        </>
+                    )}
                 </div>
             ) : (
-                item.type === MediaType.Video ? (
-                    <div className="w-full h-full relative group/player">
-                        {isDriveVideo ? (
-                            <div className="w-full h-full relative">
-                                {!iframeLoaded && (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-20">
-                                        <LoadingSpinner className="w-12 h-12 text-pink-500 mb-4" />
-                                        <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] animate-pulse font-orbitron">Establishing Signal</p>
-                                    </div>
-                                )}
-                                <iframe 
-                                    src={item.videoSrc}
-                                    className="w-full h-full border-0 z-10"
-                                    allow="autoplay"
-                                    onLoad={() => setIframeLoaded(true)}
-                                />
-                            </div>
-                        ) : (
-                            <>
-                                <video 
-                                    ref={videoRef}
-                                    src={item.videoSrc}
-                                    loop
-                                    muted={isGlobalMuted}
-                                    playsInline
-                                    poster={item.src}
-                                    onTimeUpdate={handleTimeUpdate}
-                                    onPlay={() => setIsPlaying(true)}
-                                    onPause={() => setIsPlaying(false)}
-                                    className="w-full h-full object-contain z-10"
-                                />
-                                {!isPlaying && (
-                                    <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/10 pointer-events-none transition-opacity duration-300">
-                                        <div className="p-8 bg-black/40 backdrop-blur-3xl rounded-full border border-white/10 shadow-2xl">
-                                            <PlayIcon className="w-12 h-12 text-white" />
-                                        </div>
-                                    </div>
-                                )}
-                                <button 
-                                    onClick={handleMuteToggle}
-                                    className="absolute top-6 right-6 z-30 p-4 bg-black/30 backdrop-blur-3xl rounded-2xl border border-white/5 text-white hover:bg-black/60 transition-all active:scale-90"
-                                >
-                                    {isGlobalMuted ? (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path strokeLinecap="round" d="M15.54 8.46l5.66 5.66m0-5.66l-5.66 5.66"/></svg>
-                                    ) : (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
-                                    )}
-                                </button>
-                            </>
-                        )}
-                    </div>
-                ) : (
-                    <img 
-                      src={item.src} 
-                      alt={item.description} 
-                      className="w-full h-full object-contain z-10 transition-opacity duration-700" 
-                      onLoad={() => setIsImageLoaded(true)}
-                    />
-                )
+                <img 
+                  src={item.src} 
+                  alt={item.description} 
+                  className="w-full h-full object-contain z-10 transition-opacity duration-700" 
+                  onLoad={() => setIsImageLoaded(true)}
+                />
             )}
 
             {/* Interaction Bar - Enhanced hit targets for mobile */}
@@ -275,17 +245,6 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
 
                 <div className="flex flex-col items-center">
                     <button 
-                      onClick={(e) => { e.stopPropagation(); setIsTipModalOpen(true); }} 
-                      className="p-4 text-yellow-500 transition-all active:scale-50"
-                      aria-label="Gift"
-                    >
-                        <GiftIcon className="w-8 h-8 drop-shadow-2xl" />
-                    </button>
-                    <span className="text-[10px] font-black text-white -mt-2 drop-shadow-xl font-orbitron">Gift</span>
-                </div>
-
-                <div className="flex flex-col items-center">
-                    <button 
                       onClick={handleShareClick} 
                       className="p-4 text-white transition-all active:scale-50"
                       aria-label="Share"
@@ -329,7 +288,6 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
         </div>
 
         {shareAnchorEl && <SharePopover item={item} onClose={() => setShareAnchorEl(null)} anchorEl={shareAnchorEl} />}
-        {isTipModalOpen && <TipModal recipientId={item.user_id || ''} recipientName={item.author || ''} onClose={() => setIsTipModalOpen(false)} />}
     </div>
   );
 };

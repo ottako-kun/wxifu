@@ -8,7 +8,6 @@ import PencilIcon from './icons/PencilIcon';
 import TrashIcon from './icons/TrashIcon';
 import ShareIcon from './icons/ShareIcon';
 import FlagIcon from './icons/FlagIcon';
-import LockIcon from './icons/LockIcon';
 import CommentSection from './CommentSection';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmationContext';
@@ -122,7 +121,6 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
                     {relatedItems.map(rel => (
                         <div key={rel.id} onClick={() => onRelatedClick(rel.id)} className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-pink-500 transition-all relative" title="View related content">
                             <img src={rel.src} className="w-full h-full object-cover" alt="Related" />
-                            {rel.is_premium && <div className="absolute top-1 right-1 bg-black/60 p-0.5 rounded-full"><LockIcon className="w-2.5 h-2.5 text-yellow-500" /></div>}
                         </div>
                     ))}
                 </div>

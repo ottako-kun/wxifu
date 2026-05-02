@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import Hero from './Hero';
+import { cn } from '../lib/utils';
 import MediaGrid from './MediaGrid';
 import FeedView from './FeedView';
 import SearchIcon from './icons/SearchIcon';
@@ -14,6 +14,7 @@ import PullToRefresh from './PullToRefresh';
 import GalleryTabs from './GalleryTabs';
 import { useScrollDirection } from '../hooks/useScrollDirection';
 import MediaDetailModal from './MediaDetailModal';
+import { useUI } from '../context/UIContext';
 
 interface HomeViewProps {
   photoMedia: MediaItem[];
@@ -50,6 +51,7 @@ const HomeView: React.FC<HomeViewProps> = ({
   const scrollDirection = useScrollDirection();
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const { searchQuery, setSearchQuery } = useUI();
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 1000);
@@ -72,7 +74,7 @@ const HomeView: React.FC<HomeViewProps> = ({
   }
 
   const {
-    searchQuery, setSearchQuery,
+    searchQuery: localSearchQuery, setSearchQuery: setLocalSearchQuery,
     sortOrder, toggleSort,
     selectedCategory, setSelectedCategory,
     selectedTags, toggleTag,
@@ -83,6 +85,11 @@ const HomeView: React.FC<HomeViewProps> = ({
     sortedItems,
     visibleItems,
   } = useGalleryFilters(itemsToDisplay);
+
+  // Sync global search with local filters
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery, setLocalSearchQuery]);
 
   useEffect(() => {
     // Standard social experience defaults:
@@ -127,19 +134,32 @@ const HomeView: React.FC<HomeViewProps> = ({
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <Hero />
-      <main className={`container mx-auto py-6 min-h-screen relative ${viewMode === 'feed' ? 'max-w-none px-0' : 'px-4'}`}>
+      <main className={cn(
+        "py-4 min-h-screen relative w-full",
+        viewMode === 'feed' ? 'max-w-none px-0' : 'px-4 lg:px-6'
+      )}>
         
         <div 
-            className={`sticky z-40 py-4 -mx-4 px-4 bg-gradient-to-b from-[#020202] via-[#020202]/95 to-transparent backdrop-blur-2xl transition-[top] duration-500 ease-in-out border-b border-white/5`}
+            className={`sticky z-40 py-2 bg-gradient-to-b from-[#020202] via-[#020202]/95 to-transparent backdrop-blur-2xl transition-[top] duration-500 ease-in-out`}
             style={{ top: scrollDirection === 'down' ? '0px' : '56px' }}
         >
-             <GalleryTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+             {/* Trending Tags Row */}
+             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 px-2">
+                 {['Trending', 'New', 'AMVs', 'Cyberpunk', 'UHD', 'Cosplay'].map(tag => (
+                     <button 
+                         key={tag}
+                         className="px-4 py-1.5 rounded-full bg-white/5 border border-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all whitespace-nowrap"
+                     >
+                         {tag}
+                     </button>
+                 ))}
+             </div>
+
              {(activeTab !== 'following' || session) && (
                 <GalleryControls 
                     galleryName={galleryName}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
+                    searchQuery={localSearchQuery}
+                    setSearchQuery={setLocalSearchQuery}
                     searchInputRef={searchInputRef}
                     sortOrder={sortOrder}
                     toggleSort={toggleSort}
@@ -149,7 +169,10 @@ const HomeView: React.FC<HomeViewProps> = ({
                     selectedTags={selectedTags}
                     toggleTag={toggleTag}
                     availableTags={availableTags}
-                    clearFilters={clearFilters}
+                    clearFilters={() => {
+                        clearFilters();
+                        setSearchQuery('');
+                    }}
                     viewMode={viewMode}
                     onViewModeChange={onViewModeChange}
                 />

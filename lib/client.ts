@@ -92,8 +92,6 @@ export const supabase: any = {
                 name: mockUser.user_metadata.full_name,
                 avatar: mockUser.user_metadata.avatar_url,
                 bio: '',
-                coins: 100,
-                frame: 'none',
                 updated_at: new Date().toISOString()
             });
 

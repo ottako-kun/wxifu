@@ -10,10 +10,8 @@ import GridIcon from './icons/GridIcon';
 import ListIcon from './icons/ListIcon';
 import HeartIcon from './icons/HeartIcon';
 import EditProfileModal from './EditProfileModal';
-import TipModal from './TipModal';
 import MediaDetailModal from './MediaDetailModal';
 import { useProfileStats } from '../hooks/useProfileStats';
-import { useWallet } from '../context/WalletContext';
 import { useFollow } from '../hooks/useFollow';
 import { useUI } from '../context/UIContext';
 import ProfileHeader from './ProfileHeader';
@@ -40,7 +38,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   const isOwner = session?.user.id === profileData.id;
   
   const [isEditing, setIsEditing] = useState(false);
-  const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'feed'>('grid');
   const [activeSubTab, setActiveSubTab] = useState<'posts' | 'liked'>('posts');
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
@@ -52,7 +49,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   const { openChat } = useUI();
   
   // Frame State
-  const { activeFrame } = useWallet(); // Current user's frame
   const [viewedUserFrame, setViewedUserFrame] = useState('none');
   
   // Stats Logic (Extracted)
@@ -70,12 +66,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   // Sync state if profileData changes (e.g. switching viewed profile)
   useEffect(() => {
       if (isOwner) {
-          setViewedUserFrame(activeFrame);
+          setViewedUserFrame('none');
       } else {
           const stored = localStorage.getItem(`frame_${profileData.id}`);
           setViewedUserFrame(stored || 'none');
       }
-  }, [profileData, isOwner, activeFrame]);
+  }, [profileData, isOwner]);
 
   const handleFollowToggleWrapper = async () => {
       if (await toggleFollow(profileData.name)) {
@@ -114,7 +110,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
           viewedUserFrame={viewedUserFrame}
           onEditClick={() => setIsEditing(true)}
           onFollowToggle={handleFollowToggleWrapper}
-          onTipClick={() => setIsTipModalOpen(true)}
           onMessageClick={openChat}
       />
 
@@ -212,15 +207,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
                 window.location.reload();
             }}
         />
-      )}
-      
-      {/* Tip Modal */}
-      {isTipModalOpen && (
-          <TipModal 
-            recipientId={profileData.id}
-            recipientName={profileData.name}
-            onClose={() => setIsTipModalOpen(false)}
-          />
       )}
     </div>
   );

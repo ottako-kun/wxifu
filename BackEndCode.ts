@@ -16,13 +16,12 @@ const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheets = {
-    'profiles': ['id', 'name', 'avatar', 'bio', 'coins', 'frame', 'updated_at'],
-    'media': ['id', 'created_at', 'user_id', 'type', 'src', 'videoSrc', 'description', 'category', 'tags', 'is_premium', 'price', 'author', 'author_avatar'],
+    'profiles': ['id', 'name', 'avatar', 'bio', 'updated_at'],
+    'media': ['id', 'created_at', 'user_id', 'type', 'src', 'videoSrc', 'description', 'category', 'tags', 'author', 'author_avatar'],
     'likes': ['id', 'media_id', 'user_id', 'created_at'],
     'comments': ['id', 'media_id', 'user_id', 'content', 'author_name', 'author_avatar', 'created_at'],
     'follows': ['id', 'follower_id', 'following_id', 'created_at'],
-    'messages': ['id', 'sender_id', 'receiver_id', 'content', 'created_at', 'is_read'],
-    'unlocked_media': ['id', 'user_id', 'media_id', 'created_at']
+    'messages': ['id', 'sender_id', 'receiver_id', 'content', 'created_at', 'is_read']
   };
 
   for (const [name, headers] of Object.entries(sheets)) {
@@ -137,15 +136,6 @@ function doPost(e) {
         response.data = appendRow('messages', payload);
         response.success = true;
         break;
-      case 'GET_UNLOCKED':
-        response.data = getRows('unlocked_media').filter(r => r.user_id === payload.user_id);
-        response.success = true;
-        break;
-      case 'UNLOCK_MEDIA':
-        const unlock = { id: Utilities.getUuid(), ...payload, created_at: new Date().toISOString() };
-        appendRow('unlocked_media', unlock);
-        response.success = true;
-        break;
       default:
         throw new Error("Unknown command: " + cmd);
     }
@@ -171,8 +161,7 @@ function getRows(sheetName) {
       if (h === 'tags' && typeof val === 'string' && val.startsWith('[')) {
         try { val = JSON.parse(val); } catch(e) {}
       }
-      if (h === 'coins' || h === 'price') val = Number(val) || 0;
-      if (h === 'is_premium' || h === 'is_read') val = (val === true || val === "TRUE" || val === 1);
+      if (h === 'is_read') val = (val === true || val === "TRUE" || val === 1);
       obj[h] = val;
     });
     return obj;

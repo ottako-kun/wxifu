@@ -25,7 +25,7 @@ export const useMediaUpload = ({ session, onUploadSuccess }: UseMediaUploadProps
 
   const closeModal = () => setIsModalOpen(false);
 
-  const handleUploadSubmit = async (data: { type: MediaType; src: string; description: string; category: string; tags: string[]; is_premium: boolean; price: number }) => {
+  const handleUploadSubmit = async (data: { type: MediaType; src: string; description: string; category: string; tags: string[] }) => {
     if (!session) return;
     setIsUploading(true);
     try {
@@ -37,9 +37,7 @@ export const useMediaUpload = ({ session, onUploadSuccess }: UseMediaUploadProps
             tags: data.tags,
             user_id: session.user.id,
             author: session.user.user_metadata.full_name || session.user.email?.split('@')[0],
-            author_avatar: session.user.user_metadata.avatar_url,
-            is_premium: data.is_premium,
-            price: data.price
+            author_avatar: session.user.user_metadata.avatar_url
         });
 
         if (error) {

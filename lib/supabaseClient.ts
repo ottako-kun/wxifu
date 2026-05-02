@@ -11,4 +11,3 @@ export { supabase } from './client';
 export * from './modules/auth';
 export * from './modules/media';
 export * from './modules/social';
-export * from './modules/economy';

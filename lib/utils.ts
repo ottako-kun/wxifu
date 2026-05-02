@@ -1,4 +1,11 @@
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 import { MediaItem, MediaType } from '../types';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
 import { getDriveId, getGoogleDriveImageUrl, getGoogleDriveVideoPreviewUrl, isGoogleDriveLink } from './googleDrive';
 
 // Default thumbnail for videos if none is provided
@@ -79,8 +86,6 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
     tags: item.tags || [],
     user_id: userId, 
     author: authorName,
-    author_avatar: profileAvatar || item.author_avatar,
-    is_premium: item.is_premium || false,
-    price: item.price || 0
+    author_avatar: profileAvatar || item.author_avatar
   };
 };

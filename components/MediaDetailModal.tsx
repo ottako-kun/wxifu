@@ -10,7 +10,6 @@ import { useToast } from '../context/ToastContext';
 import MediaSidebar from './MediaSidebar';
 import MediaViewer from './MediaViewer';
 import { useRelatedMedia } from '../hooks/useRelatedMedia';
-import { useWallet } from '../context/WalletContext';
 import { useMediaLikes } from '../hooks/useMediaLikes';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import { useSwipe } from '../hooks/useSwipe';
@@ -18,8 +17,6 @@ import { useDoubleTap } from '../hooks/useDoubleTap';
 import HeartIcon from './icons/HeartIcon';
 import ChatIcon from './icons/ChatIcon';
 import ShareIcon from './icons/ShareIcon';
-import GiftIcon from './icons/GiftIcon';
-import TipModal from './TipModal';
 import FlagIcon from './icons/FlagIcon';
 import Avatar from './Avatar';
 
@@ -42,18 +39,14 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
   // HUD state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [isTipModalOpen, setIsTipModalOpen] = useState(false);
 
   const item = items[currentIndex] || items[0];
   const isOwner = session?.user.id === item?.user_id;
   
   const toast = useToast();
   const relatedItems = useRelatedMedia(item, items);
-  const { unlockContent, isUnlocked: checkIsUnlocked, isLoading: isWalletLoading } = useWallet();
   const { isLiked, likeCount, toggleLike } = useMediaLikes(item?.id || '', session?.user.id, (item?.id || '').startsWith('static'));
   
-  const isUnlocked = isOwner || !item?.is_premium || checkIsUnlocked(item?.id || '');
-
   const triggerChangeEffect = useCallback(() => {
     setIsChanging(true);
     setTimeout(() => setIsChanging(false), 400); // Slightly longer for the neural effect
@@ -160,9 +153,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
             <div className="w-full h-full max-w-7xl mx-auto flex items-center justify-center relative">
                 <MediaViewer 
                     item={item} 
-                    isUnlocked={isUnlocked} 
-                    onUnlockClick={() => unlockContent(item.id, item.price || 0, item.user_id)} 
-                    isUnlocking={isWalletLoading} 
                     onMediaEnded={goToNext}
                     onZoomChange={setIsZoomed} 
                 />
@@ -189,16 +179,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
                     <ChatIcon className="w-7 h-7 md:w-8 md:h-8" />
                 </button>
                 <span className="text-[10px] font-black text-white/70 mt-1 uppercase tracking-tight font-orbitron">Info</span>
-            </div>
-
-            <div className="flex flex-col items-center group">
-                <button 
-                    onClick={(e) => { e.stopPropagation(); setIsTipModalOpen(true); }}
-                    className="p-4 md:p-5 rounded-[2rem] bg-black/40 backdrop-blur-3xl border border-white/10 text-yellow-500 transition-all active:scale-75 shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:border-yellow-500/30"
-                >
-                    <GiftIcon className="w-7 h-7 md:w-8 md:h-8" />
-                </button>
-                <span className="text-[10px] font-black text-white/70 mt-1 uppercase tracking-tight font-orbitron">Gift</span>
             </div>
 
             <div className="flex flex-col items-center group">
@@ -283,7 +263,6 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
 
         {shareAnchorEl && <SharePopover item={item} anchorEl={shareAnchorEl} onClose={() => setShareAnchorEl(null)} />}
         {isReportModalOpen && <ReportModal onClose={() => setIsReportModalOpen(false)} isSubmitting={false} onSubmit={async () => {}} />}
-        {isTipModalOpen && <TipModal recipientId={item.user_id || ''} recipientName={item.author || ''} onClose={() => setIsTipModalOpen(false)} />}
     </div>
   );
 };

@@ -1,33 +1,21 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { MediaItem, MediaType, Session } from '../types';
+import { cn } from '../lib/utils';
 import PlayIcon from './icons/PlayIcon';
 import ShareIcon from './icons/ShareIcon';
 import TrashIcon from './icons/TrashIcon';
 import SharePopover from './SharePopover';
 import VideoIcon from './icons/VideoIcon';
-import LockIcon from './icons/LockIcon';
 import HeartIcon from './icons/HeartIcon';
 // Fixed: Import Session from local types
 import { deleteMediaItem } from '../lib/supabaseClient';
 import { useConfirm } from '../context/ConfirmationContext';
 import { useToast } from '../context/ToastContext';
-import { useWallet } from '../context/WalletContext';
 import { useMediaLikes } from '../hooks/useMediaLikes';
 import { useDoubleTap } from '../hooks/useDoubleTap';
 
 // --- Sub-Components ---
-
-const PremiumOverlay: React.FC<{ price: number }> = ({ price }) => (
-  <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-10 p-4 bg-black/40">
-    <div className="bg-black/60 backdrop-blur-md p-3 rounded-full mb-2 border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]">
-      <LockIcon className="w-6 h-6 text-yellow-500" />
-    </div>
-    <span className="text-white font-bold text-xs mt-1 bg-black/60 px-3 py-1 rounded-full border border-white/10">
-      {price} Coins
-    </span>
-  </div>
-);
 
 const MediaBadges: React.FC<{ type: MediaType }> = ({ type }) => (
   <div className="absolute top-2 right-2 flex gap-1 z-20">
@@ -43,11 +31,10 @@ const MediaBadges: React.FC<{ type: MediaType }> = ({ type }) => (
 const MobileOverlay: React.FC<{
   author: string;
   avatar?: string;
-  isPremium: boolean;
   isLiked: boolean;
   likeCount: number;
   onLike: (e: React.MouseEvent) => void;
-}> = ({ author, avatar, isPremium, isLiked, likeCount, onLike }) => (
+}> = ({ author, avatar, isLiked, likeCount, onLike }) => (
   <div className="md:hidden absolute bottom-0 inset-x-0 bg-gradient-to-t from-black via-black/80 to-transparent pt-8 pb-3 px-3 flex items-end justify-between z-20">
     <div className="flex items-center gap-2 max-w-[70%]">
       {avatar ? (
@@ -59,9 +46,6 @@ const MobileOverlay: React.FC<{
       )}
       <div className="flex flex-col truncate">
         <span className="text-[10px] font-bold text-gray-200 truncate leading-none">{author}</span>
-        {isPremium && (
-          <span className="text-[8px] text-yellow-500 font-bold uppercase tracking-wider leading-tight">Premium</span>
-        )}
       </div>
     </div>
     <button onClick={onLike} className="flex flex-col items-center justify-center text-white">
@@ -73,16 +57,15 @@ const MobileOverlay: React.FC<{
 
 const DesktopOverlay: React.FC<{
   item: MediaItem;
-  isUnlocked: boolean;
   isLiked: boolean;
   isOwner: boolean;
   onUserClick: (e: React.MouseEvent) => void;
   onLike: (e: React.MouseEvent) => void;
   onDelete: (e: React.MouseEvent) => void;
   onShare: (e: React.MouseEvent) => void;
-}> = ({ item, isUnlocked, isLiked, isOwner, onUserClick, onLike, onDelete, onShare }) => (
+}> = ({ item, isLiked, isOwner, onUserClick, onLike, onDelete, onShare }) => (
   <div className="hidden md:flex absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-col justify-end p-4 z-20">
-    {item.type === MediaType.Video && isUnlocked && (
+    {item.type === MediaType.Video && (
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] transform scale-90 group-hover:scale-110 transition-transform duration-300">
           <PlayIcon className="w-6 h-6 text-white ml-1" />
@@ -98,7 +81,7 @@ const DesktopOverlay: React.FC<{
       )}
       
       {item.description && (
-        <p className={`text-white text-sm font-semibold line-clamp-2 leading-tight mb-3 drop-shadow-md ${!isUnlocked ? 'blur-[2px]' : ''}`}>
+        <p className={`text-white text-sm font-semibold line-clamp-2 leading-tight mb-3 drop-shadow-md`}>
           {item.description}
         </p>
       )}
@@ -146,17 +129,17 @@ interface MediaCardProps {
 const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, session, onDataChange }) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   
   const cardRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const { confirm } = useConfirm();
   const toast = useToast();
-  const { isUnlocked: checkIsUnlocked } = useWallet();
 
   const isOwner = session?.user.id === item.user_id;
-  const isUnlocked = isOwner || !item.is_premium || checkIsUnlocked(item.id); 
   const isStatic = item.id.startsWith('static-');
   
   const { likeCount, isLiked, toggleLike } = useMediaLikes(item.id, session?.user.id, isStatic);
@@ -174,6 +157,17 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
     if (cardRef.current) observer.observe(cardRef.current);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (item.type === MediaType.Video && videoRef.current) {
+        if (isHovered && isInView) {
+            videoRef.current.play().catch(() => {});
+        } else {
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0;
+        }
+    }
+  }, [isHovered, isInView, item.type]);
 
   const handleLikeAction = async () => {
     setShowHeartAnimation(true);
@@ -219,23 +213,46 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
     <>
       <div 
         ref={cardRef}
-        className={`group relative overflow-hidden rounded-xl bg-gray-900 border border-gray-800 cursor-pointer mb-3 break-inside-avoid shadow-lg transition-all duration-300 hover:shadow-pink-500/10 hover:border-gray-700 hover:ring-1 hover:ring-pink-500/30 ${!isImageLoaded ? 'min-h-[200px] animate-pulse-bg' : ''} ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
+        className={cn(
+            "group relative overflow-hidden rounded-xl bg-[#111] border border-white/5 cursor-pointer mb-4 break-inside-avoid shadow-lg transition-all duration-300",
+            "hover:shadow-pink-500/20 hover:border-pink-500/30 hover:ring-1 hover:ring-pink-500/20",
+            !isImageLoaded && "min-h-[200px] animate-pulse",
+            isDeleting && "opacity-50 pointer-events-none"
+        )}
         onClick={onClick}
         onTouchEnd={handleTouchEnd}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseOver={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="relative">
+        <div className="relative aspect-auto">
           {isInView ? (
-            <img 
-              src={item.src} 
-              alt={item.description || "Gallery content"} 
-              className={`w-full h-auto object-cover block transition-all duration-700 ease-in-out ${isImageLoaded ? 'opacity-100 scale-100 group-hover:scale-105' : 'opacity-0 scale-105'} ${!isUnlocked ? 'blur-md brightness-50' : ''}`}
-              loading="lazy"
-              decoding="async"
-              onLoad={() => setIsImageLoaded(true)}
-              onError={() => setIsImageLoaded(true)}
-            />
+            <>
+                <img 
+                    src={item.src} 
+                    alt={item.description || "Gallery content"} 
+                    className={cn(
+                        "w-full h-auto object-cover block transition-all duration-500 ease-in-out",
+                        isImageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105",
+                        isHovered && item.type === MediaType.Video ? "opacity-0" : "opacity-100"
+                    )}
+                    loading="lazy"
+                    onLoad={() => setIsImageLoaded(true)}
+                />
+                
+                {item.type === MediaType.Video && isHovered && (
+                    <video 
+                        ref={videoRef}
+                        src={item.videoSrc}
+                        muted
+                        playsInline
+                        loop
+                        className="absolute inset-0 w-full h-full object-cover z-10"
+                    />
+                )}
+            </>
           ) : (
-            <div className="w-full aspect-square bg-gray-900 animate-pulse-bg" />
+            <div className="w-full aspect-[3/4] bg-white/5 animate-pulse" />
           )}
 
           {showHeartAnimation && (
@@ -244,14 +261,12 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
             </div>
           )}
 
-          {!isUnlocked && isImageLoaded && <PremiumOverlay price={item.price || 5} />}
           <MediaBadges type={item.type} />
         </div>
         
         <MobileOverlay 
           author={item.author || 'Unknown'} 
           avatar={item.author_avatar}
-          isPremium={!!item.is_premium}
           isLiked={isLiked}
           likeCount={likeCount}
           onLike={(e) => handleAction(e, handleLikeAction)}
@@ -259,7 +274,6 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
 
         <DesktopOverlay 
           item={item}
-          isUnlocked={isUnlocked}
           isLiked={isLiked}
           isOwner={isOwner}
           onUserClick={(e) => handleAction(e, handleUserClickInternal)}

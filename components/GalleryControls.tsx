@@ -57,25 +57,8 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto mb-2 space-y-3">
-      {/* Top Row: Search | View Toggle | Sort | Filter */}
-      <div className="flex items-center gap-2 md:gap-3">
-        {/* Search Bar - Compact Pill */}
-        <div className="relative flex-grow">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <SearchIcon className="w-4 h-4 text-gray-500" />
-          </div>
-          <input
-            ref={searchInputRef}
-            type="search"
-            placeholder={`Search...`}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-gray-900/80 border border-gray-700 rounded-full py-2.5 pl-9 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-pink-500 focus:border-pink-500 transition-all shadow-inner"
-            aria-label="Search"
-            title="Search by description, author, or tags"
-          />
-        </div>
-
+      {/* Top Row: View Toggle | Sort | Filter */}
+      <div className="flex items-center justify-end gap-2 md:gap-3">
         {/* Action Buttons Group */}
         <div className="flex items-center gap-2">
             {/* View Mode Toggle */}

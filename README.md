@@ -2,10 +2,10 @@
 
 Welcome to **wxifu** — The premier social stage for anime artwork, cosplay, and digital assets. Powered by a lightweight, high-performance **Google Sheets + Apps Script** backend.
 
-Official URL: [https://wxifu.vercel.app/](https://wxifu.vercel.app/)
+---
 
 ## ✨ About
-wxifu is a fully-featured **Social Media Platform** built for artists and fans. It allows creators to upload, manage, and monetize their content while enabling fans to follow, chat, and interact in real-time. Built with a cyberpunk aesthetic, it prioritizes a premium user experience for high-resolution art and video consumption.
+wxifu is a fully-featured **Social Media Platform** built for artists and fans. It allows creators to upload and manage their content while enabling fans to follow, chat, and interact in real-time. Built with a cyberpunk aesthetic, it prioritizes a premium user experience for high-resolution art and video consumption.
 
 ---
 
@@ -35,7 +35,7 @@ To run this project, you must set up your own database using Google Sheets. It t
 
 ### 4. Connect Frontend
 1. Open `lib/client.ts` in your code editor.
-2. Replace `PASTE_YOUR_GAS_WEBAPP_URL_HERE` with the URL you just copied.
+2. Replace the URL with your deployed Web App URL.
 
 ---
 
@@ -52,13 +52,12 @@ const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheets = {
-    'profiles': ['id', 'name', 'avatar', 'bio', 'coins', 'frame', 'updated_at'],
-    'media': ['id', 'created_at', 'user_id', 'type', 'src', 'videoSrc', 'description', 'category', 'tags', 'is_premium', 'price', 'author', 'author_avatar'],
+    'profiles': ['id', 'name', 'avatar', 'bio', 'updated_at'],
+    'media': ['id', 'created_at', 'user_id', 'type', 'src', 'videoSrc', 'description', 'category', 'tags', 'author', 'author_avatar'],
     'likes': ['id', 'media_id', 'user_id', 'created_at'],
     'comments': ['id', 'media_id', 'user_id', 'content', 'author_name', 'author_avatar', 'created_at'],
     'follows': ['id', 'follower_id', 'following_id', 'created_at'],
-    'messages': ['id', 'sender_id', 'receiver_id', 'content', 'created_at', 'is_read'],
-    'unlocked_media': ['id', 'user_id', 'media_id', 'created_at']
+    'messages': ['id', 'sender_id', 'receiver_id', 'content', 'created_at', 'is_read']
   };
 
   for (const [name, headers] of Object.entries(sheets)) {
@@ -147,7 +146,7 @@ function doPost(e) {
         response.success = true;
         break;
       case 'UNFOLLOW_USER':
-        const follow = getRows('follows').find(r => r.follower_id === payload.follower_id && r.following_id === payload.following_id);
+        const follow = getRows('follows').find(r => f.follower_id === payload.follower_id && f.following_id === payload.following_id);
         if (follow) deleteRow('follows', 'id', follow.id);
         response.success = true;
         break;
@@ -163,15 +162,6 @@ function doPost(e) {
         payload.created_at = new Date().toISOString();
         payload.is_read = false;
         response.data = appendRow('messages', payload);
-        response.success = true;
-        break;
-      case 'GET_UNLOCKED':
-        response.data = getRows('unlocked_media').filter(r => r.user_id === payload.user_id);
-        response.success = true;
-        break;
-      case 'UNLOCK_MEDIA':
-        const unlock = { id: Utilities.getUuid(), ...payload, created_at: new Date().toISOString() };
-        appendRow('unlocked_media', unlock);
         response.success = true;
         break;
       default:
@@ -196,8 +186,7 @@ function getRows(sheetName) {
       if (h === 'tags' && typeof val === 'string' && val.startsWith('[')) {
         try { val = JSON.parse(val); } catch(e) {}
       }
-      if (h === 'coins' || h === 'price') val = Number(val) || 0;
-      if (h === 'is_premium' || h === 'is_read') val = (val === true || val === "TRUE" || val === 1);
+      if (h === 'is_read') val = (val === true || val === "TRUE" || val === 1);
       obj[h] = val;
     });
     return obj;
@@ -285,12 +274,7 @@ function updateRow(sheetName, keyCol, keyValue, updates) {
 ### 👥 Social System
 *   **Direct Messaging**: Real-time chat with other users.
 *   **Follow System**: Tailor your feed by following top creators.
-*   **Gifting**: Send coins to support your favorite artists.
-
-### 💰 Economy & Monetization
-*   **Coin Market**: Purchase and spend coins on premium assets.
-*   **Avatar Decorations**: Custom animated frames for your profile.
-*   **Premium Vaults**: Unlock exclusive content using the platform currency.
+*   **Interaction**: Like and comment on your favorite pieces.
 
 ## 💻 Tech Stack
 *   **Frontend**: React 19, TypeScript, Vite

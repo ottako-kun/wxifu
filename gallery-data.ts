@@ -39,8 +39,7 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
     description: 'Cyberpunk Oni - Neural Synthesis Study. High-resolution illustration exploring futuristic folklore.',
     category: 'Illustration',
     author: 'NeuralRonin',
-    tags: ['Cyberpunk', 'Oni', '4K', 'Art'],
-    is_premium: false
+    tags: ['Cyberpunk', 'Oni', '4K', 'Art']
   },
   {
     type: 'VIDEO',
@@ -49,9 +48,7 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
     description: 'Neon Dreams AMV - Dynamic Visual Edit. A synchronized journey through Neo-Tokyo.',
     category: 'AMV',
     author: 'VibeEditor',
-    tags: ['AMV', 'Action', 'Edit', 'Hype'],
-    is_premium: true,
-    price: 15
+    tags: ['AMV', 'Action', 'Edit', 'Hype']
   },
   {
     type: 'PHOTO',
@@ -59,8 +56,7 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
     description: 'Midnight Samurai - Traditional vs Digital Synth.',
     category: 'Fanart',
     author: 'RoninArt',
-    tags: ['Samurai', 'Dark', 'Art'],
-    is_premium: false
+    tags: ['Samurai', 'Dark', 'Art']
   },
   {
     type: 'VIDEO',
@@ -68,8 +64,7 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
     description: 'Mecha Awakening - Experimental Motion Graphics.',
     category: 'Motion',
     author: 'MechaDesigner',
-    tags: ['Mecha', 'SciFi', 'Animation'],
-    is_premium: false
+    tags: ['Mecha', 'SciFi', 'Animation']
   },
   {
      type: 'PHOTO',
@@ -77,9 +72,7 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
      description: 'Ethereal Forest - Background Concept Art.',
      category: 'Background',
      author: 'SceneryMaster',
-     tags: ['Nature', 'Anime', 'Scenery'],
-     is_premium: true,
-     price: 10
+     tags: ['Nature', 'Anime', 'Scenery']
   }
 ];
 

@@ -13,8 +13,6 @@ interface UploadFormData {
   description: string;
   category: string;
   tags: string[];
-  is_premium: boolean;
-  price: number;
 }
 
 interface UploadModalProps {
@@ -29,9 +27,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
     src: '',
     description: '',
     category: '',
-    tags: [],
-    is_premium: false,
-    price: 5
+    tags: []
   });
   
   const [tagInput, setTagInput] = useState('');
@@ -136,43 +132,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
               <VideoIcon className="w-5 h-5" />
               <span className="font-semibold">Video</span>
             </button>
-          </div>
-
-          {/* Premium / Monetization Toggle */}
-          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2 text-yellow-500 font-bold">
-                      <LockIcon className="w-5 h-5" />
-                      <span className="uppercase tracking-wider text-xs">Premium Content</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                        type="checkbox" 
-                        className="sr-only peer"
-                        checked={formData.is_premium}
-                        onChange={(e) => handleChange('is_premium', e.target.checked)}
-                    />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
-                  </label>
-              </div>
-              
-              {formData.is_premium && (
-                  <div className="animate-fade-in">
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                          Unlock Price ($ or Coins)
-                      </label>
-                      <input 
-                        type="number"
-                        min="1"
-                        value={formData.price}
-                        onChange={(e) => handleChange('price', parseInt(e.target.value) || 0)}
-                        className="w-full bg-black/40 border border-yellow-500/50 rounded-lg p-2 text-yellow-400 font-bold focus:outline-none focus:ring-1 focus:ring-yellow-500"
-                      />
-                      <p className="text-[10px] text-gray-500 mt-2">
-                          Users must pay this amount to view the content.
-                      </p>
-                  </div>
-              )}
           </div>
 
           {/* URL Input */}
