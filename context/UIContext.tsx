@@ -25,6 +25,10 @@ interface UIContextType {
   // Global Search
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+
+  // Global Category
+  selectedCategory: string;
+  setSelectedCategory: (category: string) => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -36,6 +40,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [showVolumeHUD, setShowVolumeHUD] = useState(false);
   const [density, setDensityState] = useState<DensityType>('standard');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   
   const volumeTimerRef = useRef<number | null>(null);
 
@@ -71,7 +76,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       activeLegalModal, openLegal, closeLegal,
       isGlobalMuted, toggleGlobalMute, showVolumeHUD,
       density, setDensity,
-      searchQuery, setSearchQuery
+      searchQuery, setSearchQuery,
+      selectedCategory, setSelectedCategory
     }}>
       {children}
     </UIContext.Provider>

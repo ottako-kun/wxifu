@@ -1,22 +1,23 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useUI } from '../context/UIContext';
+import { cn } from '../lib/utils';
 import SearchIcon from './icons/SearchIcon';
 import SortAscendingIcon from './icons/SortAscendingIcon';
 import CloseIcon from './icons/CloseIcon';
 import FilterIcon from './icons/FilterIcon';
 import GridIcon from './icons/GridIcon';
 import ListIcon from './icons/ListIcon';
-import { useUI } from '../context/UIContext';
-import { DensityType } from '../types';
+import { SortOption, DensityType } from '../types';
 
 interface GalleryControlsProps {
   galleryName: string;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   searchInputRef: React.RefObject<HTMLInputElement>;
-  sortOrder: 'default' | 'asc';
-  toggleSort: () => void;
+  sortOption: SortOption;
+  setSortOption: (option: SortOption) => void;
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
   availableCategories: string[];
@@ -33,8 +34,8 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
   searchQuery,
   setSearchQuery,
   searchInputRef,
-  sortOrder,
-  toggleSort,
+  sortOption,
+  setSortOption,
   selectedCategory,
   setSelectedCategory,
   availableCategories,
@@ -46,6 +47,7 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
   onViewModeChange
 }) => {
   const [showFilters, setShowFilters] = useState(false);
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
   const { density, setDensity } = useUI();
 
   const activeFilterCount = (selectedCategory !== 'All' ? 1 : 0) + selectedTags.length;
@@ -56,15 +58,38 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
     { id: 'large', label: 'Large' },
   ];
 
+  const sortOptions = [
+    { id: SortOption.Trending, label: 'Trending' },
+    { id: SortOption.Week, label: 'Top This Week' },
+    { id: SortOption.Month, label: 'Top This Month' },
+    { id: SortOption.Views, label: 'Most Viewed' },
+    { id: SortOption.Latest, label: 'Latest' },
+  ];
+
   return (
     <div className="max-w-4xl mx-auto mb-2 space-y-3">
       {/* Top Row: View Toggle | Sort | Filter */}
-      <div className="flex items-center justify-end gap-2 md:gap-3">
+      <div className="flex items-center justify-between gap-2 md:gap-3">
+        {/* Search Integration */}
+        <div className="relative group flex-grow max-w-xs">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <SearchIcon className={cn("w-4 h-4 transition-colors", searchQuery ? "text-pink-500" : "text-gray-500 group-hover:text-gray-400")} />
+            </div>
+            <input 
+                ref={searchInputRef}
+                type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Find aesthetics..."
+                className="w-full bg-gray-900/40 border border-white/5 rounded-full py-2 pl-10 pr-4 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-pink-500/30 focus:border-pink-500/20 transition-all font-medium"
+            />
+        </div>
+
         {/* Action Buttons Group */}
         <div className="flex items-center gap-2">
             {/* View Mode Toggle */}
             {onViewModeChange && (
-                <div className="flex bg-gray-900/80 border border-gray-700/50 rounded-full p-1 relative">
+                <div className="flex bg-gray-900/80 border border-gray-700/50 rounded-full p-1 relative mr-2">
                     <button
                         onClick={() => onViewModeChange('grid')}
                         className={`p-2 rounded-full transition-all duration-300 relative z-10 ${viewMode === 'grid' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
@@ -92,17 +117,43 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
                 </div>
             )}
 
-            <button
-                onClick={toggleSort}
-                className={`flex-shrink-0 p-2.5 rounded-full border transition-all duration-300 
-                    ${sortOrder === 'asc'
-                    ? 'bg-cyan-900/30 border-cyan-500 text-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.15)]'
-                    : 'bg-gray-900/80 border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
-                    }`}
-                title={sortOrder === 'asc' ? "Remove Sorting" : "Sort results A-Z"}
-            >
-                <SortAscendingIcon className="w-5 h-5" />
-            </button>
+            {/* Sort Toggle Dropdown */}
+            <div className="relative">
+                <button
+                    onClick={() => setShowSortDropdown(!showSortDropdown)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 bg-gray-900/80 border-gray-700 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:border-gray-500 shadow-xl`}
+                >
+                    <SortAscendingIcon className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">{sortOptions.find(o => o.id === sortOption)?.label}</span>
+                </button>
+
+                <AnimatePresence>
+                    {showSortDropdown && (
+                        <>
+                            <div className="fixed inset-0 z-40" onClick={() => setShowSortDropdown(false)} />
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                className="absolute right-0 mt-2 w-48 bg-black/90 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 z-50 shadow-2xl"
+                            >
+                                {sortOptions.map(opt => (
+                                    <button
+                                        key={opt.id}
+                                        onClick={() => {
+                                            setSortOption(opt.id);
+                                            setShowSortDropdown(false);
+                                        }}
+                                        className={`w-full text-left px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${sortOption === opt.id ? 'bg-pink-500/10 text-pink-500' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
+            </div>
 
             <button
                 onClick={() => setShowFilters(!showFilters)}

@@ -39,7 +39,10 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
     description: 'Cyberpunk Oni - Neural Synthesis Study. High-resolution illustration exploring futuristic folklore.',
     category: 'Photos',
     author: 'NeuralRonin',
-    tags: ['Illustration', 'Cyberpunk', 'Oni', '4K', 'Art']
+    tags: ['Illustration', 'Cyberpunk', 'Oni', '4K', 'Art'],
+    views: 12500,
+    likes: 450,
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString() // 2 days ago
   },
   {
     type: 'VIDEO',
@@ -48,7 +51,10 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
     description: 'Neon Dreams AMV - Dynamic Visual Edit. A synchronized journey through Neo-Tokyo.',
     category: 'Videos',
     author: 'VibeEditor',
-    tags: ['AMV', 'Action', 'Edit', 'Hype']
+    tags: ['AMV', 'Action', 'Edit', 'Hype'],
+    views: 45000,
+    likes: 2100,
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString() // 5 days ago
   },
   {
     type: 'PHOTO',
@@ -56,7 +62,10 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
     description: 'Midnight Samurai - Traditional vs Digital Synth.',
     category: 'Photos',
     author: 'RoninArt',
-    tags: ['Fanart', 'Samurai', 'Dark', 'Art']
+    tags: ['Fanart', 'Samurai', 'Dark', 'Art'],
+    views: 8900,
+    likes: 320,
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() // 2 hours ago
   },
   {
     type: 'VIDEO',
@@ -64,7 +73,10 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
     description: 'Mecha Awakening - Experimental Motion Graphics.',
     category: 'Videos',
     author: 'MechaDesigner',
-    tags: ['Motion', 'Mecha', 'SciFi', 'Animation']
+    tags: ['Motion', 'Mecha', 'SciFi', 'Animation'],
+    views: 67000,
+    likes: 4500,
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 15).toISOString() // 15 days ago
   },
   {
      type: 'PHOTO',
@@ -72,7 +84,10 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
      description: 'Ethereal Forest - Background Concept Art.',
      category: 'Photos',
      author: 'SceneryMaster',
-     tags: ['Background', 'Nature', 'Anime', 'Scenery']
+     tags: ['Background', 'Nature', 'Anime', 'Scenery'],
+     views: 3200,
+     likes: 120,
+     created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString() // 1 day ago
   },
   {
     type: 'PHOTO',
@@ -80,7 +95,21 @@ const CUSTOM_MEDIA_COLLECTION: any[] = [
     description: 'Glitch Distortion - Aesthetic Loop.',
     category: 'GIFs',
     author: 'GlitchArtist',
-    tags: ['Glitch', 'Loop', 'Aesthetic']
+    tags: ['Glitch', 'Loop', 'Aesthetic'],
+    views: 150000,
+    likes: 8900,
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString() // 30 days ago
+  },
+  {
+    type: 'PHOTO',
+    link: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHp1eXh4ZzR6NHR6NHR6NHR6NHR6NHR6NHR6NHR6NHR6NHR6NHR6JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/l41lTfuxV3GlnRzY4/giphy.gif',
+    description: 'Pixel Rain - Retro Aesthetic.',
+    category: 'GIFs',
+    author: 'RetroVibe',
+    tags: ['Pixel', 'Rain', 'Retro'],
+    views: 22000,
+    likes: 1100,
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() // 5 hours ago
   }
 ];
 

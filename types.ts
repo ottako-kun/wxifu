@@ -22,6 +22,16 @@ export interface Session {
   refresh_token?: string;
 }
 
+export enum SortOption {
+    Trending = 'trending',
+    Week = 'top-week',
+    Month = 'top-month',
+    Views = 'most-viewed',
+    Latest = 'latest'
+}
+
+export type ExploreTab = 'GIFs' | 'Images' | 'Videos' | 'Creators' | 'Niches';
+
 export interface MediaItem {
   id: string;
   type: MediaType;
@@ -33,6 +43,9 @@ export interface MediaItem {
   user_id?: string; // Links the media to a specific user
   author?: string; // Username of the uploader
   author_avatar?: string; // Avatar URL of the uploader
+  views?: number;
+  likes?: number;
+  created_at?: string;
 }
 
 export interface Message {

@@ -23,7 +23,7 @@ import { useToast } from './context/ToastContext';
 import { ConfirmationProvider } from './context/ConfirmationContext';
 
 // UI State System
-import { UIProvider } from './context/UIContext';
+import { UIProvider, useUI } from './context/UIContext';
 
 // App Logic Hooks
 import { useAppNavigation } from './hooks/useAppNavigation';
@@ -99,6 +99,8 @@ const AppContent: React.FC = () => {
     return all.filter(item => item.user_id === activeProfile.id);
   }, [photoMedia, videoMedia, activeProfile]);
 
+  const { searchQuery, setSearchQuery, selectedCategory, setSelectedCategory } = useUI();
+
   return (
     <div className="min-h-screen bg-[#020202] text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative pb-16 md:pb-0 overflow-x-hidden">
       
@@ -116,6 +118,8 @@ const AppContent: React.FC = () => {
         <Sidebar 
           activeTab={activeTab}
           setActiveTab={setActiveTab}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
           currentView={currentView}
           onNavigate={handleNavigate}
           isOpen={isSidebarOpen}
@@ -193,6 +197,7 @@ const AppContent: React.FC = () => {
       <BottomNav 
         currentView={currentView}
         onNavigate={handleNavigate}
+        setActiveTab={setActiveTab}
         onUploadClick={handleUploadClick}
         onSearchClick={handleSearchClick}
         session={session}

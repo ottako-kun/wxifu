@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import MediaGrid from './MediaGrid';
@@ -61,22 +61,18 @@ const HomeView: React.FC<HomeViewProps> = ({
   }, []);
 
   let itemsToDisplay: MediaItem[] = [];
-  let galleryName = '';
+  let galleryName = 'explore';
 
-  if (activeTab === 'photos') {
-    itemsToDisplay = photoMedia;
-    galleryName = 'photo';
-  } else if (activeTab === 'videos') {
-    itemsToDisplay = videoMedia;
-    galleryName = 'video';
+  if (activeTab === 'following' && session) {
+      itemsToDisplay = followedMedia;
+      galleryName = 'following';
   } else {
-    itemsToDisplay = followedMedia;
-    galleryName = 'following';
+      // For Explore (Photos/Videos tabs now represent different types in the same view)
+      itemsToDisplay = [...photoMedia, ...videoMedia];
   }
 
   const {
-    searchQuery: localSearchQuery, setSearchQuery: setLocalSearchQuery,
-    sortOrder, toggleSort,
+    sortOption, setSortOption,
     selectedCategory, setSelectedCategory,
     selectedTags, toggleTag,
     visibleCount, loadMore,
@@ -87,23 +83,28 @@ const HomeView: React.FC<HomeViewProps> = ({
     visibleItems,
   } = useGalleryFilters(itemsToDisplay);
 
-  // Sync global search with local filters
-  useEffect(() => {
-    setLocalSearchQuery(searchQuery);
-  }, [searchQuery, setLocalSearchQuery]);
+  const exploreTabs: ExploreTab[] = ['GIFs', 'Images', 'Videos', 'Creators', 'Niches'];
 
+  // Effect to handle initial category when activeTab changes (optional sync)
   useEffect(() => {
-    // Standard social experience defaults:
-    // If user switches to videos/following, the feed is usually a better fit
-    if (activeTab === 'videos' || activeTab === 'following') {
-        onViewModeChange('feed');
-    } else {
-        onViewModeChange('grid');
-    }
-    
-    clearFilters();
-    setSelectedItemIndex(null);
+     if (activeTab === 'videos') setSelectedCategory('Videos');
+     else if (activeTab === 'photos') setSelectedCategory('Images');
   }, [activeTab]);
+
+  // Derive unique creators for Creators tab
+  const uniqueCreators = useMemo(() => {
+    const creators = new Map();
+    itemsToDisplay.forEach(item => {
+        if (item.author && !creators.has(item.author)) {
+            creators.set(item.author, {
+                id: item.user_id || item.author,
+                name: item.author,
+                avatar: item.author_avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${item.author}`
+            });
+        }
+    });
+    return Array.from(creators.values());
+  }, [itemsToDisplay]);
 
   const observerTarget = useRef<HTMLDivElement>(null);
 
@@ -141,43 +142,51 @@ const HomeView: React.FC<HomeViewProps> = ({
       )}>
         
         <div 
-            className={`sticky z-40 py-2 bg-gradient-to-b from-[#020202] via-[#020202]/95 to-transparent backdrop-blur-2xl transition-[top] duration-500 ease-in-out`}
+            className={`sticky z-40 py-2 bg-gradient-to-b from-[#020202] via-[#020202]/95 to-transparent backdrop-blur-2xl transition-[top] duration-500 ease-in-out border-b border-white/5 pb-4 mb-2`}
             style={{ top: scrollDirection === 'down' ? '0px' : '56px' }}
         >
-             {/* Trending Tags Row */}
-             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 px-2">
-                 {['Trending', 'New', 'AMVs', 'Cyberpunk', 'UHD', 'Cosplay'].map(tag => (
+             {/* Explore Navigation Tabs */}
+             <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pb-4 px-2 mb-2 border-b border-white/5">
+                 {exploreTabs.map(tab => (
                      <button 
-                         key={tag}
-                         className="px-4 py-1.5 rounded-full bg-white/5 border border-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all whitespace-nowrap"
+                         key={tab}
+                         onClick={() => setSelectedCategory(tab === 'Images' ? 'Photos' : tab)}
+                         className={cn(
+                            "group relative py-2 transition-all cursor-pointer",
+                            (selectedCategory === tab || (tab === 'Images' && selectedCategory === 'Photos')) ? "text-white" : "text-gray-500 hover:text-gray-300"
+                         )}
                      >
-                         {tag}
+                         <span className="text-sm font-black uppercase tracking-[0.2em] font-orbitron">{tab}</span>
+                         {(selectedCategory === tab || (tab === 'Images' && selectedCategory === 'Photos')) && (
+                             <motion.div 
+                                layoutId="explore-active-pill"
+                                className="absolute -bottom-1 left-0 right-0 h-1 bg-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.5)] rounded-full"
+                             />
+                         )}
                      </button>
                  ))}
              </div>
 
-             {(activeTab !== 'following' || session) && (
-                <GalleryControls 
-                    galleryName={galleryName}
-                    searchQuery={localSearchQuery}
-                    setSearchQuery={setLocalSearchQuery}
-                    searchInputRef={searchInputRef}
-                    sortOrder={sortOrder}
-                    toggleSort={toggleSort}
-                    selectedCategory={selectedCategory}
-                    setSelectedCategory={setSelectedCategory}
-                    availableCategories={availableCategories}
-                    selectedTags={selectedTags}
-                    toggleTag={toggleTag}
-                    availableTags={availableTags}
-                    clearFilters={() => {
-                        clearFilters();
-                        setSearchQuery('');
-                    }}
-                    viewMode={viewMode}
-                    onViewModeChange={onViewModeChange}
-                />
-             )}
+             <GalleryControls 
+                galleryName={galleryName}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                searchInputRef={searchInputRef}
+                sortOption={sortOption}
+                setSortOption={setSortOption}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                availableCategories={availableCategories}
+                selectedTags={selectedTags}
+                toggleTag={toggleTag}
+                availableTags={availableTags}
+                clearFilters={() => {
+                    clearFilters();
+                    setSearchQuery('');
+                }}
+                viewMode={viewMode}
+                onViewModeChange={onViewModeChange}
+            />
         </div>
 
         {activeTab === 'following' && !session ? (
@@ -199,7 +208,43 @@ const HomeView: React.FC<HomeViewProps> = ({
             <div className="relative flex-grow">
                 <AnimatePresence mode="wait">
                   {itemsToDisplay.length > 0 || isLoading ? (
-                    sortedItems.length > 0 || isLoading ? (
+                    selectedCategory === 'Creators' ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8">
+                             {uniqueCreators.map(creator => (
+                                 <motion.button 
+                                     key={creator.id}
+                                     whileHover={{ y: -5 }}
+                                     onClick={() => onUserClick(creator)}
+                                     className="flex flex-col items-center gap-4 p-6 rounded-[2rem] bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all text-center"
+                                 >
+                                     <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-pink-500/20 p-1 bg-black">
+                                         <img src={creator.avatar} alt={creator.name} className="w-full h-full object-cover rounded-full" />
+                                     </div>
+                                     <div>
+                                         <h3 className="text-sm font-black text-white uppercase tracking-widest">{creator.name}</h3>
+                                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Artist</p>
+                                     </div>
+                                 </motion.button>
+                             ))}
+                        </div>
+                    ) : selectedCategory === 'Niches' ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-8">
+                             {availableTags.map(tag => (
+                                 <motion.button 
+                                     key={tag}
+                                     whileHover={{ scale: 1.02 }}
+                                     onClick={() => toggleTag(tag)}
+                                     className={cn(
+                                        "h-32 flex items-center justify-center p-6 rounded-[2rem] border transition-all text-center relative overflow-hidden group",
+                                        selectedTags.includes(tag) ? "bg-pink-500/20 border-pink-500/50" : "bg-white/5 border-white/5 hover:border-white/20"
+                                     )}
+                                 >
+                                     <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                     <span className="text-lg font-black text-white uppercase tracking-widest font-orbitron z-10">#{tag}</span>
+                                 </motion.button>
+                             ))}
+                        </div>
+                    ) : (
                       <motion.div 
                         key={viewMode}
                         initial={{ opacity: 0, scale: 0.98 }}
@@ -208,25 +253,29 @@ const HomeView: React.FC<HomeViewProps> = ({
                         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                         className={cn("w-full h-full", viewMode === 'grid' ? 'mt-4' : 'mt-0')}
                       >
-                          {viewMode === 'grid' ? (
-                              <MediaGrid items={visibleItems} onUserClick={onUserClick} session={session} onDataChange={onDataChange} isLoading={isLoading} onItemClick={setSelectedItemIndex} />
+                          {sortedItems.length > 0 || isLoading ? (
+                              <>
+                                {viewMode === 'grid' ? (
+                                    <MediaGrid items={visibleItems} onUserClick={onUserClick} session={session} onDataChange={onDataChange} isLoading={isLoading} onItemClick={setSelectedItemIndex} />
+                                ) : (
+                                    <FeedView items={visibleItems} session={session} onUserClick={onUserClick} onDataChange={onDataChange} isLoading={isLoading} onItemClick={setSelectedItemIndex} />
+                                )}
+                                {visibleCount < sortedItems.length && !isLoading && <div ref={observerTarget} className="flex justify-center py-16 w-full"><LoadingSpinner className="w-12 h-12 text-pink-500/20" /></div>}
+                                {!isLoading && viewMode === 'grid' && <div className="text-center text-[10px] text-gray-700 uppercase tracking-[0.4em] pt-12 pb-24">Neural Index End // {sortedItems.length} Records</div>}
+                              </>
                           ) : (
-                              <FeedView items={visibleItems} session={session} onUserClick={onUserClick} onDataChange={onDataChange} isLoading={isLoading} onItemClick={setSelectedItemIndex} />
+                              <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="flex flex-col items-center justify-center h-[60vh] text-center border border-white/5 rounded-[4rem] bg-gray-900/5 m-4"
+                              >
+                                  <div className="w-24 h-24 mb-10 text-gray-800 opacity-20"><SearchIcon className="w-full h-full" /></div>
+                                  <h2 className="text-3xl font-black text-gray-700 mb-6 font-orbitron uppercase tracking-widest">No Matches Found</h2>
+                                  <button onClick={clearFilters} className="px-12 py-4 border border-pink-500/40 text-pink-500 hover:bg-pink-600 hover:text-white rounded-2xl transition-all font-black uppercase tracking-widest text-xs">Reset Filters</button>
+                              </motion.div>
                           )}
-                          {visibleCount < sortedItems.length && !isLoading && <div ref={observerTarget} className="flex justify-center py-16 w-full"><LoadingSpinner className="w-12 h-12 text-pink-500/20" /></div>}
-                          {!isLoading && viewMode === 'grid' && <div className="text-center text-[10px] text-gray-700 uppercase tracking-[0.4em] pt-12 pb-24">Neural Index End // {sortedItems.length} Records</div>}
                       </motion.div>
-                  ) : (
-                      <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="flex flex-col items-center justify-center h-[60vh] text-center border border-white/5 rounded-[4rem] bg-gray-900/5 m-4"
-                      >
-                          <div className="w-24 h-24 mb-10 text-gray-800 opacity-20"><SearchIcon className="w-full h-full" /></div>
-                          <h2 className="text-3xl font-black text-gray-700 mb-6 font-orbitron uppercase tracking-widest">No Matches Found</h2>
-                          <button onClick={clearFilters} className="px-12 py-4 border border-pink-500/40 text-pink-500 hover:bg-pink-600 hover:text-white rounded-2xl transition-all font-black uppercase tracking-widest text-xs">Reset Filters</button>
-                      </motion.div>
-                  )
+                    )
                   ) : (
                   <div className="flex flex-col items-center justify-center h-[50vh] text-center">
                       <LoadingSpinner className="w-12 h-12 text-pink-500/30 mb-4" />
