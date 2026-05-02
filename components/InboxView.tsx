@@ -1,4 +1,4 @@
-import React from 'react';
+import { motion } from 'motion/react';
 import { UserProfileData } from '../types';
 import LoadingSpinner from './icons/LoadingSpinner';
 import ChatIcon from './icons/ChatIcon';
@@ -14,7 +14,11 @@ const InboxView: React.FC<InboxViewProps> = ({ currentUserId }) => {
   const { openChat } = useUI();
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl animate-fade-in">
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="container mx-auto px-4 py-12 max-w-4xl"
+    >
         <h2 className="text-3xl font-bold text-white mb-8 border-b border-gray-800 pb-4 font-orbitron">
             Messages
         </h2>
@@ -24,15 +28,22 @@ const InboxView: React.FC<InboxViewProps> = ({ currentUserId }) => {
                 <LoadingSpinner className="w-10 h-10 text-pink-500" />
             </div>
         ) : conversations.length === 0 ? (
-            <div className="text-center py-20 bg-gray-900/30 rounded-2xl border border-gray-800 border-dashed">
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="text-center py-20 bg-gray-900/30 rounded-2xl border border-gray-800 border-dashed"
+            >
                 <ChatIcon className="w-16 h-16 text-gray-700 mx-auto mb-4" />
                 <h3 className="text-xl text-gray-400 font-bold mb-2">No Messages Yet</h3>
                 <p className="text-gray-500">Visit a user's profile to start a conversation.</p>
-            </div>
+            </motion.div>
         ) : (
             <div className="space-y-4">
-                {conversations.map(convo => (
-                    <div 
+                {conversations.map((convo, index) => (
+                    <motion.div 
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: index * 0.05 }}
                         key={convo.userId}
                         onClick={() => openChat({
                             id: convo.userId,
@@ -69,11 +80,11 @@ const InboxView: React.FC<InboxViewProps> = ({ currentUserId }) => {
                                 {convo.lastMessage}
                             </p>
                         </div>
-                    </div>
+                    </motion.div>
                 ))}
             </div>
         )}
-    </div>
+    </motion.div>
   );
 };
 

@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 // Fixed: Import Session from local types
 import { MediaItem, Session } from '../types';
 import MediaGrid from './MediaGrid';
@@ -87,7 +88,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
   const postCount = userMedia.length;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl animate-fade-in">
+    <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="container mx-auto px-4 py-8 max-w-6xl"
+    >
        {/* Back Button */}
        <button 
          onClick={onBack}
@@ -119,38 +124,67 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
              <div className="flex gap-8">
                 <button 
                     onClick={() => setActiveSubTab('posts')}
-                    className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest pb-2 transition-all ${activeSubTab === 'posts' ? 'text-white border-b-2 border-pink-500' : 'text-gray-500 hover:text-gray-300'}`}
+                    className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest pb-2 transition-all relative ${activeSubTab === 'posts' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
                 >
                     <GridIcon className="w-4 h-4" /> Posts
+                    {activeSubTab === 'posts' && (
+                        <motion.div 
+                            layoutId="profile-tab-pill"
+                            className="absolute bottom-0 inset-x-0 h-0.5 bg-pink-500"
+                        />
+                    )}
                 </button>
                 {isOwner && (
                     <button 
                         onClick={() => setActiveSubTab('liked')}
-                        className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest pb-2 transition-all ${activeSubTab === 'liked' ? 'text-white border-b-2 border-pink-500' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest pb-2 transition-all relative ${activeSubTab === 'liked' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
                     >
                         <HeartIcon filled={activeSubTab === 'liked'} className="w-4 h-4" /> Liked
+                        {activeSubTab === 'liked' && (
+                            <motion.div 
+                                layoutId="profile-tab-pill"
+                                className="absolute bottom-0 inset-x-0 h-0.5 bg-pink-500"
+                            />
+                        )}
                     </button>
                 )}
              </div>
              
              {/* View Toggle */}
-             <div className="flex bg-gray-900 border border-gray-800 rounded-full p-0.5">
+             <div className="flex bg-gray-900 border border-gray-800 rounded-full p-0.5 relative">
                  <button 
                      onClick={() => setViewMode('grid')}
-                     className={`p-2 rounded-full transition-all ${viewMode === 'grid' ? 'bg-gray-800 text-white shadow' : 'text-gray-500 hover:text-white'}`}
+                     className={`p-2 rounded-full transition-all relative z-10 ${viewMode === 'grid' ? 'text-white' : 'text-gray-500 hover:text-white'}`}
                  >
                      <GridIcon className="w-4 h-4" />
                  </button>
                  <button 
                      onClick={() => setViewMode('feed')}
-                     className={`p-2 rounded-full transition-all ${viewMode === 'feed' ? 'bg-gray-800 text-white shadow' : 'text-gray-500 hover:text-white'}`}
+                     className={`p-2 rounded-full transition-all relative z-10 ${viewMode === 'feed' ? 'text-white' : 'text-gray-500 hover:text-white'}`}
                  >
                      <ListIcon className="w-4 h-4" />
                  </button>
+                 <motion.div 
+                    layoutId="profile-view-pill"
+                    className="absolute inset-y-0.5 bg-gray-800 rounded-full shadow-lg"
+                    animate={{ 
+                        left: viewMode === 'grid' ? '2px' : '34px',
+                        width: '32px'
+                    }}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                 />
              </div>
         </div>
 
-        {displayItems.length > 0 ? (
+        <AnimatePresence mode="wait">
+            <motion.div
+                key={`${activeSubTab}-${viewMode}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+            >
+                {displayItems.length > 0 ? (
           viewMode === 'grid' ? (
               <MediaGrid 
                 items={displayItems} 
@@ -169,19 +203,21 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
                 onItemClick={setSelectedItemIndex}
               />
           )
-        ) : (
-           <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-gray-800 rounded-3xl bg-gray-900/20">
-             <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mb-4">
-               {activeSubTab === 'posts' ? <UploadIcon className="w-8 h-8 text-gray-600" /> : <HeartIcon className="w-8 h-8 text-gray-600" />}
-             </div>
-             <h3 className="text-xl font-bold text-white mb-2">{activeSubTab === 'posts' ? 'No Posts Yet' : 'No Liked Posts'}</h3>
-             <p className="text-gray-500 max-w-xs mb-6">
-                 {isOwner 
-                    ? (activeSubTab === 'posts' ? "Upload your first photo or video to show it here." : "Posts you've liked will appear here.") 
-                    : "This user hasn't posted anything yet."}
-             </p>
-           </div>
-        )}
+                ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-gray-800 rounded-3xl bg-gray-900/20">
+                    <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mb-4">
+                    {activeSubTab === 'posts' ? <UploadIcon className="w-8 h-8 text-gray-600" /> : <HeartIcon className="w-8 h-8 text-gray-600" />}
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">{activeSubTab === 'posts' ? 'No Posts Yet' : 'No Liked Posts'}</h3>
+                    <p className="text-gray-500 max-w-xs mb-6">
+                        {isOwner 
+                            ? (activeSubTab === 'posts' ? "Upload your first photo or video to show it here." : "Posts you've liked will appear here.") 
+                            : "This user hasn't posted anything yet."}
+                    </p>
+                </div>
+                )}
+            </motion.div>
+        </AnimatePresence>
       </div>
 
       {selectedItemIndex !== null && (
@@ -208,7 +244,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
             }}
         />
       )}
-    </div>
+    </motion.div>
   );
 };
 

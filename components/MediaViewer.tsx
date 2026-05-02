@@ -39,6 +39,8 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
     return /\.(mp4|webm|ogg|mov)($|\?)/i.test(url);
   };
 
+  const isUnlocked = true; // Simplified for now: everything is unlocked
+
   useEffect(() => {
     setVideoError(false);
     setIframeLoaded(false);
