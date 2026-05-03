@@ -38,11 +38,11 @@ export const useGalleryFilters = (items: MediaItem[]) => {
       if (selectedCategory !== 'All') {
         const cat = selectedCategory.toLowerCase();
         if (cat === 'images' || cat === 'photos') {
-          matchesCategory = item.type === MediaType.Photo && !item.src.toLowerCase().includes('.gif');
+          matchesCategory = (item.type === MediaType.Photo && !item.src.toLowerCase().includes('.gif')) || item.category === 'Images' || item.category === 'Photos';
         } else if (cat === 'videos') {
-          matchesCategory = item.type === MediaType.Video;
+          matchesCategory = item.type === MediaType.Video || item.category === 'Videos';
         } else if (cat === 'gifs') {
-          matchesCategory = item.src.toLowerCase().includes('.gif');
+          matchesCategory = item.src.toLowerCase().includes('.gif') || item.category === 'GIFs';
         } else if (cat === 'creators' || cat === 'niches') {
             // These would normally be handled by a different rendering mode in HomeView
             matchesCategory = true; 

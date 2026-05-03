@@ -115,9 +115,9 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
             </label>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { id: 'Images', type: MediaType.Photo, label: 'Images', icon: PhotoIcon, color: 'pink' },
-                { id: 'Videos', type: MediaType.Video, label: 'Videos', icon: VideoIcon, color: 'cyan' },
-                { id: 'GIFs', type: MediaType.Photo, label: 'GIFs', icon: PlayIcon, color: 'purple' }
+                { id: 'Images', type: MediaType.Photo, label: 'Images', icon: PhotoIcon, activeClass: 'bg-pink-500/10 border-pink-500 text-pink-400 shadow-[0_0_20px_rgba(236,72,153,0.1)]' },
+                { id: 'Videos', type: MediaType.Video, label: 'Videos', icon: VideoIcon, activeClass: 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.1)]' },
+                { id: 'GIFs', type: MediaType.Photo, label: 'GIFs', icon: PlayIcon, activeClass: 'bg-purple-500/10 border-purple-500 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.1)]' }
               ].map((cat) => (
                 <button
                   key={cat.id}
@@ -127,7 +127,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
                   }}
                   className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all duration-300 ${
                     formData.category === cat.id
-                      ? `bg-${cat.color}-500/10 border-${cat.color}-500 text-${cat.color}-400 shadow-[0_0_20px_rgba(236,72,153,0.1)]`
+                      ? cat.activeClass
                       : 'bg-white/5 border-white/10 text-gray-500 hover:border-white/20'
                   }`}
                 >

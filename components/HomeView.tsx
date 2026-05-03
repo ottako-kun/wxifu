@@ -6,7 +6,7 @@ import MediaGrid from './MediaGrid';
 import FeedView from './FeedView';
 import SearchIcon from './icons/SearchIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
-import { MediaItem, Session } from '../types';
+import { MediaItem, Session, ExploreTab } from '../types';
 // Fixed: Import Session from local types
 import { useGalleryFilters } from '../hooks/useGalleryFilters';
 import { signInWithGoogle } from '../lib/supabaseClient';
@@ -85,12 +85,6 @@ const HomeView: React.FC<HomeViewProps> = ({
 
   const exploreTabs: ExploreTab[] = ['GIFs', 'Images', 'Videos', 'Creators', 'Niches'];
 
-  // Effect to handle initial category when activeTab changes (optional sync)
-  useEffect(() => {
-     if (activeTab === 'videos') setSelectedCategory('Videos');
-     else if (activeTab === 'photos') setSelectedCategory('Images');
-  }, [activeTab]);
-
   // Derive unique creators for Creators tab
   const uniqueCreators = useMemo(() => {
     const creators = new Map();
@@ -146,18 +140,18 @@ const HomeView: React.FC<HomeViewProps> = ({
             style={{ top: scrollDirection === 'down' ? '0px' : '56px' }}
         >
              {/* Explore Navigation Tabs */}
-             <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pb-4 px-2 mb-2 border-b border-white/5">
+              <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pb-4 px-2 mb-2 border-b border-white/5">
                  {exploreTabs.map(tab => (
                      <button 
                          key={tab}
-                         onClick={() => setSelectedCategory(tab === 'Images' ? 'Photos' : tab)}
+                         onClick={() => setSelectedCategory(tab)}
                          className={cn(
                             "group relative py-2 transition-all cursor-pointer",
-                            (selectedCategory === tab || (tab === 'Images' && selectedCategory === 'Photos')) ? "text-white" : "text-gray-500 hover:text-gray-300"
+                            (selectedCategory === tab) ? "text-white" : "text-gray-500 hover:text-gray-300"
                          )}
                      >
                          <span className="text-sm font-black uppercase tracking-[0.2em] font-orbitron">{tab}</span>
-                         {(selectedCategory === tab || (tab === 'Images' && selectedCategory === 'Photos')) && (
+                         {(selectedCategory === tab) && (
                              <motion.div 
                                 layoutId="explore-active-pill"
                                 className="absolute -bottom-1 left-0 right-0 h-1 bg-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.5)] rounded-full"

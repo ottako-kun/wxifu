@@ -31,6 +31,7 @@ import { useAppNavigation } from './hooks/useAppNavigation';
 import { motion, AnimatePresence } from 'motion/react';
 
 const AppContent: React.FC = () => {
+  const { searchQuery, setSearchQuery, selectedCategory, setSelectedCategory } = useUI();
   const {
       currentView,
       setCurrentView,
@@ -84,22 +85,27 @@ const AppContent: React.FC = () => {
   const onUploadSubmitWrapper = useCallback(async (data: any) => {
       const type = await handleUploadSubmit(data);
       if (type) {
-         if (type === MediaType.Video) {
+         if (data.category === 'GIFs') {
+            setActiveTab('photos');
+            setSelectedCategory('GIFs');
+            setViewMode('grid');
+         } else if (type === MediaType.Video) {
             setActiveTab('videos');
+            setSelectedCategory('Videos');
             setViewMode('feed'); // Auto-switch to feed for videos
         } else {
             setActiveTab('photos');
+            setSelectedCategory('Images');
+            setViewMode('grid');
         }
       }
-  }, [handleUploadSubmit, setActiveTab]);
+  }, [handleUploadSubmit, setActiveTab, setSelectedCategory]);
 
   const profileMedia = React.useMemo(() => {
     if (!activeProfile) return [];
     const all = [...photoMedia, ...videoMedia];
     return all.filter(item => item.user_id === activeProfile.id);
   }, [photoMedia, videoMedia, activeProfile]);
-
-  const { searchQuery, setSearchQuery, selectedCategory, setSelectedCategory } = useUI();
 
   return (
     <div className="min-h-screen bg-[#020202] text-gray-100 flex flex-col selection:bg-pink-500 selection:text-white relative pb-16 md:pb-0 overflow-x-hidden">
