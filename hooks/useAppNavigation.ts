@@ -95,6 +95,17 @@ export const useAppNavigation = () => {
       }
   }, [currentView, handleNavigate]);
 
+  const handleLogout = useCallback(async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast.success("Successfully logged out.");
+      setCurrentView('home');
+    } catch (err: any) {
+      toast.error(err.message || "Failed to logout");
+    }
+  }, [toast]);
+
   return {
       currentView,
       setCurrentView,
@@ -103,6 +114,7 @@ export const useAppNavigation = () => {
       activeTab,
       setActiveTab,
       session,
+      handleLogout,
       searchInputRef,
       handleNavigate,
       handleUserClick,

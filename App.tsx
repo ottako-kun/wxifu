@@ -48,6 +48,7 @@ const AppContent: React.FC = () => {
       followedMedia,
       isLoading,
       error,
+      handleLogout,
       refresh
   } = useAppNavigation();
 
@@ -131,6 +132,8 @@ const AppContent: React.FC = () => {
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
           onUploadClick={handleUploadClick}
+          onLogout={handleLogout}
+          session={session}
         />
 
         <main className={cn(
@@ -172,6 +175,7 @@ const AppContent: React.FC = () => {
                             onBack={() => setCurrentView('home')} 
                             onUserClick={handleUserClick} 
                             onDataChange={refresh}
+                            onLogout={handleLogout}
                          />
                      )}
                  </div>

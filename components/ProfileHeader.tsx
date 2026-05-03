@@ -19,6 +19,7 @@ interface ProfileHeaderProps {
     onEditClick: () => void;
     onFollowToggle: () => void;
     onMessageClick?: (user: UserProfileData) => void;
+    onLogout?: () => void;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
@@ -34,7 +35,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     viewedUserFrame,
     onEditClick,
     onFollowToggle,
-    onMessageClick
+    onMessageClick,
+    onLogout
 }) => {
     return (
         <div className="flex flex-col md:flex-row items-center md:items-start gap-8 mb-16 border-b border-gray-800 pb-12">
@@ -58,12 +60,22 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                         </h2>
                         
                         {isOwner ? (
-                            <button 
-                                onClick={onEditClick}
-                                className="px-4 py-1.5 bg-gray-800/80 hover:bg-gray-700 text-gray-200 text-xs font-bold uppercase tracking-wider rounded-full border border-gray-700 transition-colors"
-                            >
-                                Edit Profile
-                            </button>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={onEditClick}
+                                    className="px-4 py-1.5 bg-gray-800/80 hover:bg-gray-700 text-gray-200 text-xs font-bold uppercase tracking-wider rounded-full border border-gray-700 transition-colors"
+                                >
+                                    Edit Profile
+                                </button>
+                                {onLogout && (
+                                    <button 
+                                        onClick={onLogout}
+                                        className="px-4 py-1.5 bg-red-950/20 hover:bg-red-900/40 text-red-400 text-xs font-bold uppercase tracking-wider rounded-full border border-red-500/30 transition-colors shadow-lg shadow-red-500/5"
+                                    >
+                                        Log Out
+                                    </button>
+                                )}
+                            </div>
                         ) : session ? (
                             <div className="flex gap-2">
                                 <button

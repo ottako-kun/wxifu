@@ -10,7 +10,8 @@ import {
   Image as ImageIcon, 
   Video as VideoIcon, 
   Hash, 
-  Plus
+  Plus,
+  LogOut
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,6 +24,8 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   onUploadClick: () => void;
+  onLogout: () => void;
+  session: any;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -34,7 +37,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     onNavigate,
     isOpen,
     onClose,
-    onUploadClick
+    onUploadClick,
+    onLogout,
+    session
 }) => {
   
   const navItems = [
@@ -125,6 +130,20 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Footer info at bottom of sidebar */}
         <div className="p-6 border-t border-white/5 mt-auto">
+            {session && (
+                <button 
+                    onClick={onLogout}
+                    className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-500/5 transition-all mb-4 border border-rose-500/20"
+                >
+                    <motion.div
+                        animate={{ rotate: [0, 10, -10, 0] }}
+                        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                    >
+                        <LogOut className="w-4 h-4" />
+                    </motion.div>
+                    Log Out
+                </button>
+            )}
             <div className="flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
                 <a href="#" className="hover:text-gray-400">Rules</a>
                 <a href="#" className="hover:text-gray-400">API</a>

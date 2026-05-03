@@ -33,9 +33,10 @@ interface ProfileViewProps {
   onBack: () => void;
   onUserClick?: (user: { id: string; name: string; avatar: string }) => void;
   onDataChange?: () => void;
+  onLogout?: () => void;
 }
 
-const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMedia, onBack, onUserClick, onDataChange }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMedia, onBack, onUserClick, onDataChange, onLogout }) => {
   const isOwner = session?.user.id === profileData.id;
   
   const [isEditing, setIsEditing] = useState(false);
@@ -116,6 +117,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ session, profileData, userMed
           onEditClick={() => setIsEditing(true)}
           onFollowToggle={handleFollowToggleWrapper}
           onMessageClick={openChat}
+          onLogout={onLogout}
       />
 
       {/* Profile Gallery Controls */}
