@@ -4,6 +4,7 @@ import CloseIcon from './icons/CloseIcon';
 import UploadIcon from './icons/UploadIcon';
 import PhotoIcon from './icons/PhotoIcon';
 import VideoIcon from './icons/VideoIcon';
+import PlayIcon from './icons/PlayIcon';
 import LockIcon from './icons/LockIcon';
 import { MediaType } from '../types';
 
@@ -26,7 +27,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
     type: MediaType.Photo,
     src: '',
     description: '',
-    category: 'Photos',
+    category: 'Images',
     tags: []
   });
   
@@ -90,6 +91,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
   };
 
   const isVideo = formData.type === MediaType.Video;
+  const isGif = formData.category === 'GIFs';
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -113,9 +115,9 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
             </label>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { id: 'Photos', type: MediaType.Photo, label: 'Photo', icon: PhotoIcon, color: 'pink' },
-                { id: 'Videos', type: MediaType.Video, label: 'Video', icon: VideoIcon, color: 'cyan' },
-                { id: 'GIFs', type: MediaType.Photo, label: 'GIF', icon: PlayIcon, color: 'purple' }
+                { id: 'Images', type: MediaType.Photo, label: 'Images', icon: PhotoIcon, color: 'pink' },
+                { id: 'Videos', type: MediaType.Video, label: 'Videos', icon: VideoIcon, color: 'cyan' },
+                { id: 'GIFs', type: MediaType.Photo, label: 'GIFs', icon: PlayIcon, color: 'purple' }
               ].map((cat) => (
                 <button
                   key={cat.id}
@@ -139,7 +141,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
           {/* URL Input */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-              {isVideo ? 'Video Link (Google Drive / Direct)' : 'Source Link (Direct / Drive)'}
+              {isVideo ? 'Video Link (Direct / Drive)' : isGif ? 'GIF Link (Giphy / Tenor / Direct)' : 'Image Link (Direct / Drive)'}
             </label>
             <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -150,13 +152,15 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
                 required
                 value={formData.src}
                 onChange={(e) => handleChange('src', e.target.value)}
-                placeholder={isVideo ? "https://drive.google.com/file/d/..." : "https://drive.google.com/file/d/..."}
+                placeholder={isVideo ? "https://.../video.mp4" : isGif ? "https://media.giphy.com/..." : "https://.../image.webp"}
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
                 />
             </div>
             <p className="text-[10px] text-gray-500 mt-2">
                 {isVideo 
-                  ? "Supports shared Google Drive files and direct video URLs." 
+                  ? "Supports direct video URLs and shared Google Drive files." 
+                  : isGif
+                  ? "Paste a link to a GIF from Giphy, Tenor, or any direct URL."
                   : "Supports direct image URLs and shared Google Drive images."}
             </p>
           </div>
