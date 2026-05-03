@@ -137,7 +137,7 @@ const AppContent: React.FC = () => {
         />
 
         <main className={cn(
-            "flex-grow transition-all duration-300 lg:pl-[260px] pt-14 md:pt-16 outline-none",
+            "flex-grow transition-all duration-300 lg:pl-[260px] pt-14 md:pt-16 pb-20 md:pb-6 outline-none flex flex-col min-h-[calc(100vh-4rem)] md:min-h-screen",
             viewMode === 'feed' && currentView === 'home' ? "pt-0 md:pt-0" : ""
         )}>
           <AnimatePresence mode="wait">
@@ -166,7 +166,7 @@ const AppContent: React.FC = () => {
                    onViewModeChange={setViewMode}
                 />
               ) : currentView === 'profile' ? (
-                 <div className="pt-16 md:pt-24 min-h-screen px-4 max-w-6xl mx-auto w-full">
+                 <div className="pt-2 md:pt-8 min-h-screen px-2 md:px-4 max-w-6xl mx-auto w-full">
                      {activeProfile && (
                          <ProfileView 
                             session={session} 
@@ -180,7 +180,7 @@ const AppContent: React.FC = () => {
                      )}
                  </div>
               ) : (
-                  <div className="pt-16 md:pt-24 min-h-screen px-4 max-w-4xl mx-auto w-full">
+                  <div className="pt-4 md:pt-12 min-h-screen px-2 md:px-4 max-w-4xl mx-auto w-full">
                       {session ? (
                           <InboxView 
                               currentUserId={session.user.id}

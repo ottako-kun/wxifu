@@ -131,8 +131,8 @@ const HomeView: React.FC<HomeViewProps> = ({
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <main className={cn(
-        "py-4 min-h-screen relative w-full flex flex-col",
-        viewMode === 'feed' ? 'max-w-none px-0' : 'px-4 lg:px-6'
+        "py-2 md:py-4 min-h-screen relative w-full flex flex-col",
+        viewMode === 'feed' ? 'max-w-none px-0' : 'px-2 sm:px-4 lg:px-6'
       )}>
         
         <div 

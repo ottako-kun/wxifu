@@ -37,14 +37,14 @@ const MediaGrid: React.FC<MediaGridProps> = ({ items, onUserClick, session, onDa
   const columnClass = useMemo(() => {
     switch (density) {
       case 'compact':
-        // Mobile: 3 columns, Desktop (XL): 12 columns
-        return "columns-3 sm:columns-4 md:columns-6 lg:columns-8 xl:columns-12";
+        // Mobile: 3 columns, Tablet: 5 columns, Desktop (L): 8 columns, Desktop (XL): 12 columns
+        return "columns-3 sm:columns-4 md:columns-5 lg:columns-8 xl:columns-12";
       case 'large':
-        // Mobile: 1 column, Desktop (XL): 5 columns
-        return "columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5";
+        // Mobile: 1 column, Tablet: 2 columns, Desktop (L): 3 columns, Desktop (XL): 5 columns
+        return "columns-1 sm:columns-2 md:columns-2 lg:columns-3 xl:columns-5";
       case 'standard':
       default:
-        // Mobile: 2 columns, Desktop (XL): 8 columns
+        // Mobile: 2 columns, Tablet: 3-4 columns, Desktop (L): 6 columns, Desktop (XL): 8 columns
         return "columns-2 sm:columns-3 md:columns-4 lg:columns-6 xl:columns-8";
     }
   }, [density]);

@@ -58,8 +58,8 @@ const ToastContainer: React.FC = () => {
   const { toasts, removeToast } = useToast();
 
   return (
-    <div className="fixed top-20 right-4 z-[100] flex flex-col items-end pointer-events-none">
-      <div className="pointer-events-auto">
+    <div className="fixed bottom-20 md:top-20 md:bottom-auto right-4 left-4 md:left-auto z-[100] flex flex-col items-center md:items-end pointer-events-none">
+      <div className="pointer-events-auto w-full md:w-auto flex flex-col items-center md:items-end">
         {toasts.map((toast) => (
           <ToastItem
             key={toast.id}
