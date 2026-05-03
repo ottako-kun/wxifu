@@ -9,9 +9,16 @@ export const useGalleryFilters = (items: MediaItem[]) => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(APP_CONFIG.itemsPerPage);
 
+  // Set default category to 'For You' if not set
+  useEffect(() => {
+    if (!selectedCategory || selectedCategory === 'All') {
+      setSelectedCategory('For You');
+    }
+  }, []);
+
   // Derive available categories from the dataset
   const availableCategories = useMemo(() => {
-    return ['All', 'GIFs', 'Images', 'Videos', 'Creators', 'Niches'];
+    return ['For You', 'Trending', 'GIFs', 'Images', 'Videos', 'Creators', 'Niches'];
   }, []);
 
   const availableTags = useMemo(() => {
@@ -35,7 +42,7 @@ export const useGalleryFilters = (items: MediaItem[]) => {
       const matchesSearch = query === '' || inDescription || inCategory || inTags || inAuthor;
       
       let matchesCategory = true;
-      if (selectedCategory !== 'All') {
+      if (selectedCategory && selectedCategory !== 'All' && selectedCategory !== 'For You' && selectedCategory !== 'Trending') {
         const cat = selectedCategory.toLowerCase();
         if (cat === 'images' || cat === 'photos') {
           matchesCategory = (item.type === MediaType.Photo && !item.src.toLowerCase().includes('.gif')) || item.category === 'Images' || item.category === 'Photos';
@@ -43,9 +50,6 @@ export const useGalleryFilters = (items: MediaItem[]) => {
           matchesCategory = item.type === MediaType.Video || item.category === 'Videos';
         } else if (cat === 'gifs') {
           matchesCategory = item.src.toLowerCase().includes('.gif') || item.category === 'GIFs';
-        } else if (cat === 'creators' || cat === 'niches') {
-            // These would normally be handled by a different rendering mode in HomeView
-            matchesCategory = true; 
         }
       }
       
@@ -56,9 +60,22 @@ export const useGalleryFilters = (items: MediaItem[]) => {
   }, [items, searchQuery, selectedCategory, selectedTags]);
 
   const sortedItems = useMemo(() => {
-    const sorted = [...filteredItems];
+    let sorted = [...filteredItems];
     
-    switch (sortOption) {
+    // Explicitly handle Trending tab by setting sort option if selected
+    const effectiveSortOption = selectedCategory === 'Trending' ? SortOption.Trending : sortOption;
+
+    if (selectedCategory === 'For You') {
+        // For You: Slightly randomized or mixed (pseudo-random based on id)
+        sorted = sorted.sort((a, b) => {
+            const hashA = a.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const hashB = b.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            return (hashB % 100) - (hashA % 100);
+        });
+        return sorted;
+    }
+    
+    switch (effectiveSortOption) {
       case SortOption.Trending:
         // Trending = Higher likes/views ratio or recently popular (mocking with likes)
         return sorted.sort((a, b) => (b.likes || 0) - (a.likes || 0));

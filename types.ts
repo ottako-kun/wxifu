@@ -30,7 +30,7 @@ export enum SortOption {
     Latest = 'latest'
 }
 
-export type ExploreTab = 'GIFs' | 'Images' | 'Videos' | 'Creators' | 'Niches';
+export type ExploreTab = 'For You' | 'Trending' | 'GIFs' | 'Images' | 'Videos' | 'Creators' | 'Niches';
 
 export interface MediaItem {
   id: string;

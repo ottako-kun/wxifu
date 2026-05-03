@@ -40,7 +40,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [showVolumeHUD, setShowVolumeHUD] = useState(false);
   const [density, setDensityState] = useState<DensityType>('standard');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('For You');
   
   const volumeTimerRef = useRef<number | null>(null);
 

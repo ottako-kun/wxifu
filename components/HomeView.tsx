@@ -83,7 +83,7 @@ const HomeView: React.FC<HomeViewProps> = ({
     visibleItems,
   } = useGalleryFilters(itemsToDisplay);
 
-  const exploreTabs: ExploreTab[] = ['GIFs', 'Images', 'Videos', 'Creators', 'Niches'];
+  const exploreTabs: ExploreTab[] = ['For You', 'Trending', 'GIFs', 'Images', 'Videos', 'Creators', 'Niches'];
 
   // Derive unique creators for Creators tab
   const uniqueCreators = useMemo(() => {
@@ -140,25 +140,47 @@ const HomeView: React.FC<HomeViewProps> = ({
             style={{ top: scrollDirection === 'down' ? '0px' : '56px' }}
         >
              {/* Explore Navigation Tabs */}
-              <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pb-4 px-2 mb-2 border-b border-white/5">
-                 {exploreTabs.map(tab => (
-                     <button 
-                         key={tab}
-                         onClick={() => setSelectedCategory(tab)}
-                         className={cn(
-                            "group relative py-2 transition-all cursor-pointer",
-                            (selectedCategory === tab) ? "text-white" : "text-gray-500 hover:text-gray-300"
-                         )}
-                     >
-                         <span className="text-sm font-black uppercase tracking-[0.2em] font-orbitron">{tab}</span>
-                         {(selectedCategory === tab) && (
-                             <motion.div 
-                                layoutId="explore-active-pill"
-                                className="absolute -bottom-1 left-0 right-0 h-1 bg-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.5)] rounded-full"
-                             />
-                         )}
-                     </button>
-                 ))}
+              <div className="flex items-center gap-4 md:gap-8 overflow-x-auto no-scrollbar pb-4 px-2 mb-2 border-b border-white/5 relative">
+                 {exploreTabs.map((tab, idx) => {
+                     const isPrimary = tab === 'For You' || tab === 'Trending';
+                     return (
+                         <button 
+                             key={tab}
+                             onClick={() => setSelectedCategory(tab)}
+                             className={cn(
+                                "group relative py-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-2",
+                                (selectedCategory === tab) ? "text-white" : "text-gray-500 hover:text-gray-300",
+                                isPrimary && "font-black"
+                             )}
+                         >
+                             {isPrimary && (
+                                 <div className={cn(
+                                     "w-1.5 h-1.5 rounded-full transition-all duration-500",
+                                     selectedCategory === tab ? (tab === 'For You' ? "bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.8)]" : "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]") : "bg-transparent"
+                                 )} />
+                             )}
+                             <span className={cn(
+                                 "text-xs md:text-sm uppercase tracking-[0.2em] font-orbitron transition-all",
+                                 selectedCategory === tab ? "scale-110" : "scale-100"
+                             )}>
+                                 {tab}
+                             </span>
+                             {(selectedCategory === tab) && (
+                                 <motion.div 
+                                    layoutId="explore-active-pill"
+                                    className={cn(
+                                        "absolute -bottom-1 left-0 right-0 h-0.5 rounded-full",
+                                        tab === 'For You' ? "bg-pink-500" : (tab === 'Trending' ? "bg-cyan-500" : "bg-white/40")
+                                    )}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                 />
+                             )}
+                         </button>
+                     );
+                 })}
+                 {/* Decorative spacer for mobile horizontal scroll */}
+                 <div className="min-w-[20px] h-4" />
              </div>
 
              <GalleryControls 
