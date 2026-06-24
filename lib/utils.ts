@@ -9,8 +9,8 @@ export function cn(...inputs: ClassValue[]) {
 import { getDriveId, getGoogleDriveImageUrl, getGoogleDriveVideoPreviewUrl, isGoogleDriveLink } from './googleDrive';
 
 // Default thumbnail for videos if none is provided
-export const DEFAULT_THUMB_URL = 'https://drive.google.com/file/d/12nzE1g4dwx6ltHIbK2rWtC4V58vYDlsP';
-export const HYPNOTUBE_DEFAULT_THUMB = 'https://drive.google.com/file/d/12nzE1g4dwx6ltHIbK2rWtC4V58vYDlsP';
+export const DEFAULT_THUMB_URL = 'https://lh3.googleusercontent.com/d/1NzeN_AT422Ec--ZGUGMILaW7-GxVVElF';
+export const HYPNOTUBE_DEFAULT_THUMB = 'https://lh3.googleusercontent.com/d/1NzeN_AT422Ec--ZGUGMILaW7-GxVVElF';
 
 export function isHypnotubeUrl(url?: string): boolean {
   if (!url) return false;
