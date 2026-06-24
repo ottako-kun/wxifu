@@ -121,7 +121,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
       className="w-full h-[100dvh] md:h-[90vh] bg-black md:bg-gray-950 md:rounded-3xl overflow-hidden mb-0 md:mb-8 shadow-2xl relative flex flex-col group/feed snap-start snap-always"
     >
         <div className="hidden md:block absolute inset-0 z-0 pointer-events-none">
-            <img src={item.src} className="w-full h-full object-cover opacity-25 blur-[100px] scale-110" alt="" />
+            <img src={item.src} referrerPolicy="no-referrer" className="w-full h-full object-cover opacity-25 blur-[100px] scale-110" alt="" />
         </div>
 
         <div 
@@ -195,6 +195,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                 <img 
                   src={item.src} 
                   alt={item.description} 
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-contain z-10 transition-opacity duration-700" 
                   onLoad={() => setIsImageLoaded(true)}
                 />

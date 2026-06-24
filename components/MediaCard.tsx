@@ -234,6 +234,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                     src={item.src} 
                     alt={item.description || "Gallery content"} 
+                    referrerPolicy="no-referrer"
                     className={cn(
                         "w-full h-auto object-cover block transition-opacity duration-500 ease-in-out",
                         isImageLoaded ? "opacity-100" : "opacity-0",

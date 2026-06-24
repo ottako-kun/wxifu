@@ -116,6 +116,7 @@ const MediaDetailModal: React.FC<MediaDetailModalProps> = ({ items, initialIndex
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
             <img 
                 src={item.src} 
+                referrerPolicy="no-referrer"
                 className={`w-full h-full object-cover scale-125 blur-[150px] opacity-40 brightness-[0.2] transition-all duration-1000 ${isChanging ? 'grayscale blur-[200px] opacity-20' : ''}`} 
                 alt="" 
             />

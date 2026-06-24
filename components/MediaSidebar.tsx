@@ -120,7 +120,7 @@ const MediaSidebar: React.FC<MediaSidebarProps> = ({
                 <div className="grid grid-cols-3 gap-2">
                     {relatedItems.map(rel => (
                         <div key={rel.id} onClick={() => onRelatedClick(rel.id)} className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-pink-500 transition-all relative" title="View related content">
-                            <img src={rel.src} className="w-full h-full object-cover" alt="Related" />
+                            <img src={rel.src} referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="Related" />
                         </div>
                     ))}
                 </div>

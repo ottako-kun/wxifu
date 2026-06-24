@@ -167,6 +167,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, isUnlocked, onZ
       <img 
         src={src} 
         alt={alt} 
+        referrerPolicy="no-referrer"
         className={`max-h-full max-w-full object-contain select-none transition-transform duration-100 ease-out relative z-10
             ${!isUnlocked ? 'blur-3xl opacity-30 grayscale' : ''}
             ${isDragging ? 'cursor-grabbing' : transform.scale > 1 ? 'cursor-grab' : 'cursor-zoom-in'}
