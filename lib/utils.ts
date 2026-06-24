@@ -10,6 +10,31 @@ import { getDriveId, getGoogleDriveImageUrl, getGoogleDriveVideoPreviewUrl, isGo
 
 // Default thumbnail for videos if none is provided
 export const DEFAULT_THUMB_URL = 'https://lh3.googleusercontent.com/d/1Qcdu24M-ArsEeqTTLqSY1OzDx8NM14gM';
+export const HYPNOTUBE_DEFAULT_THUMB = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop';
+
+export function isHypnotubeUrl(url?: string): boolean {
+  if (!url) return false;
+  return /hypnotube\.com\/(video|embed)\//i.test(url);
+}
+
+export function getHypnotubeEmbedUrl(url?: string): string {
+  if (!url) return '';
+  if (url.includes('/embed/')) {
+    return url;
+  }
+  const match = url.match(/\/video\/([a-zA-Z0-9_-]+)(?:\.html|\/)?/i);
+  if (match) {
+    const slug = match[1];
+    const idMatch = slug.match(/-(\d+)$/);
+    if (idMatch) {
+      return `https://hypnotube.com/embed/${idMatch[1]}`;
+    }
+    if (/^\d+$/.test(slug)) {
+      return `https://hypnotube.com/embed/${slug}`;
+    }
+  }
+  return url;
+}
 
 // Simple string hash for stable IDs
 export const generateHash = (str: string) => {
@@ -23,14 +48,15 @@ export const generateHash = (str: string) => {
 };
 
 export const processMediaItem = (item: any, index: number): MediaItem => {
-  // Case insensitive check for video type
-  const rawType = item.type ? String(item.type).toUpperCase() : '';
-  const isVideo = rawType === 'VIDEO' || rawType === MediaType.Video;
-  
-  const type = isVideo ? MediaType.Video : MediaType.Photo;
-  
   // Input Source Handling
   const sourceString = item.link || item.src || item.url || '';
+  const hasHypnotube = isHypnotubeUrl(sourceString);
+
+  // Case insensitive check for video type
+  const rawType = item.type ? String(item.type).toUpperCase() : '';
+  const isVideo = rawType === 'VIDEO' || rawType === MediaType.Video || hasHypnotube;
+  
+  const type = isVideo ? MediaType.Video : MediaType.Photo;
   
   // Generate stable ID based on content source rather than index
   const contentHash = generateHash(sourceString + (item.description || ''));
@@ -42,27 +68,30 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
   let finalVideoSrc = item.videoSrc;
 
   if (type === MediaType.Photo) {
-     // Auto-convert Drive Links to High-Res Image Proxy
-     if (driveId) {
-        finalSrc = getGoogleDriveImageUrl(driveId);
-     }
+      // Auto-convert Drive Links to High-Res Image Proxy
+      if (driveId) {
+         finalSrc = getGoogleDriveImageUrl(driveId);
+      }
   } else {
-     // Video Handling
-     // Check if thumbnail is also a Drive link
-     const thumbDriveId = getDriveId(item.thumbnail);
-     if (thumbDriveId) {
-         finalSrc = getGoogleDriveImageUrl(thumbDriveId);
-     } else {
-         finalSrc = item.thumbnail || DEFAULT_THUMB_URL;
-     }
-     
-     if (driveId) {
-        // Handle Google Drive
-        finalVideoSrc = getGoogleDriveVideoPreviewUrl(driveId);
-     } else {
-        // Use the direct link or existing videoSrc for non-Drive links
-        finalVideoSrc = item.videoSrc || sourceString;
-     }
+      // Video Handling
+      // Check if thumbnail is also a Drive link
+      const thumbDriveId = getDriveId(item.thumbnail);
+      if (thumbDriveId) {
+          finalSrc = getGoogleDriveImageUrl(thumbDriveId);
+      } else {
+          finalSrc = item.thumbnail || (hasHypnotube ? HYPNOTUBE_DEFAULT_THUMB : DEFAULT_THUMB_URL);
+      }
+      
+      if (driveId) {
+         // Handle Google Drive
+         finalVideoSrc = getGoogleDriveVideoPreviewUrl(driveId);
+      } else if (hasHypnotube) {
+         // Handle HypnoTube
+         finalVideoSrc = getHypnotubeEmbedUrl(sourceString);
+      } else {
+         // Use the direct link or existing videoSrc for non-Drive links
+         finalVideoSrc = item.videoSrc || sourceString;
+      }
   }
 
   // Author Logic

@@ -32,6 +32,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
   });
   
   const [tagInput, setTagInput] = useState('');
+  const [directLink, setDirectLink] = useState('');
+  const [hypnotubeLink, setHypnotubeLink] = useState('');
 
   const handleChange = (field: keyof UploadFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -123,7 +125,9 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
                   key={cat.id}
                   type="button"
                   onClick={() => {
-                    setFormData(prev => ({ ...prev, category: cat.id, type: cat.type }));
+                    setFormData(prev => ({ ...prev, category: cat.id, type: cat.type, src: '' }));
+                    setDirectLink('');
+                    setHypnotubeLink('');
                   }}
                   className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all duration-300 ${
                     formData.category === cat.id
@@ -139,31 +143,107 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
           </div>
 
           {/* URL Input */}
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-              {isVideo ? 'Video Link (Direct / Drive)' : isGif ? 'GIF Link (Giphy / Tenor / Direct)' : 'Image Link (Direct / Drive)'}
-            </label>
-            <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <UploadIcon className="h-5 w-5 text-gray-500" />
-                </div>
-                <input
-                type="text"
-                required
-                value={formData.src}
-                onChange={(e) => handleChange('src', e.target.value)}
-                placeholder={isVideo ? "https://.../video.mp4" : isGif ? "https://media.giphy.com/..." : "https://.../image.webp"}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
-                />
+          {!isVideo ? (
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                {isGif ? 'GIF Link (Giphy / Tenor / Direct)' : 'Image Link (Direct / Drive)'}
+              </label>
+              <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <UploadIcon className="h-5 w-5 text-gray-500" />
+                  </div>
+                  <input
+                  type="text"
+                  required
+                  value={formData.src}
+                  onChange={(e) => handleChange('src', e.target.value)}
+                  placeholder={isGif ? "https://media.giphy.com/..." : "https://.../image.webp"}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                  />
+              </div>
+              <p className="text-[10px] text-gray-500 mt-2">
+                  {isGif
+                    ? "Paste a link to a GIF from Giphy, Tenor, or any direct URL."
+                    : "Supports direct image URLs and shared Google Drive images."}
+              </p>
             </div>
-            <p className="text-[10px] text-gray-500 mt-2">
-                {isVideo 
-                  ? "Supports direct video URLs and shared Google Drive files." 
-                  : isGif
-                  ? "Paste a link to a GIF from Giphy, Tenor, or any direct URL."
-                  : "Supports direct image URLs and shared Google Drive images."}
-            </p>
-          </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Box 1: Direct Video Link */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Video Link (Direct / Drive)
+                </label>
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <UploadIcon className="h-5 w-5 text-gray-500" />
+                    </div>
+                    <input
+                    type="text"
+                    required={!hypnotubeLink}
+                    value={directLink}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setDirectLink(val);
+                      if (val) {
+                        setHypnotubeLink('');
+                        handleChange('src', val);
+                      } else {
+                        handleChange('src', '');
+                      }
+                    }}
+                    placeholder="https://.../video.mp4"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                    />
+                </div>
+                <p className="text-[10px] text-gray-500 mt-1">
+                    Supports direct video URLs and shared Google Drive files.
+                </p>
+              </div>
+
+              {/* OR Divider */}
+              <div className="flex items-center gap-3">
+                <div className="flex-grow h-[1px] bg-gray-800"></div>
+                <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest font-orbitron">OR</span>
+                <div className="flex-grow h-[1px] bg-gray-800"></div>
+              </div>
+
+              {/* Box 2: HypnoTube Link */}
+              <div>
+                <label className="block text-xs font-bold text-pink-500/80 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 bg-pink-500 rounded-full animate-pulse shadow-[0_0_8px_#ec4899]"></span>
+                  HypnoTube Video Link
+                </label>
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="h-5 w-5 text-pink-500/60" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                        </svg>
+                    </div>
+                    <input
+                    type="text"
+                    required={!directLink}
+                    value={hypnotubeLink}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setHypnotubeLink(val);
+                      if (val) {
+                        setDirectLink('');
+                        handleChange('src', val);
+                      } else {
+                        handleChange('src', '');
+                      }
+                    }}
+                    placeholder="https://hypnotube.com/video/shemale-dildo-trainer-103.html"
+                    className="w-full bg-gray-800/60 border border-pink-500/30 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                    />
+                </div>
+                <p className="text-[10px] text-pink-500/60 mt-1">
+                    Paste a HypnoTube video URL to embed and play it directly in the app.
+                </p>
+              </div>
+            </div>
+          )}
 
 
           

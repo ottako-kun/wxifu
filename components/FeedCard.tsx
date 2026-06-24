@@ -14,6 +14,7 @@ import { useDoubleTap } from '../hooks/useDoubleTap';
 import { useUI } from '../context/UIContext';
 import Avatar from './Avatar';
 import { isGoogleDriveLink } from '../lib/googleDrive';
+import { isHypnotubeUrl } from '../lib/utils';
 
 interface FeedCardProps {
   item: MediaItem;
@@ -41,7 +42,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
 
   const isOwner = session?.user.id === item.user_id;
   const isUnlocked = true; // Simplified: everything is unlocked
-  const isDriveVideo = item.type === MediaType.Video && isGoogleDriveLink(item.videoSrc);
+  const isIframeVideo = item.type === MediaType.Video && (isGoogleDriveLink(item.videoSrc) || isHypnotubeUrl(item.videoSrc));
 
   useEffect(() => {
     if (videoRef.current) {
@@ -50,7 +51,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   }, [isGlobalMuted]);
 
   useEffect(() => {
-    if (item.type !== MediaType.Video || !isUnlocked || isDriveVideo) return;
+    if (item.type !== MediaType.Video || !isUnlocked || isIframeVideo) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -141,7 +142,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
 
             {item.type === MediaType.Video ? (
                 <div className="w-full h-full relative group/player">
-                    {isDriveVideo ? (
+                    {isIframeVideo ? (
                         <div className="w-full h-full relative">
                             {!iframeLoaded && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-20">
@@ -280,7 +281,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                 </div>
             </div>
 
-            {item.type === MediaType.Video && isUnlocked && !isDriveVideo && (
+            {item.type === MediaType.Video && isUnlocked && !isIframeVideo && (
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10 z-50">
                     <div className="h-full bg-pink-500 shadow-[0_0_15px_#ec4899] transition-all duration-300 ease-linear" style={{ width: `${progress}%` }} />
                 </div>

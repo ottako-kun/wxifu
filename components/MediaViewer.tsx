@@ -6,6 +6,7 @@ import LoadingSpinner from './icons/LoadingSpinner';
 import PlayIcon from './icons/PlayIcon';
 import { useUI } from '../context/UIContext';
 import { isGoogleDriveLink } from '../lib/googleDrive';
+import { isHypnotubeUrl } from '../lib/utils';
 
 interface MediaViewerProps {
   item: MediaItem;
@@ -36,6 +37,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
   const isDirectVideo = (url?: string) => {
     if (!url) return false;
     if (isGoogleDriveLink(url)) return false;
+    if (isHypnotubeUrl(url)) return false;
     return /\.(mp4|webm|ogg|mov)($|\?)/i.test(url);
   };
 
