@@ -14,7 +14,7 @@ import { useDoubleTap } from '../hooks/useDoubleTap';
 import { useUI } from '../context/UIContext';
 import Avatar from './Avatar';
 import { isGoogleDriveLink } from '../lib/googleDrive';
-import { isHypnotubeUrl } from '../lib/utils';
+import { isHypnotubeUrl, DEFAULT_THUMB_URL } from '../lib/utils';
 
 interface FeedCardProps {
   item: MediaItem;
@@ -32,6 +32,11 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
   const [progress, setProgress] = useState(0);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState(item.src);
+  
+  useEffect(() => {
+    setCurrentSrc(item.src);
+  }, [item.src]);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -121,7 +126,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
       className="w-full h-[100dvh] md:h-[90vh] bg-black md:bg-gray-950 md:rounded-3xl overflow-hidden mb-0 md:mb-8 shadow-2xl relative flex flex-col group/feed snap-start snap-always"
     >
         <div className="hidden md:block absolute inset-0 z-0 pointer-events-none">
-            <img src={item.src} referrerPolicy="no-referrer" className="w-full h-full object-cover opacity-25 blur-[100px] scale-110" alt="" />
+            <img src={currentSrc} referrerPolicy="no-referrer" className="w-full h-full object-cover opacity-25 blur-[100px] scale-110" alt="" />
         </div>
 
         <div 
@@ -143,20 +148,43 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
             {item.type === MediaType.Video ? (
                 <div className="w-full h-full relative group/player">
                     {isIframeVideo ? (
-                        <div className="w-full h-full relative">
-                            {!iframeLoaded && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-20">
-                                    <LoadingSpinner className="w-12 h-12 text-pink-500 mb-4" />
-                                    <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] animate-pulse font-orbitron">Establishing Signal</p>
+                        isHypnotubeUrl(item.videoSrc) ? (
+                            <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center text-center p-8 bg-black/95 backdrop-blur-3xl z-30">
+                                <div className="w-16 h-16 rounded-full bg-pink-500/10 flex items-center justify-center mb-6 border border-pink-500/30">
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-pink-500">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                  </svg>
                                 </div>
-                            )}
-                            <iframe 
-                                src={item.videoSrc}
-                                className="w-full h-full border-0 z-10"
-                                allow="autoplay"
-                                onLoad={() => setIframeLoaded(true)}
-                            />
-                        </div>
+                                <h3 className="text-white text-base font-bold font-orbitron uppercase tracking-widest mb-2">Embed Restrained</h3>
+                                <p className="text-gray-400 text-xs mb-8 max-w-[280px] leading-relaxed mx-auto">
+                                    HypnoTube prohibits inline frame embedding. View the direct host link in a secure browser container.
+                                </p>
+                                <a 
+                                    href={item.src || item.videoSrc} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="px-8 py-4 bg-pink-600 hover:bg-pink-500 text-white font-black rounded-2xl transition-all shadow-[0_0_15px_rgba(236,72,153,0.5)] active:scale-95 uppercase tracking-widest text-[9px] font-orbitron"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    Open External Stream
+                                </a>
+                            </div>
+                        ) : (
+                            <div className="w-full h-full relative">
+                                {!iframeLoaded && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-20">
+                                        <LoadingSpinner className="w-12 h-12 text-pink-500 mb-4" />
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] animate-pulse font-orbitron">Establishing Signal</p>
+                                    </div>
+                                )}
+                                <iframe 
+                                    src={item.videoSrc}
+                                    className="w-full h-full border-0 z-10"
+                                    allow="autoplay"
+                                    onLoad={() => setIframeLoaded(true)}
+                                />
+                            </div>
+                        )
                     ) : (
                         <>
                             <video 
@@ -165,7 +193,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                                 loop
                                 muted={isGlobalMuted}
                                 playsInline
-                                poster={item.src}
+                                poster={currentSrc}
                                 onTimeUpdate={handleTimeUpdate}
                                 onPlay={() => setIsPlaying(true)}
                                 onPause={() => setIsPlaying(false)}
@@ -193,11 +221,16 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                 </div>
             ) : (
                 <img 
-                  src={item.src} 
+                  src={currentSrc} 
                   alt={item.description} 
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-contain z-10 transition-opacity duration-700" 
                   onLoad={() => setIsImageLoaded(true)}
+                  onError={() => {
+                    if (currentSrc !== DEFAULT_THUMB_URL) {
+                      setCurrentSrc(DEFAULT_THUMB_URL);
+                    }
+                  }}
                 />
             )}
 

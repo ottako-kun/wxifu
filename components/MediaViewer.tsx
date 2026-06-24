@@ -36,9 +36,10 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
 
   const isDirectVideo = (url?: string) => {
     if (!url) return false;
+    if (/\.(mp4|webm|ogg|mov)($|\?)/i.test(url)) return true;
     if (isGoogleDriveLink(url)) return false;
     if (isHypnotubeUrl(url)) return false;
-    return /\.(mp4|webm|ogg|mov)($|\?)/i.test(url);
+    return false;
   };
 
   const isUnlocked = true; // Simplified for now: everything is unlocked
@@ -274,6 +275,26 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                 </div>
                             </div>
                         </div>
+                    ) : isHypnotubeUrl(item.videoSrc) ? (
+                        <div className="flex flex-col items-center text-center p-12 bg-gray-950 rounded-[3rem] border border-gray-800 border-dashed backdrop-blur-md max-w-xl mx-auto z-30">
+                            <div className="w-16 h-16 rounded-full bg-pink-500/10 flex items-center justify-center mb-6 border border-pink-500/30">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-pink-500">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                              </svg>
+                            </div>
+                            <h3 className="text-white text-lg font-bold font-orbitron uppercase tracking-widest mb-2">Embed Restrained</h3>
+                            <p className="text-gray-400 text-xs mb-8 max-w-sm leading-relaxed">
+                                HypnoTube prohibits inline frame embedding on external networks. To play this neural video, view the direct host link in a secure browser container.
+                            </p>
+                            <a 
+                                href={item.src || item.videoSrc} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="px-12 py-5 bg-pink-600 hover:bg-pink-500 text-white font-black rounded-3xl transition-all shadow-[0_0_15px_rgba(236,72,153,0.5)] active:scale-95 uppercase tracking-widest text-[10px] font-orbitron"
+                            >
+                                Open External Stream
+                            </a>
+                        </div>
                     ) : (
                         <div className="w-full h-full max-w-6xl aspect-video mx-auto relative overflow-hidden rounded-[2.5rem] shadow-2xl border border-white/5 bg-black">
                             {!iframeLoaded && (
@@ -281,7 +302,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                      <LoadingSpinner className="w-14 h-14 text-pink-500 mb-4" />
                                      <p className="text-[9px] text-gray-500 uppercase font-black tracking-[0.4em] font-orbitron animate-pulse">Establishing Signal</p>
                                  </div>
-                            )}
+                             )}
                             <iframe 
                                 key={item.id}
                                 src={item.videoSrc}

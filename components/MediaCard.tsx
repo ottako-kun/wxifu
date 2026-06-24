@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { MediaItem, MediaType, Session } from '../types';
-import { cn } from '../lib/utils';
+import { cn, DEFAULT_THUMB_URL } from '../lib/utils';
 import PlayIcon from './icons/PlayIcon';
 import ShareIcon from './icons/ShareIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -134,6 +134,11 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
   const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState(item.src);
+  
+  useEffect(() => {
+    setCurrentSrc(item.src);
+  }, [item.src]);
   
   const cardRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -232,7 +237,7 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
                 <motion.img 
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    src={item.src} 
+                    src={currentSrc} 
                     alt={item.description || "Gallery content"} 
                     referrerPolicy="no-referrer"
                     className={cn(
@@ -242,6 +247,11 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
                     )}
                     loading="lazy"
                     onLoad={() => setIsImageLoaded(true)}
+                    onError={() => {
+                      if (currentSrc !== DEFAULT_THUMB_URL) {
+                        setCurrentSrc(DEFAULT_THUMB_URL);
+                      }
+                    }}
                 />
                 
                 {item.type === MediaType.Video && isHovered && (
