@@ -36,6 +36,68 @@ export function getHypnotubeEmbedUrl(url?: string): string {
   return url;
 }
 
+export function isRedgifsUrl(url?: string): boolean {
+  if (!url) return false;
+  return /redgifs\.com/i.test(url);
+}
+
+export function getRedgifsId(url?: string): string | null {
+  if (!url) return null;
+  
+  let target = url;
+  // If it's an iframe embed code, extract the src attribute
+  if (url.includes('<iframe')) {
+    const srcMatch = url.match(/src=['"]([^'"]+)['"]/i);
+    if (srcMatch) {
+      target = srcMatch[1];
+    }
+  }
+  
+  // Extract ID from watch, iframe, or detail links
+  const idMatch = target.match(/redgifs\.com\/(?:ifr|watch|detail)\/([a-zA-Z0-9_-]+)/i);
+  if (idMatch) {
+    return idMatch[1];
+  }
+  
+  // Try matching filename for thumbs/media links
+  const mediaMatch = target.match(/([a-zA-Z0-9_-]+)-(?:large|poster|small|mobile)\.(?:jpg|png|webp|mp4|gif)/i);
+  if (mediaMatch) {
+    return mediaMatch[1];
+  }
+  
+  // Simple match for path segments if it contains redgifs.com
+  if (target.includes('redgifs.com')) {
+    const segments = target.split('/');
+    const lastSegment = segments[segments.length - 1];
+    if (lastSegment) {
+      const cleanSegment = lastSegment.split('?')[0].split('#')[0];
+      if (/^[a-zA-Z0-9_-]+$/.test(cleanSegment)) {
+        return cleanSegment;
+      }
+    }
+  }
+
+  return null;
+}
+
+export function getRedgifsEmbedUrl(url?: string): string {
+  if (!url) return '';
+  const id = getRedgifsId(url);
+  if (id) {
+    return `https://www.redgifs.com/ifr/${id}`;
+  }
+  return url;
+}
+
+export function getRedgifsThumbnailUrl(url?: string): string {
+  if (!url) return '';
+  const id = getRedgifsId(url);
+  if (id) {
+    return `https://thumbs2.redgifs.com/${id}-large.jpg`;
+  }
+  return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop';
+}
+
 // Simple string hash for stable IDs
 export const generateHash = (str: string) => {
   let hash = 0;
@@ -51,10 +113,11 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
   // Input Source Handling
   const sourceString = item.link || item.src || item.url || '';
   const hasHypnotube = isHypnotubeUrl(sourceString);
+  const hasRedgifs = isRedgifsUrl(sourceString);
 
   // Case insensitive check for video type
   const rawType = item.type ? String(item.type).toUpperCase() : '';
-  const isVideo = rawType === 'VIDEO' || rawType === MediaType.Video || hasHypnotube;
+  const isVideo = rawType === 'VIDEO' || rawType === MediaType.Video || hasHypnotube || hasRedgifs;
   
   const type = isVideo ? MediaType.Video : MediaType.Photo;
   
@@ -79,7 +142,7 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
       if (thumbDriveId) {
           finalSrc = getGoogleDriveImageUrl(thumbDriveId);
       } else {
-          finalSrc = item.thumbnail || (hasHypnotube ? HYPNOTUBE_DEFAULT_THUMB : DEFAULT_THUMB_URL);
+          finalSrc = item.thumbnail || (hasHypnotube ? HYPNOTUBE_DEFAULT_THUMB : (hasRedgifs ? getRedgifsThumbnailUrl(sourceString) : DEFAULT_THUMB_URL));
       }
       
       if (driveId) {
@@ -88,6 +151,9 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
       } else if (hasHypnotube) {
          // Handle HypnoTube
          finalVideoSrc = getHypnotubeEmbedUrl(sourceString);
+      } else if (hasRedgifs) {
+         // Handle RedGIFs
+         finalVideoSrc = getRedgifsEmbedUrl(sourceString);
       } else {
          // Use the direct link or existing videoSrc for non-Drive links
          finalVideoSrc = item.videoSrc || sourceString;
