@@ -14,7 +14,7 @@ import { useDoubleTap } from '../hooks/useDoubleTap';
 import { useUI } from '../context/UIContext';
 import Avatar from './Avatar';
 import { isGoogleDriveLink } from '../lib/googleDrive';
-import { isHypnotubeUrl, DEFAULT_THUMB_URL } from '../lib/utils';
+import { isHypnotubeUrl, DEFAULT_THUMB_URL, isRedgifsUrl } from '../lib/utils';
 
 interface FeedCardProps {
   item: MediaItem;
@@ -47,7 +47,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
 
   const isOwner = session?.user.id === item.user_id;
   const isUnlocked = true; // Simplified: everything is unlocked
-  const isIframeVideo = item.type === MediaType.Video && (isGoogleDriveLink(item.videoSrc) || isHypnotubeUrl(item.videoSrc));
+  const isIframeVideo = item.type === MediaType.Video && (isGoogleDriveLink(item.videoSrc) || isHypnotubeUrl(item.videoSrc) || isRedgifsUrl(item.videoSrc));
 
   useEffect(() => {
     if (videoRef.current) {

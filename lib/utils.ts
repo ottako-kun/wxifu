@@ -41,6 +41,14 @@ export function isRedgifsUrl(url?: string): boolean {
   return /redgifs\.com/i.test(url);
 }
 
+export function isDirectVideoUrl(url?: string): boolean {
+  if (!url) return false;
+  if (/\.(mp4|webm|ogg|mov)($|\?)/i.test(url)) return true;
+  if (isGoogleDriveLink(url)) return false;
+  if (isHypnotubeUrl(url)) return false;
+  return false;
+}
+
 export function getRedgifsId(url?: string): string | null {
   if (!url) return null;
   
@@ -114,10 +122,11 @@ export const processMediaItem = (item: any, index: number): MediaItem => {
   const sourceString = item.link || item.src || item.url || '';
   const hasHypnotube = isHypnotubeUrl(sourceString);
   const hasRedgifs = isRedgifsUrl(sourceString);
+  const isDirectVid = isDirectVideoUrl(sourceString);
 
   // Case insensitive check for video type
   const rawType = item.type ? String(item.type).toUpperCase() : '';
-  const isVideo = rawType === 'VIDEO' || rawType === MediaType.Video || hasHypnotube || hasRedgifs;
+  const isVideo = rawType === 'VIDEO' || rawType === MediaType.Video || hasHypnotube || hasRedgifs || isDirectVid;
   
   const type = isVideo ? MediaType.Video : MediaType.Photo;
   
