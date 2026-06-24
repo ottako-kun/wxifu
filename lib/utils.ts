@@ -9,8 +9,8 @@ export function cn(...inputs: ClassValue[]) {
 import { getDriveId, getGoogleDriveImageUrl, getGoogleDriveVideoPreviewUrl, isGoogleDriveLink } from './googleDrive';
 
 // Default thumbnail for videos if none is provided
-export const DEFAULT_THUMB_URL = 'https://lh3.googleusercontent.com/d/1Qcdu24M-ArsEeqTTLqSY1OzDx8NM14gM';
-export const HYPNOTUBE_DEFAULT_THUMB = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop';
+export const DEFAULT_THUMB_URL = 'https://lh3.googleusercontent.com/d/1B4aawP-ai23NZOKVSsV4OGtvWBr87xC0';
+export const HYPNOTUBE_DEFAULT_THUMB = 'https://lh3.googleusercontent.com/d/1B4aawP-ai23NZOKVSsV4OGtvWBr87xC0';
 
 export function isHypnotubeUrl(url?: string): boolean {
   if (!url) return false;
@@ -95,7 +95,7 @@ export function getRedgifsThumbnailUrl(url?: string): string {
   if (id) {
     return `https://thumbs2.redgifs.com/${id}-large.jpg`;
   }
-  return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop';
+  return DEFAULT_THUMB_URL;
 }
 
 // Simple string hash for stable IDs
