@@ -146,7 +146,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
           {!isVideo ? (
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                {isGif ? 'GIF Link (Giphy / Tenor / Direct)' : 'Image Link (Direct / Drive)'}
+                {isGif ? 'GIF Link (Giphy / Tenor / Direct)' : 'Image Link (Direct / RedGIFs / Drive)'}
               </label>
               <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -157,14 +157,14 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
                   required
                   value={formData.src}
                   onChange={(e) => handleChange('src', e.target.value)}
-                  placeholder={isGif ? "https://media.giphy.com/..." : "https://.../image.webp"}
+                  placeholder={isGif ? "https://media.giphy.com/..." : "https://media.redgifs.com/ExperiencedGreedyCutworm-large.jpg"}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
                   />
               </div>
               <p className="text-[10px] text-gray-500 mt-2">
                   {isGif
                     ? "Paste a link to a GIF from Giphy, Tenor, or any direct URL."
-                    : "Supports direct image URLs and shared Google Drive images."}
+                    : "Supports direct image URLs, RedGIFs (media.redgifs.com), and shared Google Drive images."}
               </p>
             </div>
           ) : (

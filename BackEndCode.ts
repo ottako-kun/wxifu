@@ -67,6 +67,15 @@ function doPost(e) {
       case 'INSERT_MEDIA':
         payload.id = payload.id || Utilities.getUuid();
         payload.created_at = new Date().toISOString();
+        
+        // Auto-resolve HypnoTube URL to direct MP4 source
+        if (payload.src && /hypnotube\.com/i.test(payload.src)) {
+          const directUrl = resolveHypnotubeUrl(payload.src);
+          if (directUrl) {
+            payload.videoSrc = directUrl;
+          }
+        }
+        
         response.data = appendRow('media', payload);
         response.success = true;
         break;
@@ -75,6 +84,12 @@ function doPost(e) {
         response.success = true;
         break;
       case 'UPDATE_MEDIA':
+        if (payload.updates && payload.updates.src && /hypnotube\.com/i.test(payload.updates.src)) {
+          const directUrl = resolveHypnotubeUrl(payload.updates.src);
+          if (directUrl) {
+            payload.updates.videoSrc = directUrl;
+          }
+        }
         updateRow('media', 'id', payload.id, payload.updates);
         response.success = true;
         break;
@@ -242,5 +257,64 @@ function updateRow(sheetName, keyCol, keyValue, updates) {
         }
       }
     }
+  }
+}
+
+function resolveHypnotubeUrl(url) {
+  if (!url) return null;
+  try {
+    const response = UrlFetchApp.fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Referer": "https://hypnotube.com/"
+      },
+      muteHttpExceptions: true
+    });
+    const html = response.getContentText();
+    
+    // 1. Try og:video or og:video:secure_url meta tags
+    const ogVideoRegex = /<meta\s+[^>]*property=["']og:video(?::secure_url)?["']\s+[^>]*content=["']([^"']+)["']/i;
+    let match = html.match(ogVideoRegex);
+    if (match) return match[1];
+
+    const ogVideoRegex2 = /<meta\s+[^>]*content=["']([^"']+)["']\s+[^>]*property=["']og:video(?::secure_url)?["']/i;
+    match = html.match(ogVideoRegex2);
+    if (match) return match[1];
+
+    // 2. Try twitter:player:stream meta tag
+    const twitterRegex = /<meta\s+[^>]*name=["']twitter:player:stream["']\s+[^>]*content=["']([^"']+)["']/i;
+    match = html.match(twitterRegex);
+    if (match) return match[1];
+
+    const twitterRegex2 = /<meta\s+[^>]*content=["']([^"']+)["']\s+[^>]*name=["']twitter:player:stream["']/i;
+    match = html.match(twitterRegex2);
+    if (match) return match[1];
+
+    // 3. Try HTML5 source tags
+    const sourceRegex = /<source\s+[^>]*src=["'](https:\/\/[^"']+\.mp4(?:\?[^"']+)?)["']/i;
+    match = html.match(sourceRegex);
+    if (match) return match[1];
+
+    // 4. Try json or script configs (e.g. file: "...", videoUrl: "...", videoSrc: "...")
+    const configRegex = /(?:file|videoUrl|video_url|videoSrc)\s*:\s*["'](https:\/\/[^"']+\.mp4(?:\?[^"']+)?)["']/i;
+    match = html.match(configRegex);
+    if (match) return match[1];
+
+    // 5. Broad search for any direct .mp4 link
+    const mp4Regex = /"https:\/\/[^"']+\.mp4(?:\?[^"']+)?"/gi;
+    const links = html.match(mp4Regex);
+    if (links && links.length > 0) {
+      for (let i = 0; i < links.length; i++) {
+        const link = links[i].replace(/["']/g, '');
+        if (!link.includes('promo') && !link.includes('ad') && !link.includes('trailer')) {
+          return link;
+        }
+      }
+      return links[0].replace(/["']/g, '');
+    }
+    
+    return null;
+  } catch (e) {
+    return null;
   }
 }
