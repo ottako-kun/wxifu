@@ -6,7 +6,7 @@ import LoadingSpinner from './icons/LoadingSpinner';
 import PlayIcon from './icons/PlayIcon';
 import { useUI } from '../context/UIContext';
 import { isGoogleDriveLink } from '../lib/googleDrive';
-import { isHypnotubeUrl } from '../lib/utils';
+import { isHypnotubeUrl, isDirectVideoUrl } from '../lib/utils';
 
 interface MediaViewerProps {
   item: MediaItem;
@@ -35,11 +35,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
   const controlsTimeoutRef = useRef<number | null>(null);
 
   const isDirectVideo = (url?: string) => {
-    if (!url) return false;
-    if (/\.(mp4|webm|ogg|mov)($|\?)/i.test(url)) return true;
-    if (isGoogleDriveLink(url)) return false;
-    if (isHypnotubeUrl(url)) return false;
-    return false;
+    return isDirectVideoUrl(url);
   };
 
   const isUnlocked = true; // Simplified for now: everything is unlocked

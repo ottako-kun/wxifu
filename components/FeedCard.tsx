@@ -78,7 +78,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
     }
 
     return () => observer.disconnect();
-  }, [item.type, isUnlocked, isDriveVideo]);
+  }, [item.type, isUnlocked, isIframeVideo]);
 
   const handleTimeUpdate = () => {
     if (videoRef.current && videoRef.current.duration) {

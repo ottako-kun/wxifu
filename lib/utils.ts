@@ -43,9 +43,9 @@ export function isRedgifsUrl(url?: string): boolean {
 
 export function isDirectVideoUrl(url?: string): boolean {
   if (!url) return false;
-  if (/\.(mp4|webm|ogg|mov)($|\?)/i.test(url)) return true;
   if (isGoogleDriveLink(url)) return false;
   if (isHypnotubeUrl(url)) return false;
+  if (/\.(mp4|webm|ogg|mov)/i.test(url)) return true;
   return false;
 }
 
