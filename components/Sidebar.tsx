@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -13,6 +12,7 @@ import {
   Plus,
   LogOut
 } from 'lucide-react';
+import { useDevice } from '../hooks/useDevice';
 
 interface SidebarProps {
   activeTab: 'photos' | 'videos' | 'following';
@@ -42,6 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     session
 }) => {
   
+  const { isDesktop, isTablet } = useDevice();
   const navItems = [
     { id: 'home', label: 'Home', icon: Home, view: 'home' },
     { id: 'explore', label: 'Explore', icon: TrendingUp, view: 'home' },
@@ -68,7 +69,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         handleNavigateToView(id, view);
     }
     
-    if (window.innerWidth < 1024) onClose();
+    // Close on mobile and tablet, keep open on desktop
+    if (!isDesktop) onClose();
   };
 
   const handleNavigateToView = (id: string, view: any) => {
@@ -77,7 +79,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Overlay */}
+      {/* Mobile Overlay - only on mobile */}
       <AnimatePresence>
         {isOpen && (
           <motion.div 
@@ -91,8 +93,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       </AnimatePresence>
 
       <aside className={cn(
-        "fixed top-0 left-0 h-full w-[260px] bg-[#0A0A0A] border-r border-white/5 z-[80] transition-transform duration-300 ease-in-out lg:translate-x-0 pt-20 flex flex-col",
-        isOpen ? "translate-x-0" : "-translate-x-full"
+        "fixed top-0 left-0 h-full w-[260px] bg-[#0A0A0A] border-r border-white/5 z-[80] transition-transform duration-300 ease-in-out pt-20 flex flex-col",
+        // Show on desktop always, on tablet/mobile when open
+        isDesktop ? "translate-x-0" : isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex-grow overflow-y-auto px-4 custom-scrollbar">
           
