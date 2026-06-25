@@ -84,6 +84,7 @@ const HomeView: React.FC<HomeViewProps> = ({
   const showSortDropdown = selectedCategory && 
     ['GIFs', 'Images', 'Creators', 'Niches', 'All Niches'].includes(selectedCategory);
 
+
   // Derive unique creators for Creators tab
   const uniqueCreators = useMemo(() => {
     const creators = new Map();
@@ -139,7 +140,6 @@ const HomeView: React.FC<HomeViewProps> = ({
             style={{ top: scrollDirection === 'down' ? '0px' : '56px' }}
         >
              {/* Explore Navigation Tabs - Simplified for TikTok-style */}
-             {!showSortDropdown && (
               <div className="flex items-center gap-6 md:gap-8 overflow-x-auto no-scrollbar pb-2 px-4 mb-0 relative">
                  {exploreTabs.map((tab) => {
                      return (
