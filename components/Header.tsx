@@ -11,6 +11,7 @@ import { useToast } from '../context/ToastContext';
 import Avatar from './Avatar';
 import { useScrollDirection } from '../hooks/useScrollDirection';
 import InboxIcon from './icons/InboxIcon';
+import { ariaLabels } from '../lib/designTokens';
 
 interface HeaderProps {
   session: Session | null;
@@ -64,19 +65,25 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate, onMenuClick }) => 
 
   return (
     <header className={headerClass}>
+      {/* Skip to Content Link for Accessibility */}
+      <a href="#main-content" className="skip-to-content" tabIndex={0}>
+        {ariaLabels.skipToContent}
+      </a>
+      
       <div className="mx-auto px-4 lg:px-6 flex items-center justify-between h-full gap-4 md:gap-8">
         
         <div className="flex items-center gap-4">
             {/* Menu Toggle (Mobile + Sidebar control) */}
             <button 
                 onClick={onMenuClick}
-                className="p-2 -ml-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                className="p-2 -ml-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all min-h-[48px] min-w-[48px] flex items-center justify-center"
+                aria-label={ariaLabels.menu}
             >
                 <Menu className="w-6 h-6" />
             </button>
 
             {/* Logo and Title */}
-            <a href="/" onClick={handleLogoClick} className="flex items-center gap-x-3 group cursor-pointer" title="Return to Home">
+            <a href="/" onClick={handleLogoClick} className="flex items-center gap-x-3 group cursor-pointer" title="Return to Home" aria-label={ariaLabels.home}>
                 <div className="relative w-8 h-8 flex items-center justify-center bg-gray-950 rounded-lg border border-pink-500/30 overflow-hidden group-hover:border-pink-500 transition-all duration-300">
                     <span className="text-pink-500 font-black text-lg leading-none select-none relative z-10 font-orbitron">{APP_CONFIG.name.charAt(0)}</span>
                 </div>
@@ -97,10 +104,11 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate, onMenuClick }) => 
                     placeholder="Search neural grid..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="block w-full bg-white/5 border border-white/5 hover:border-white/10 focus:border-pink-500/50 focus:bg-white/[0.07] focus:ring-4 focus:ring-pink-500/10 rounded-2xl py-2.5 pl-11 pr-4 text-sm text-white placeholder-gray-500 transition-all outline-none"
+                    className="block w-full bg-white/5 border border-white/5 hover:border-white/10 focus:border-pink-500/50 focus:bg-white/[0.07] focus:ring-4 focus:ring-pink-500/10 rounded-2xl py-2.5 pl-11 pr-4 text-sm text-white placeholder-gray-500 transition-all outline-none min-h-[48px]"
                     onFocus={() => {
                         if (onNavigate) onNavigate('home');
                     }}
+                    aria-label={ariaLabels.search}
                 />
             </div>
         </div>
@@ -108,27 +116,41 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate, onMenuClick }) => 
         {/* Auth & Actions Section */}
         <div className="flex items-center gap-2 md:gap-3">
           <button 
-            className="md:hidden p-2 text-gray-400 hover:text-white transition-all rounded-xl hover:bg-white/5"
+            className="md:hidden p-2 text-gray-400 hover:text-white transition-all rounded-xl hover:bg-white/5 min-h-[48px] min-w-[48px] flex items-center justify-center"
             onClick={() => onNavigate && onNavigate('home')}
+            aria-label={ariaLabels.search}
           >
               <Search className="w-5 h-5" />
           </button>
           {session ? (
             <div className="flex items-center gap-3 md:gap-4">
-              <button className="hidden sm:flex p-2 text-gray-400 hover:text-white transition-all rounded-xl hover:bg-white/5">
+              <button 
+                className="hidden sm:flex p-2 text-gray-400 hover:text-white transition-all rounded-xl hover:bg-white/5 min-h-[48px] min-w-[48px] items-center justify-center"
+                aria-label={ariaLabels.notifications}
+              >
                   <Bell className="w-5 h-5" />
               </button>
               
               <button 
                 onClick={handleInboxClick}
-                className="hidden sm:flex p-2 text-gray-400 hover:text-white transition-all rounded-xl hover:bg-white/5"
+                className="hidden sm:flex p-2 text-gray-400 hover:text-white transition-all rounded-xl hover:bg-white/5 min-h-[48px] min-w-[48px] items-center justify-center"
+                aria-label={ariaLabels.inbox}
               >
                   <MessageSquare className="w-5 h-5" />
               </button>
 
               <div 
-                className="flex items-center gap-2 cursor-pointer group ml-2"
+                className="flex items-center gap-2 cursor-pointer group ml-2 min-h-[48px] px-2 rounded-lg hover:bg-white/5 transition-all"
                 onClick={handleProfileClick}
+                role="button"
+                tabIndex={0}
+                aria-label={ariaLabels.profile}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleProfileClick();
+                  }
+                }}
               >
                 <Avatar 
                     src={session.user.user_metadata.avatar_url} 
@@ -142,7 +164,8 @@ const Header: React.FC<HeaderProps> = ({ session, onNavigate, onMenuClick }) => 
             <button
               onClick={signInWithGoogle}
               title="Establish Link"
-              className="flex items-center gap-2 px-5 py-2.5 bg-white text-black hover:bg-pink-500 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 shadow-[0_10px_20px_rgba(255,255,255,0.1)] active:scale-95"
+              className="flex items-center gap-2 px-5 py-2.5 bg-white text-black hover:bg-pink-500 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 shadow-[0_10px_20px_rgba(255,255,255,0.1)] active:scale-95 min-h-[48px]"
+              aria-label="Sign in with Google"
             >
               <GoogleIcon className="w-3.5 h-3.5" />
               <span>Link Identity</span>
