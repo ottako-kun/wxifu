@@ -14,11 +14,13 @@ import { useMediaLikes } from '../hooks/useMediaLikes';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import { useSwipe } from '../hooks/useSwipe';
 import { useDoubleTap } from '../hooks/useDoubleTap';
+import { useGesture } from '../hooks/useGesture';
 import HeartIcon from './icons/HeartIcon';
 import ChatIcon from './icons/ChatIcon';
 import ShareIcon from './icons/ShareIcon';
 import FlagIcon from './icons/FlagIcon';
 import Avatar from './Avatar';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface MediaDetailModalProps {
   items: MediaItem[];

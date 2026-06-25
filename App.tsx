@@ -24,6 +24,9 @@ import { ConfirmationProvider } from './context/ConfirmationContext';
 // UI State System
 import { UIProvider, useUI } from './context/UIContext';
 
+// Shared Element Transitions
+import { SharedElementProvider } from './context/SharedElementContext';
+
 // App Logic Hooks
 import { useAppNavigation } from './hooks/useAppNavigation';
 import { useDevice } from './hooks/useDevice';
@@ -228,7 +231,9 @@ const App: React.FC = () => {
     <ToastProvider>
       <ConfirmationProvider>
         <UIProvider>
-          <AppContent />
+          <SharedElementProvider>
+            <AppContent />
+          </SharedElementProvider>
         </UIProvider>
       </ConfirmationProvider>
     </ToastProvider>
