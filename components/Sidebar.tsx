@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { buttonVariants, spacing, colors } from '../lib/designTokens';
 import { 
   Home, 
   TrendingUp, 
@@ -120,19 +121,22 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex-grow overflow-y-auto px-4 custom-scrollbar">
           
           {/* Main Nav */}
-          <div className="space-y-1 mb-2">
+          <nav className="space-y-1 mb-2" role="navigation" aria-label="Main navigation">
             {/* Home Section */}
             <div className="mb-1">
               <button
                 onClick={() => handleNavClick('home', 'home')}
                 className={cn(
                   "w-full flex items-center justify-between gap-4 px-4 py-4 rounded-2xl text-sm font-black transition-all group relative overflow-hidden uppercase tracking-widest",
+                  "min-h-[48px] active:scale-[0.98] transition-transform",
                   expandedSection === 'home' || (currentView === 'home' && selectedCategory === 'For You' || selectedCategory === 'Trending')
                     ? "text-pink-500 bg-pink-500/5" 
                     : "text-gray-400 hover:text-white hover:bg-white/5"
                 )}
+                aria-expanded={expandedSection === 'home'}
+                aria-controls="home-submenu"
               >
-                <div className="flex items-center gap-4">
+                <div className={cn("flex items-center gap-4", spacing.gap4)}>
                   <Home className={cn(
                     "w-5 h-5 relative z-10",
                     expandedSection === 'home' || (currentView === 'home' && selectedCategory === 'For You' || selectedCategory === 'Trending') ? "text-pink-500" : "group-hover:text-white"
@@ -309,7 +313,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               )} />
               <span className="relative z-10 text-[10px]">Profile</span>
             </button>
-          </div>
+          </nav>
 
         </div>
 
