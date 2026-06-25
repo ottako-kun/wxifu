@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { 
@@ -10,7 +10,10 @@ import {
   Video as VideoIcon, 
   Hash, 
   Plus,
-  LogOut
+  LogOut,
+  ChevronRight,
+  Film,
+  Palette
 } from 'lucide-react';
 import { useDevice } from '../hooks/useDevice';
 
@@ -28,6 +31,12 @@ interface SidebarProps {
   session: any;
 }
 
+type SubItem = {
+  id: string;
+  label: string;
+  category: string;
+};
+
 const Sidebar: React.FC<SidebarProps> = ({ 
     activeTab, 
     setActiveTab, 
@@ -43,38 +52,49 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   
   const { isDesktop, isTablet } = useDevice();
-  const navItems = [
-    { id: 'home', label: 'Home', icon: Home, view: 'home' },
-    { id: 'explore', label: 'Explore', icon: TrendingUp, view: 'home' },
-    { id: 'upload', label: 'Upload', icon: Plus, view: 'upload' },
-    { id: 'niches', label: 'Niches', icon: Hash, view: 'home' },
-    { id: 'profile', label: 'Profile', icon: Users, view: 'profile' },
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSection(expandedSection === sectionId ? null : sectionId);
+  };
+
+  const homeSubItems: SubItem[] = [
+    { id: 'for-you', label: 'For You', category: 'For You' },
+    { id: 'trending', label: 'Trending', category: 'Trending' },
   ];
+
+  const exploreSubItems: SubItem[] = [
+    { id: 'gifs', label: 'GIFs', category: 'GIFs' },
+    { id: 'images', label: 'Images', category: 'Images' },
+    { id: 'creators', label: 'Creators', category: 'Creators' },
+    { id: 'niches-explore', label: 'Niches', category: 'Niches' },
+  ];
+
+  const nichesSubItems: SubItem[] = [
+    { id: 'all-niches', label: 'All Categories', category: 'All Niches' },
+  ];
+
+  const handleSubItemClick = (subItem: SubItem, parentSection: string) => {
+    if (parentSection === 'home') {
+      setActiveTab('following');
+    } else {
+      setActiveTab('photos');
+    }
+    if (setSelectedCategory) setSelectedCategory(subItem.category);
+    onNavigate('home');
+    if (!isDesktop) onClose();
+  };
 
   const handleNavClick = (id: string, view: any) => {
     if (id === 'upload') {
         onUploadClick();
-    } else if (id === 'niches') {
-        setActiveTab('photos'); // Reset to photos or handle exploration
-        if (setSelectedCategory) setSelectedCategory('Niches');
-        onNavigate('home');
-    } else if (id === 'explore') {
-        setActiveTab('photos');
-        if (setSelectedCategory) setSelectedCategory('All');
-        onNavigate('home');
-    } else if (id === 'home') {
-        setActiveTab('following');
-        onNavigate('home');
-    } else {
-        handleNavigateToView(id, view);
+    } else if (id === 'home' || id === 'explore' || id === 'niches') {
+        // Toggle expansion for sections with sub-items
+        toggleSection(id);
+    } else if (id === 'profile') {
+        onNavigate('profile');
+        if (!isDesktop) onClose();
     }
-    
-    // Close on mobile and tablet, keep open on desktop
-    if (!isDesktop) onClose();
-  };
-
-  const handleNavigateToView = (id: string, view: any) => {
-      onNavigate(view);
   };
 
   return (
@@ -101,32 +121,194 @@ const Sidebar: React.FC<SidebarProps> = ({
           
           {/* Main Nav */}
           <div className="space-y-1 mb-2">
-            {navItems.map((item) => {
-              let isActive = false;
-              if (item.id === 'home') isActive = currentView === 'home' && activeTab === 'following';
-              else if (item.id === 'explore') isActive = currentView === 'home' && activeTab !== 'following' && selectedCategory !== 'Niches';
-              else if (item.id === 'niches') isActive = currentView === 'home' && selectedCategory === 'Niches';
-              else if (item.id === 'profile') isActive = currentView === 'profile';
-              
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavClick(item.id, item.view)}
-                  className={cn(
-                    "w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-black transition-all group relative overflow-hidden uppercase tracking-widest",
-                    isActive 
-                      ? "text-pink-500 bg-pink-500/5" 
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
-                  )}
-                >
-                  <item.icon className={cn(
+            {/* Home Section */}
+            <div className="mb-1">
+              <button
+                onClick={() => handleNavClick('home', 'home')}
+                className={cn(
+                  "w-full flex items-center justify-between gap-4 px-4 py-4 rounded-2xl text-sm font-black transition-all group relative overflow-hidden uppercase tracking-widest",
+                  expandedSection === 'home' || (currentView === 'home' && selectedCategory === 'For You' || selectedCategory === 'Trending')
+                    ? "text-pink-500 bg-pink-500/5" 
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                )}
+              >
+                <div className="flex items-center gap-4">
+                  <Home className={cn(
                     "w-5 h-5 relative z-10",
-                    isActive ? "text-pink-500" : "group-hover:text-white"
+                    expandedSection === 'home' || (currentView === 'home' && selectedCategory === 'For You' || selectedCategory === 'Trending') ? "text-pink-500" : "group-hover:text-white"
                   )} />
-                  <span className="relative z-10 text-[10px]">{item.label}</span>
-                </button>
-              );
-            })}
+                  <span className="relative z-10 text-[10px]">Home</span>
+                </div>
+                <ChevronRight className={cn(
+                  "w-4 h-4 transition-transform duration-300",
+                  expandedSection === 'home' ? "rotate-90 text-pink-500" : "text-gray-500"
+                )} />
+              </button>
+              
+              <AnimatePresence>
+                {expandedSection === 'home' && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden ml-4 mt-1 space-y-1"
+                  >
+                    {homeSubItems.map((subItem) => (
+                      <button
+                        key={subItem.id}
+                        onClick={() => handleSubItemClick(subItem, 'home')}
+                        className={cn(
+                          "w-full flex items-center gap-4 px-4 py-3 rounded-xl text-xs font-bold transition-all",
+                          selectedCategory === subItem.category
+                            ? "text-pink-400 bg-pink-500/10" 
+                            : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
+                        )}
+                      >
+                        <span>{subItem.label}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Explore Section */}
+            <div className="mb-1">
+              <button
+                onClick={() => handleNavClick('explore', 'home')}
+                className={cn(
+                  "w-full flex items-center justify-between gap-4 px-4 py-4 rounded-2xl text-sm font-black transition-all group relative overflow-hidden uppercase tracking-widest",
+                  expandedSection === 'explore' || (currentView === 'home' && ['GIFs', 'Images', 'Creators', 'Niches'].includes(selectedCategory || ''))
+                    ? "text-pink-500 bg-pink-500/5" 
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                )}
+              >
+                <div className="flex items-center gap-4">
+                  <TrendingUp className={cn(
+                    "w-5 h-5 relative z-10",
+                    expandedSection === 'explore' || (currentView === 'home' && ['GIFs', 'Images', 'Creators', 'Niches'].includes(selectedCategory || '')) ? "text-pink-500" : "group-hover:text-white"
+                  )} />
+                  <span className="relative z-10 text-[10px]">Explore</span>
+                </div>
+                <ChevronRight className={cn(
+                  "w-4 h-4 transition-transform duration-300",
+                  expandedSection === 'explore' ? "rotate-90 text-pink-500" : "text-gray-500"
+                )} />
+              </button>
+              
+              <AnimatePresence>
+                {expandedSection === 'explore' && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden ml-4 mt-1 space-y-1"
+                  >
+                    {exploreSubItems.map((subItem) => (
+                      <button
+                        key={subItem.id}
+                        onClick={() => handleSubItemClick(subItem, 'explore')}
+                        className={cn(
+                          "w-full flex items-center gap-4 px-4 py-3 rounded-xl text-xs font-bold transition-all",
+                          selectedCategory === subItem.category
+                            ? "text-pink-400 bg-pink-500/10" 
+                            : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
+                        )}
+                      >
+                        {subItem.id === 'gifs' && <Film className="w-4 h-4" />}
+                        {subItem.id === 'images' && <ImageIcon className="w-4 h-4" />}
+                        {subItem.id === 'creators' && <Users className="w-4 h-4" />}
+                        {subItem.id === 'niches-explore' && <Palette className="w-4 h-4" />}
+                        <span>{subItem.label}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Upload */}
+            <button
+              onClick={() => handleNavClick('upload', 'upload')}
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-black transition-all group relative overflow-hidden uppercase tracking-widest",
+                "text-gray-400 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <Plus className={cn(
+                "w-5 h-5 relative z-10 group-hover:text-white"
+              )} />
+              <span className="relative z-10 text-[10px]">Upload</span>
+            </button>
+
+            {/* Niches Section */}
+            <div className="mb-1">
+              <button
+                onClick={() => handleNavClick('niches', 'home')}
+                className={cn(
+                  "w-full flex items-center justify-between gap-4 px-4 py-4 rounded-2xl text-sm font-black transition-all group relative overflow-hidden uppercase tracking-widest",
+                  expandedSection === 'niches' || selectedCategory === 'All Niches'
+                    ? "text-pink-500 bg-pink-500/5" 
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                )}
+              >
+                <div className="flex items-center gap-4">
+                  <Hash className={cn(
+                    "w-5 h-5 relative z-10",
+                    expandedSection === 'niches' || selectedCategory === 'All Niches' ? "text-pink-500" : "group-hover:text-white"
+                  )} />
+                  <span className="relative z-10 text-[10px]">Niches</span>
+                </div>
+                <ChevronRight className={cn(
+                  "w-4 h-4 transition-transform duration-300",
+                  expandedSection === 'niches' ? "rotate-90 text-pink-500" : "text-gray-500"
+                )} />
+              </button>
+              
+              <AnimatePresence>
+                {expandedSection === 'niches' && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden ml-4 mt-1 space-y-1"
+                  >
+                    {nichesSubItems.map((subItem) => (
+                      <button
+                        key={subItem.id}
+                        onClick={() => handleSubItemClick(subItem, 'niches')}
+                        className={cn(
+                          "w-full flex items-center gap-4 px-4 py-3 rounded-xl text-xs font-bold transition-all",
+                          selectedCategory === subItem.category
+                            ? "text-pink-400 bg-pink-500/10" 
+                            : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
+                        )}
+                      >
+                        <Palette className="w-4 h-4" />
+                        <span>{subItem.label}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Profile */}
+            <button
+              onClick={() => handleNavClick('profile', 'profile')}
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-black transition-all group relative overflow-hidden uppercase tracking-widest",
+                currentView === 'profile'
+                  ? "text-pink-500 bg-pink-500/5" 
+                  : "text-gray-400 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <Users className={cn(
+                "w-5 h-5 relative z-10",
+                currentView === 'profile' ? "text-pink-500" : "group-hover:text-white"
+              )} />
+              <span className="relative z-10 text-[10px]">Profile</span>
+            </button>
           </div>
 
         </div>

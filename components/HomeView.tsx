@@ -80,6 +80,11 @@ const HomeView: React.FC<HomeViewProps> = ({
 
   const exploreTabs: ExploreTab[] = ['For You', 'Trending'];
 
+  // Check if we're in a view that should show the Sort By dropdown
+  const showSortDropdown = selectedCategory && 
+    ['GIFs', 'Images', 'Creators', 'Niches', 'All Niches'].includes(selectedCategory);
+
+
   // Derive unique creators for Creators tab
   const uniqueCreators = useMemo(() => {
     const creators = new Map();
@@ -166,6 +171,29 @@ const HomeView: React.FC<HomeViewProps> = ({
                  {/* Decorative spacer for mobile horizontal scroll */}
                  <div className="min-w-[20px] h-4" />
              </div>
+             )}
+             
+             {/* Sort By Dropdown for Explore/Niches views */}
+             {showSortDropdown && (
+               <div className="flex items-center justify-between px-4 pb-2">
+                 <h2 className="text-lg font-black text-white uppercase tracking-widest">{selectedCategory}</h2>
+                 <GalleryControls
+                   galleryName={selectedCategory}
+                   searchQuery={searchQuery}
+                   setSearchQuery={setSearchQuery}
+                   searchInputRef={searchInputRef}
+                   sortOption={sortOption}
+                   setSortOption={setSortOption}
+                   selectedCategory={selectedCategory}
+                   setSelectedCategory={setSelectedCategory}
+                   availableCategories={availableCategories}
+                   selectedTags={selectedTags}
+                   toggleTag={toggleTag}
+                   availableTags={availableTags}
+                   clearFilters={clearFilters}
+                 />
+               </div>
+             )}
         </div>
 
         {activeTab === 'following' && !session ? (
