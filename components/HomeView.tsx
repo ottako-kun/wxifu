@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-import MediaGrid from './MediaGrid';
 import FeedView from './FeedView';
 import SearchIcon from './icons/SearchIcon';
 import LoadingSpinner from './icons/LoadingSpinner';
@@ -29,8 +28,6 @@ interface HomeViewProps {
   activeTab: 'photos' | 'videos' | 'following';
   setActiveTab: (tab: 'photos' | 'videos' | 'following') => void;
   searchInputRef: React.RefObject<HTMLInputElement>;
-  viewMode: 'grid' | 'feed';
-  onViewModeChange: (mode: 'grid' | 'feed') => void;
 }
 
 const HomeView: React.FC<HomeViewProps> = ({
@@ -44,9 +41,7 @@ const HomeView: React.FC<HomeViewProps> = ({
   onDataChange,
   activeTab,
   setActiveTab,
-  searchInputRef,
-  viewMode,
-  onViewModeChange
+  searchInputRef
 }) => {
   
   const scrollDirection = useScrollDirection();
@@ -132,7 +127,7 @@ const HomeView: React.FC<HomeViewProps> = ({
     <PullToRefresh onRefresh={handleRefresh}>
       <main className={cn(
         "py-2 md:py-4 min-h-screen relative w-full flex flex-col",
-        viewMode === 'feed' ? 'max-w-none px-0' : 'px-2 sm:px-4 lg:px-6'
+        "max-w-none px-0"
       )}>
         
         <div 
@@ -200,8 +195,6 @@ const HomeView: React.FC<HomeViewProps> = ({
                     clearFilters();
                     setSearchQuery('');
                 }}
-                viewMode={viewMode}
-                onViewModeChange={onViewModeChange}
             />
         </div>
 
@@ -261,26 +254,20 @@ const HomeView: React.FC<HomeViewProps> = ({
                              ))}
                         </div>
                     ) : (
-                      <motion.div 
-                        key={viewMode}
+                      <motion.div
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.02 }}
                         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        className={cn("w-full h-full", viewMode === 'grid' ? 'mt-4' : 'mt-0')}
+                        className="w-full h-full mt-0"
                       >
                           {sortedItems.length > 0 || isLoading ? (
                               <>
-                                {viewMode === 'grid' ? (
-                                    <MediaGrid items={visibleItems} onUserClick={onUserClick} session={session} onDataChange={onDataChange} isLoading={isLoading} onItemClick={setSelectedItemIndex} />
-                                ) : (
-                                    <FeedView items={visibleItems} session={session} onUserClick={onUserClick} onDataChange={onDataChange} isLoading={isLoading} onItemClick={setSelectedItemIndex} />
-                                )}
+                                <FeedView items={visibleItems} session={session} onUserClick={onUserClick} onDataChange={onDataChange} isLoading={isLoading} onItemClick={setSelectedItemIndex} />
                                 {visibleCount < sortedItems.length && !isLoading && <div ref={observerTarget} className="flex justify-center py-16 w-full"><LoadingSpinner className="w-12 h-12 text-pink-500/20" /></div>}
-                                {!isLoading && viewMode === 'grid' && <div className="text-center text-[10px] text-gray-700 uppercase tracking-[0.4em] pt-12 pb-24">Neural Index End // {sortedItems.length} Records</div>}
                               </>
                           ) : (
-                              <motion.div 
+                              <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 className="flex flex-col items-center justify-center h-[60vh] text-center border border-white/5 rounded-[4rem] bg-gray-900/5 m-4"
@@ -302,19 +289,6 @@ const HomeView: React.FC<HomeViewProps> = ({
             </div>
         )}
         
-        {showScrollTop && viewMode === 'grid' && (
-            <motion.button 
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={scrollToTop}
-                className="fixed bottom-24 md:bottom-12 right-6 md:right-12 z-[55] p-5 rounded-2xl bg-black/60 backdrop-blur-2xl border border-white/10 text-pink-500 shadow-2xl hover:bg-pink-600 hover:text-white transition-all transform"
-                title="Return to Peak"
-            >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
-            </motion.button>
-        )}
         
         {selectedItemIndex !== null && (
             <MediaDetailModal items={visibleItems} initialIndex={selectedItemIndex} onClose={() => setSelectedItemIndex(null)} onUserClick={onUserClick} session={session || null} onDataChange={onDataChange} />
