@@ -207,6 +207,18 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Interruptible animations - allow users to interrupt transitions */
+.interruptible-transition {
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
+  will-change: transform, opacity;
+}
+
+/* Smooth scroll behavior for feed */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Prevent zoom on input focus for mobile */
 @media (max-width: 767px) {
   input, textarea, select {
