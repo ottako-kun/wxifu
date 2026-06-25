@@ -55,13 +55,6 @@ const AppContent: React.FC = () => {
   // Device detection for responsive layout
   const { isDesktop, isTablet, isMobile } = useDevice();
 
-  // Layout State: Grid vs TikTok-style Feed
-  const [viewMode, setViewMode] = useState<'grid' | 'feed'>(() => {
-    // Initialize based on device type
-    const stored = localStorage.getItem('view-mode');
-    if (stored) return stored as 'grid' | 'feed';
-    return isMobile ? 'feed' : 'grid';
-  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const { 
@@ -97,20 +90,15 @@ const AppContent: React.FC = () => {
          if (data.category === 'GIFs') {
             setActiveTab('photos');
             setSelectedCategory('GIFs');
-            setViewMode('grid');
          } else if (type === MediaType.Video) {
             setActiveTab('videos');
             setSelectedCategory('Videos');
-            setViewMode('feed'); // Auto-switch to feed for videos
         } else {
             setActiveTab('photos');
             setSelectedCategory('Images');
-            setViewMode(isMobile ? 'feed' : 'grid');
         }
       }
-      // Persist view mode preference
-      localStorage.setItem('view-mode', viewMode);
-  }, [handleUploadSubmit, setActiveTab, setSelectedCategory, isMobile, viewMode]);
+  }, [handleUploadSubmit, setActiveTab, setSelectedCategory]);
 
   const profileMedia = React.useMemo(() => {
     if (!activeProfile) return [];
@@ -150,8 +138,7 @@ const AppContent: React.FC = () => {
         <main className={cn(
             "flex-grow transition-all duration-300 pt-14 md:pt-16 pb-20 md:pb-6 outline-none flex flex-col min-h-[calc(100vh-4rem)] md:min-h-screen",
             // Adjust left padding based on device type and sidebar state
-            isDesktop ? "lg:pl-[260px]" : isSidebarOpen ? "md:pl-[260px]" : "",
-            viewMode === 'feed' && currentView === 'home' ? "pt-0 md:pt-0" : ""
+            isDesktop ? "lg:pl-[260px]" : isSidebarOpen ? "md:pl-[260px]" : ""
         )}>
           <AnimatePresence mode="wait">
             <motion.div
@@ -175,8 +162,6 @@ const AppContent: React.FC = () => {
                    activeTab={activeTab}
                    setActiveTab={setActiveTab}
                    searchInputRef={searchInputRef}
-                   viewMode={viewMode}
-                   onViewModeChange={setViewMode}
                 />
               ) : currentView === 'profile' ? (
                  <div className="pt-2 md:pt-8 min-h-screen px-2 md:px-4 max-w-6xl mx-auto w-full">
@@ -213,7 +198,7 @@ const AppContent: React.FC = () => {
             </motion.div>
           </AnimatePresence>
           
-          {currentView !== 'home' || viewMode === 'grid' ? <Footer /> : null}
+          {currentView !== 'home' ? <Footer /> : null}
         </main>
       </div>
       

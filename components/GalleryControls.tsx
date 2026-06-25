@@ -7,8 +7,6 @@ import SearchIcon from './icons/SearchIcon';
 import SortAscendingIcon from './icons/SortAscendingIcon';
 import CloseIcon from './icons/CloseIcon';
 import FilterIcon from './icons/FilterIcon';
-import GridIcon from './icons/GridIcon';
-import ListIcon from './icons/ListIcon';
 import { SortOption, DensityType } from '../types';
 
 interface GalleryControlsProps {
@@ -25,8 +23,6 @@ interface GalleryControlsProps {
   toggleTag: (tag: string) => void;
   availableTags: string[];
   clearFilters: () => void;
-  viewMode?: 'grid' | 'feed';
-  onViewModeChange?: (mode: 'grid' | 'feed') => void;
 }
 
 const GalleryControls: React.FC<GalleryControlsProps> = ({
@@ -42,9 +38,7 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
   selectedTags,
   toggleTag,
   availableTags,
-  clearFilters,
-  viewMode = 'grid',
-  onViewModeChange
+  clearFilters
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
@@ -87,36 +81,6 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
 
         {/* Action Buttons Group */}
         <div className="flex items-center gap-2">
-            {/* View Mode Toggle */}
-            {onViewModeChange && (
-                <div className="flex bg-gray-900/80 border border-gray-700/50 rounded-full p-1 relative mr-2">
-                    <button
-                        onClick={() => onViewModeChange('grid')}
-                        className={`p-2 rounded-full transition-all duration-300 relative z-10 ${viewMode === 'grid' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
-                        title="Switch to Grid layout"
-                    >
-                        <GridIcon className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={() => onViewModeChange('feed')}
-                        className={`p-2 rounded-full transition-all duration-300 relative z-10 ${viewMode === 'feed' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
-                        title="Switch to immersive Feed layout"
-                    >
-                        <ListIcon className="w-4 h-4" />
-                    </button>
-                    <motion.div
-                        layoutId="view-mode-pill"
-                        className="absolute inset-y-1 bg-gray-700 rounded-full shadow-lg"
-                        initial={false}
-                        animate={{ 
-                            left: viewMode === 'grid' ? '4px' : '36px',
-                            width: '32px'
-                        }}
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                </div>
-            )}
-
             {/* Sort Toggle Dropdown */}
             <div className="relative">
                 <button
