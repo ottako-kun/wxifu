@@ -172,7 +172,6 @@ const HomeView: React.FC<HomeViewProps> = ({
                  <div className="min-w-[20px] h-4" />
              </div>
              )}
-             
              {/* Sort By Dropdown for Explore/Niches views */}
              {showSortDropdown && (
                <div className="flex items-center justify-between px-4 pb-2">
