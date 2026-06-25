@@ -138,7 +138,9 @@ const AppContent: React.FC = () => {
           session={session}
         />
 
-        <main className={cn(
+        <main 
+          id="main-content"
+          className={cn(
             "flex-grow transition-all duration-300 pt-14 md:pt-16 pb-20 md:pb-6 outline-none flex flex-col min-h-[calc(100vh-4rem)] md:min-h-screen",
             // Adjust left padding based on device type and sidebar state
             isDesktop ? "lg:pl-[260px]" : isSidebarOpen ? "md:pl-[260px]" : ""
