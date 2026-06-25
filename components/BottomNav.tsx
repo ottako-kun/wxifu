@@ -9,6 +9,7 @@ import GridIcon from './icons/GridIcon';
 // Fixed: Import Session from local types
 import { Session } from '../types';
 import { useDevice } from '../hooks/useDevice';
+import { cn } from '../lib/utils';
 
 interface BottomNavProps {
   currentView: 'home' | 'profile' | 'inbox';
@@ -36,12 +37,6 @@ const BottomNav: React.FC<BottomNavProps> = ({
     return null;
   }
 
-  const navItemClass = (isActive: boolean) => `
-    flex flex-col items-center justify-center w-full h-full relative
-    transition-all duration-300
-    ${isActive ? 'text-pink-500 scale-105' : 'text-gray-400 hover:text-gray-200'}
-  `;
-
   const handleExploreClick = () => {
     if (setActiveTab) setActiveTab('photos');
     setSelectedCategory('All');
@@ -55,7 +50,11 @@ const BottomNav: React.FC<BottomNavProps> = ({
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-[68px] md:h-[72px] bg-black/90 backdrop-blur-3xl border-t border-white/5 z-40 pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+    <nav 
+      className="fixed bottom-0 left-0 right-0 h-[72px] bg-[#121212]/95 backdrop-blur-3xl border-t border-white/10 z-40 pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.5)]"
+      role="navigation"
+      aria-label="Main navigation"
+    >
       <div className="flex items-center justify-around h-full max-w-lg mx-auto px-2 relative">
         {/* Add safe area padding for devices with notches */}
         <div className="absolute bottom-0 left-0 right-0 h-[env(safe-area-inset-bottom)] pointer-events-none" />
@@ -67,19 +66,24 @@ const BottomNav: React.FC<BottomNavProps> = ({
             setSelectedCategory('All');
             onNavigate('home');
           }}
-          className={navItemClass(currentView === 'home' && selectedCategory !== 'Niches')}
+          className={cn(
+            "flex flex-col items-center justify-center w-full h-full relative transition-all duration-300 min-h-[72px] min-w-[64px]",
+            (currentView === 'home' && selectedCategory !== 'Niches') 
+              ? "text-pink-500 scale-105" 
+              : "text-gray-400 hover:text-gray-200"
+          )}
           title="Home Gallery"
-          // Larger touch target for mobile/tablet
-          style={{ minHeight: '48px', minWidth: '48px' }}
+          aria-label="Home Gallery"
+          aria-current={currentView === 'home' && selectedCategory !== 'Niches' ? 'page' : undefined}
         >
-          <div className="p-2">
+          <div className="p-3">
             <HomeIcon className="w-6 h-6" />
           </div>
-          <span className="text-[8px] uppercase tracking-[0.2em] font-black -mt-1">Home</span>
+          <span className="text-[11px] uppercase tracking-[0.2em] font-black -mt-1">Home</span>
           {currentView === 'home' && selectedCategory !== 'Niches' && (
               <motion.div 
                 layoutId="nav-indicator"
-                className="absolute bottom-1 w-6 h-0.5 bg-pink-500 shadow-[0_0_10px_#ec4899] rounded-full"
+                className="absolute bottom-2 w-6 h-0.5 bg-pink-500 shadow-[0_0_10px_#ec4899] rounded-full"
                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
               />
           )}
@@ -88,14 +92,20 @@ const BottomNav: React.FC<BottomNavProps> = ({
         {/* Explore (instead of Search) */}
         <button 
           onClick={handleExploreClick}
-          className={navItemClass(currentView === 'home' && selectedCategory === 'All')}
+          className={cn(
+            "flex flex-col items-center justify-center w-full h-full relative transition-all duration-300 min-h-[72px] min-w-[64px]",
+            (currentView === 'home' && selectedCategory === 'All') 
+              ? "text-pink-500 scale-105" 
+              : "text-gray-400 hover:text-gray-200"
+          )}
           title="Explore Feed"
-          style={{ minHeight: '48px', minWidth: '48px' }}
+          aria-label="Explore Feed"
+          aria-current={currentView === 'home' && selectedCategory === 'All' ? 'page' : undefined}
         >
-          <div className="p-2 text-inherit">
+          <div className="p-3 text-inherit">
              <SearchIcon className="w-6 h-6" />
           </div>
-          <span className="text-[8px] uppercase tracking-[0.2em] font-black -mt-1">Explore</span>
+          <span className="text-[11px] uppercase tracking-[0.2em] font-black -mt-1">Explore</span>
         </button>
 
         {/* Upload - Center */}
@@ -104,9 +114,8 @@ const BottomNav: React.FC<BottomNavProps> = ({
              whileHover={{ scale: 1.1 }}
              whileTap={{ scale: 0.9 }}
              onClick={onUploadClick}
-             className="flex items-center justify-center w-[52px] h-[52px] rounded-xl bg-gradient-to-tr from-pink-600 to-purple-600 shadow-[0_0_20px_rgba(236,72,153,0.4)] border-2 border-[#020202] text-white transition-all duration-200"
-             // Larger touch target
-             style={{ minHeight: '48px', minWidth: '48px' }}
+             className="flex items-center justify-center w-[56px] h-[56px] rounded-xl bg-gradient-to-tr from-pink-600 to-purple-600 shadow-[0_0_20px_rgba(236,72,153,0.4)] border-2 border-[#020202] text-white transition-all duration-200 min-h-[48px] min-w-[48px]"
+             aria-label="Upload new content"
            >
              <UploadIcon className="w-6 h-6 stroke-[2.5]" />
            </motion.button>
@@ -115,18 +124,24 @@ const BottomNav: React.FC<BottomNavProps> = ({
         {/* Niches */}
         <button 
           onClick={handleNichesClick}
-          className={navItemClass(currentView === 'home' && selectedCategory === 'Niches')}
+          className={cn(
+            "flex flex-col items-center justify-center w-full h-full relative transition-all duration-300 min-h-[72px] min-w-[64px]",
+            (currentView === 'home' && selectedCategory === 'Niches') 
+              ? "text-pink-500 scale-105" 
+              : "text-gray-400 hover:text-gray-200"
+          )}
           title="Niches"
-          style={{ minHeight: '48px', minWidth: '48px' }}
+          aria-label="Niches"
+          aria-current={selectedCategory === 'Niches' ? 'page' : undefined}
         >
-           <div className="p-2">
+           <div className="p-3">
              <GridIcon className="w-5 h-5" />
            </div>
-          <span className="text-[8px] uppercase tracking-[0.2em] font-black -mt-1">Niches</span>
+          <span className="text-[11px] uppercase tracking-[0.2em] font-black -mt-1">Niches</span>
           {selectedCategory === 'Niches' && (
               <motion.div 
                 layoutId="nav-indicator"
-                className="absolute bottom-1 w-6 h-0.5 bg-pink-500 shadow-[0_0_10px_#ec4899] rounded-full"
+                className="absolute bottom-2 w-6 h-0.5 bg-pink-500 shadow-[0_0_10px_#ec4899] rounded-full"
                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
               />
           )}
@@ -135,36 +150,52 @@ const BottomNav: React.FC<BottomNavProps> = ({
         {/* Profile */}
         <button 
           onClick={() => onNavigate('profile')}
-          className={navItemClass(currentView === 'profile')}
+          className={cn(
+            "flex flex-col items-center justify-center w-full h-full relative transition-all duration-300 min-h-[72px] min-w-[64px]",
+            (currentView === 'profile') 
+              ? "text-pink-500 scale-105" 
+              : "text-gray-400 hover:text-gray-200"
+          )}
           title="Your Profile"
-          style={{ minHeight: '48px', minWidth: '48px' }}
+          aria-label="Your Profile"
+          aria-current={currentView === 'profile' ? 'page' : undefined}
         >
-          <div className="p-2">
+          <div className="p-3">
             {session?.user.user_metadata.avatar_url ? (
                <motion.img 
                 animate={currentView === 'profile' ? { scale: 1.2 } : { scale: 1 }}
                 src={session.user.user_metadata.avatar_url} 
                 alt="Profile" 
-                className={`w-6 h-6 rounded-full border-2 transition-all ${currentView === 'profile' ? 'border-pink-500 shadow-[0_0_10px_#ec4899]' : 'border-gray-700'}`}
+                className={cn(
+                  "w-6 h-6 rounded-full border-2 transition-all",
+                  currentView === 'profile' 
+                    ? "border-pink-500 shadow-[0_0_10px_#ec4899]" 
+                    : "border-gray-700"
+                )}
               />
             ) : (
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] font-black transition-all ${currentView === 'profile' ? 'border-pink-500 bg-pink-500/20 text-pink-500' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+              <div className={cn(
+                "w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] font-black transition-all",
+                currentView === 'profile' 
+                  ? "border-pink-500 bg-pink-500/20 text-pink-500" 
+                  : "border-gray-700 bg-gray-800 text-gray-400"
+              )}>
                  {session?.user.email?.[0].toUpperCase() || '?'}
               </div>
             )}
           </div>
-          <span className="text-[8px] uppercase tracking-[0.2em] font-black -mt-1">Profile</span>
+          <span className="text-[11px] uppercase tracking-[0.2em] font-black -mt-1">Profile</span>
           {currentView === 'profile' && (
               <motion.div 
                 layoutId="nav-indicator"
-                className="absolute bottom-1 w-6 h-0.5 bg-pink-500 shadow-[0_0_10px_#ec4899] rounded-full"
+                className="absolute bottom-2 w-6 h-0.5 bg-pink-500 shadow-[0_0_10px_#ec4899] rounded-full"
                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
               />
           )}
         </button>
 
       </div>
-    </div>
+    </nav>
   );
 };
 
