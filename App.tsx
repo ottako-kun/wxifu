@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
 import ProfileView from './components/ProfileView';
@@ -27,6 +26,7 @@ import { UIProvider, useUI } from './context/UIContext';
 
 // App Logic Hooks
 import { useAppNavigation } from './hooks/useAppNavigation';
+import { useDevice } from './hooks/useDevice';
 
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -52,8 +52,16 @@ const AppContent: React.FC = () => {
       refresh
   } = useAppNavigation();
 
+  // Device detection for responsive layout
+  const { isDesktop, isTablet, isMobile } = useDevice();
+
   // Layout State: Grid vs TikTok-style Feed
-  const [viewMode, setViewMode] = useState<'grid' | 'feed'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'feed'>(() => {
+    // Initialize based on device type
+    const stored = localStorage.getItem('view-mode');
+    if (stored) return stored as 'grid' | 'feed';
+    return isMobile ? 'feed' : 'grid';
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const { 
@@ -97,10 +105,12 @@ const AppContent: React.FC = () => {
         } else {
             setActiveTab('photos');
             setSelectedCategory('Images');
-            setViewMode('grid');
+            setViewMode(isMobile ? 'feed' : 'grid');
         }
       }
-  }, [handleUploadSubmit, setActiveTab, setSelectedCategory]);
+      // Persist view mode preference
+      localStorage.setItem('view-mode', viewMode);
+  }, [handleUploadSubmit, setActiveTab, setSelectedCategory, isMobile, viewMode]);
 
   const profileMedia = React.useMemo(() => {
     if (!activeProfile) return [];
@@ -122,6 +132,7 @@ const AppContent: React.FC = () => {
       />
       
       <div className="flex flex-1 pt-0 overflow-hidden">
+        {/* Pass device-specific props to Sidebar */}
         <Sidebar 
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -137,7 +148,9 @@ const AppContent: React.FC = () => {
         />
 
         <main className={cn(
-            "flex-grow transition-all duration-300 lg:pl-[260px] pt-14 md:pt-16 pb-20 md:pb-6 outline-none flex flex-col min-h-[calc(100vh-4rem)] md:min-h-screen",
+            "flex-grow transition-all duration-300 pt-14 md:pt-16 pb-20 md:pb-6 outline-none flex flex-col min-h-[calc(100vh-4rem)] md:min-h-screen",
+            // Adjust left padding based on device type and sidebar state
+            isDesktop ? "lg:pl-[260px]" : isSidebarOpen ? "md:pl-[260px]" : "",
             viewMode === 'feed' && currentView === 'home' ? "pt-0 md:pt-0" : ""
         )}>
           <AnimatePresence mode="wait">

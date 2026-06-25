@@ -8,6 +8,7 @@ import UploadIcon from './icons/UploadIcon';
 import GridIcon from './icons/GridIcon';
 // Fixed: Import Session from local types
 import { Session } from '../types';
+import { useDevice } from '../hooks/useDevice';
 
 interface BottomNavProps {
   currentView: 'home' | 'profile' | 'inbox';
@@ -28,6 +29,12 @@ const BottomNav: React.FC<BottomNavProps> = ({
 }) => {
   
   const { selectedCategory, setSelectedCategory } = useUI();
+  const { isMobile, isTablet } = useDevice();
+
+  // Hide on tablet and desktop - they use sidebar instead
+  if (!isMobile) {
+    return null;
+  }
 
   const navItemClass = (isActive: boolean) => `
     flex flex-col items-center justify-center w-full h-full relative
@@ -48,8 +55,10 @@ const BottomNav: React.FC<BottomNavProps> = ({
   };
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 h-18 bg-black/90 backdrop-blur-3xl border-t border-white/5 z-40 pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+    <div className="fixed bottom-0 left-0 right-0 h-[68px] md:h-[72px] bg-black/90 backdrop-blur-3xl border-t border-white/5 z-40 pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
       <div className="flex items-center justify-around h-full max-w-lg mx-auto px-2 relative">
+        {/* Add safe area padding for devices with notches */}
+        <div className="absolute bottom-0 left-0 right-0 h-[env(safe-area-inset-bottom)] pointer-events-none" />
         
         {/* Home */}
         <button 
@@ -60,6 +69,8 @@ const BottomNav: React.FC<BottomNavProps> = ({
           }}
           className={navItemClass(currentView === 'home' && selectedCategory !== 'Niches')}
           title="Home Gallery"
+          // Larger touch target for mobile/tablet
+          style={{ minHeight: '48px', minWidth: '48px' }}
         >
           <div className="p-2">
             <HomeIcon className="w-6 h-6" />
@@ -79,6 +90,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
           onClick={handleExploreClick}
           className={navItemClass(currentView === 'home' && selectedCategory === 'All')}
           title="Explore Feed"
+          style={{ minHeight: '48px', minWidth: '48px' }}
         >
           <div className="p-2 text-inherit">
              <SearchIcon className="w-6 h-6" />
@@ -92,7 +104,9 @@ const BottomNav: React.FC<BottomNavProps> = ({
              whileHover={{ scale: 1.1 }}
              whileTap={{ scale: 0.9 }}
              onClick={onUploadClick}
-             className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-pink-600 to-purple-600 shadow-[0_0_20px_rgba(236,72,153,0.4)] border-2 border-[#020202] text-white transition-all duration-200"
+             className="flex items-center justify-center w-[52px] h-[52px] rounded-xl bg-gradient-to-tr from-pink-600 to-purple-600 shadow-[0_0_20px_rgba(236,72,153,0.4)] border-2 border-[#020202] text-white transition-all duration-200"
+             // Larger touch target
+             style={{ minHeight: '48px', minWidth: '48px' }}
            >
              <UploadIcon className="w-6 h-6 stroke-[2.5]" />
            </motion.button>
@@ -103,6 +117,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
           onClick={handleNichesClick}
           className={navItemClass(currentView === 'home' && selectedCategory === 'Niches')}
           title="Niches"
+          style={{ minHeight: '48px', minWidth: '48px' }}
         >
            <div className="p-2">
              <GridIcon className="w-5 h-5" />
@@ -122,6 +137,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
           onClick={() => onNavigate('profile')}
           className={navItemClass(currentView === 'profile')}
           title="Your Profile"
+          style={{ minHeight: '48px', minWidth: '48px' }}
         >
           <div className="p-2">
             {session?.user.user_metadata.avatar_url ? (
