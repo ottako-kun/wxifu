@@ -1,6 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { MediaItem, MediaType, Session } from '../types';
+import { cn, DEFAULT_THUMB_URL } from '../lib/utils';
+import { buttonVariants, spacing, transitions } from '../lib/designTokens';
 import HeartIcon from './icons/HeartIcon';
 import ChatIcon from './icons/ChatIcon';
 import ShareIcon from './icons/ShareIcon';
@@ -14,7 +16,7 @@ import { useDoubleTap } from '../hooks/useDoubleTap';
 import { useUI } from '../context/UIContext';
 import Avatar from './Avatar';
 import { isGoogleDriveLink } from '../lib/googleDrive';
-import { isHypnotubeUrl, DEFAULT_THUMB_URL, isRedgifsUrl } from '../lib/utils';
+import { isHypnotubeUrl, isRedgifsUrl } from '../lib/utils';
 
 interface FeedCardProps {
   item: MediaItem;
@@ -235,7 +237,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
             )}
 
             {/* Interaction Bar - Enhanced hit targets for mobile */}
-            <div className="absolute bottom-24 right-4 z-30 flex flex-col items-center gap-2">
+            <div className={cn("absolute bottom-24 right-4 z-30 flex flex-col items-center gap-2", spacing.gap2)}>
                 <div className="p-2" onClick={handleUserClick}>
                     <div className="relative">
                         <Avatar 
@@ -248,7 +250,11 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                         {session && !isOwner && !isFollowing && (
                             <button 
                                 onClick={(e) => { e.stopPropagation(); toggleFollow(item.author || ''); }}
-                                className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center text-white z-40 border-2 border-black shadow-xl"
+                                className={cn(
+                                    "absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center text-white z-40 border-2 border-black shadow-xl",
+                                    "min-h-[48px] min-w-[48px] active:scale-90 transition-transform"
+                                )}
+                                aria-label={`Follow ${item.author}`}
                             >
                                 <span className="text-[10px] font-black">+</span>
                             </button>
@@ -259,7 +265,10 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                 <div className="flex flex-col items-center">
                     <button 
                         onClick={(e) => { e.stopPropagation(); handleLikeAction(); }}
-                        className={`p-4 transition-all active:scale-50 ${isLiked ? 'text-pink-500' : 'text-white'}`}
+                        className={cn(
+                            "transition-all active:scale-50 min-h-[48px] min-w-[48px] flex items-center justify-center",
+                            isLiked ? 'text-pink-500' : 'text-white'
+                        )}
                         aria-label="Like"
                     >
                         <HeartIcon filled={isLiked} className="w-8 h-8 drop-shadow-2xl" />
@@ -270,7 +279,10 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                 <div className="flex flex-col items-center">
                     <button 
                       onClick={(e) => { e.stopPropagation(); onItemClick(); }} 
-                      className="p-4 text-white transition-all active:scale-50"
+                      className={cn(
+                        "transition-all active:scale-50 min-h-[48px] min-w-[48px] flex items-center justify-center",
+                        "text-white"
+                      )}
                       aria-label="Info"
                     >
                         <ChatIcon className="w-8 h-8 drop-shadow-2xl" />
@@ -281,7 +293,10 @@ const FeedCard: React.FC<FeedCardProps> = ({ item, session, onUserClick, onItemC
                 <div className="flex flex-col items-center">
                     <button 
                       onClick={handleShareClick} 
-                      className="p-4 text-white transition-all active:scale-50"
+                      className={cn(
+                        "transition-all active:scale-50 min-h-[48px] min-w-[48px] flex items-center justify-center",
+                        "text-white"
+                      )}
                       aria-label="Share"
                     >
                         <ShareIcon className="w-8 h-8 drop-shadow-2xl" />

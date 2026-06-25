@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { MediaItem, MediaType, Session } from '../types';
 import { cn, DEFAULT_THUMB_URL } from '../lib/utils';
+import { buttonVariants, cardVariants, spacing, transitions } from '../lib/designTokens';
 import PlayIcon from './icons/PlayIcon';
 import ShareIcon from './icons/ShareIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -19,9 +20,12 @@ import { useDoubleTap } from '../hooks/useDoubleTap';
 // --- Sub-Components ---
 
 const MediaBadges: React.FC<{ type: MediaType }> = ({ type }) => (
-  <div className="absolute top-2 right-2 flex gap-1 z-20">
+  <div className={cn("absolute top-2 right-2 flex gap-1 z-20", spacing.gap2)}>
     {type === MediaType.Video && (
-      <div className="bg-black/60 backdrop-blur-md rounded-lg px-2 py-1 border border-white/10 flex items-center gap-1">
+      <div className={cn(
+        "bg-black/60 backdrop-blur-md flex items-center gap-1",
+        "rounded-lg px-2 py-1 border border-white/10"
+      )}>
         <VideoIcon className="w-3 h-3 text-white" />
         <span className="text-[10px] font-bold text-white uppercase">Video</span>
       </div>
@@ -37,7 +41,7 @@ const MobileOverlay: React.FC<{
   onLike: (e: React.MouseEvent) => void;
 }> = ({ author, avatar, isLiked, likeCount, onLike }) => (
   <div className="md:hidden absolute bottom-0 inset-x-0 bg-gradient-to-t from-black via-black/80 to-transparent pt-8 pb-3 px-3 flex items-end justify-between z-20">
-    <div className="flex items-center gap-2 max-w-[70%]">
+    <div className={cn("flex items-center gap-2 max-w-[70%]", spacing.gap2)}>
       {avatar ? (
         <img src={avatar} className="w-6 h-6 rounded-full border border-white/30" alt={author} />
       ) : (
@@ -49,7 +53,14 @@ const MobileOverlay: React.FC<{
         <span className="text-[10px] font-bold text-gray-200 truncate leading-none">{author}</span>
       </div>
     </div>
-    <button onClick={onLike} className="flex flex-col items-center justify-center text-white">
+    <button 
+      onClick={onLike} 
+      className={cn(
+        "flex flex-col items-center justify-center text-white min-h-[48px] min-w-[48px]",
+        "active:scale-90 transition-transform"
+      )}
+      aria-label={isLiked ? `Unlike ${author}'s post` : `Like ${author}'s post`}
+    >
       <HeartIcon filled={isLiked} className={`w-5 h-5 ${isLiked ? 'text-pink-500' : 'text-white'}`} />
       {likeCount > 0 && <span className="text-[9px] font-bold mt-0.5">{likeCount}</span>}
     </button>
@@ -88,7 +99,16 @@ const DesktopOverlay: React.FC<{
       )}
 
       <div className="flex items-center justify-between border-t border-white/10 pt-3">
-        <div className="flex items-center gap-2 cursor-pointer hover:bg-white/10 p-1 -ml-1 rounded-lg transition-colors" onClick={onUserClick}>
+        <div 
+          className={cn(
+            "flex items-center gap-2 cursor-pointer hover:bg-white/10 p-1 -ml-1 rounded-lg transition-colors",
+            "min-h-[48px] min-w-[48px]"
+          )} 
+          onClick={onUserClick}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && onUserClick()}
+        >
           <div className="w-6 h-6 rounded-full overflow-hidden border border-white/30">
             {item.author_avatar ? (
               <img src={item.author_avatar} className="w-full h-full object-cover" alt={item.author} />
@@ -99,16 +119,37 @@ const DesktopOverlay: React.FC<{
           <span className="text-xs text-gray-300 font-medium truncate max-w-[80px]">{item.author}</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button onClick={onLike} className={`p-1.5 rounded-full transition-colors ${isLiked ? 'text-pink-500 bg-pink-500/10' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}>
+        <div className={cn("flex items-center gap-2", spacing.gap2)}>
+          <button 
+            onClick={onLike} 
+            className={cn(
+              "rounded-full transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center",
+              isLiked ? 'text-pink-500 bg-pink-500/10' : 'text-gray-300 hover:text-white hover:bg-white/10'
+            )}
+            aria-label={isLiked ? 'Unlike post' : 'Like post'}
+          >
             <HeartIcon filled={isLiked} className="w-4 h-4" />
           </button>
           {isOwner && (
-            <button onClick={onDelete} className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-full transition-colors">
+            <button 
+              onClick={onDelete} 
+              className={cn(
+                "rounded-full transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center",
+                "text-gray-400 hover:text-red-400 hover:bg-red-400/10"
+              )}
+              aria-label="Delete post"
+            >
               <TrashIcon className="w-4 h-4" />
             </button>
           )}
-          <button onClick={onShare} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+          <button 
+            onClick={onShare} 
+            className={cn(
+              "rounded-full transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center",
+              "text-gray-400 hover:text-white hover:bg-white/10"
+            )}
+            aria-label="Share post"
+          >
             <ShareIcon className="w-4 h-4" />
           </button>
         </div>
@@ -220,8 +261,9 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
       <div 
         ref={cardRef}
         className={cn(
-            "group relative overflow-hidden rounded-xl bg-[#111] border border-white/5 cursor-pointer mb-4 break-inside-avoid shadow-lg transition-all duration-300",
+            "group relative overflow-hidden rounded-xl bg-[#121212] border border-white/5 cursor-pointer mb-4 break-inside-avoid shadow-lg",
             "hover:shadow-pink-500/20 hover:border-pink-500/30 hover:ring-1 hover:ring-pink-500/20",
+            "transition-all duration-300 ease-out",
             !isImageLoaded && "min-h-[200px] animate-pulse",
             isDeleting && "opacity-50 pointer-events-none"
         )}
@@ -230,6 +272,10 @@ const MediaCard: React.FC<MediaCardProps> = ({ item, onClick, onUserClick, sessi
         onMouseEnter={() => setIsHovered(true)}
         onMouseOver={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        role="article"
+        aria-label={`Media post by ${item.author}`}
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && onClick()}
       >
         <div className="relative aspect-auto">
           {isInView ? (
