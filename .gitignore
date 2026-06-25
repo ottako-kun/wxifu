@@ -1,4 +1,3 @@
-```
 # Build artifacts
 dist/
 build/
@@ -31,7 +30,6 @@ __pycache__/
 coverage/
 htmlcov/
 .coverage
-
 # Compressed files
 *.zip
 *.gz
@@ -55,4 +53,3 @@ htmlcov/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
-```
