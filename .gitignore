@@ -1,1 +1,24 @@
+```
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+
+# Environment variables
+.env*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+```
 Nothing should be ignored since only source code files (.tsx) were modified and no build artifacts, dependencies, or temporary files are present in the changes.
