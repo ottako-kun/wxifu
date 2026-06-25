@@ -78,7 +78,7 @@ const HomeView: React.FC<HomeViewProps> = ({
     visibleItems,
   } = useGalleryFilters(itemsToDisplay);
 
-  const exploreTabs: ExploreTab[] = ['For You', 'Trending', 'GIFs', 'Images', 'Videos', 'Creators', 'Niches'];
+  const exploreTabs: ExploreTab[] = ['For You', 'Trending'];
 
   // Derive unique creators for Creators tab
   const uniqueCreators = useMemo(() => {
@@ -131,42 +131,31 @@ const HomeView: React.FC<HomeViewProps> = ({
       )}>
         
         <div 
-            className={`sticky z-40 py-2 bg-gradient-to-b from-[#020202] via-[#020202]/95 to-transparent backdrop-blur-2xl transition-[top] duration-500 ease-in-out border-b border-white/5 pb-4 mb-2`}
+            className={`sticky z-40 py-2 bg-gradient-to-b from-[#020202] via-[#020202]/95 to-transparent backdrop-blur-2xl transition-[top] duration-500 ease-in-out border-b border-white/5 pb-2 mb-0`}
             style={{ top: scrollDirection === 'down' ? '0px' : '56px' }}
         >
-             {/* Explore Navigation Tabs */}
-              <div className="flex items-center gap-4 md:gap-8 overflow-x-auto no-scrollbar pb-4 px-2 mb-2 border-b border-white/5 relative">
-                 {exploreTabs.map((tab, idx) => {
-                     const isPrimary = tab === 'For You' || tab === 'Trending';
+             {/* Explore Navigation Tabs - Simplified for TikTok-style */}
+              <div className="flex items-center gap-6 md:gap-8 overflow-x-auto no-scrollbar pb-2 px-4 mb-0 relative">
+                 {exploreTabs.map((tab) => {
                      return (
                          <button 
                              key={tab}
                              onClick={() => setSelectedCategory(tab)}
                              className={cn(
-                                "group relative py-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-2",
-                                (selectedCategory === tab) ? "text-white" : "text-gray-500 hover:text-gray-300",
-                                isPrimary && "font-black"
+                                "group relative py-3 transition-all cursor-pointer whitespace-nowrap flex items-center gap-2",
+                                (selectedCategory === tab) ? "text-white" : "text-gray-500 hover:text-gray-300"
                              )}
                          >
-                             {isPrimary && (
-                                 <div className={cn(
-                                     "w-1.5 h-1.5 rounded-full transition-all duration-500",
-                                     selectedCategory === tab ? (tab === 'For You' ? "bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.8)]" : "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]") : "bg-transparent"
-                                 )} />
-                             )}
                              <span className={cn(
-                                 "text-xs md:text-sm uppercase tracking-[0.2em] font-orbitron transition-all",
-                                 selectedCategory === tab ? "scale-110" : "scale-100"
+                                 "text-sm md:text-base font-black uppercase tracking-[0.15em] transition-all",
+                                 selectedCategory === tab ? "scale-105 text-pink-500" : "scale-100"
                              )}>
                                  {tab}
                              </span>
                              {(selectedCategory === tab) && (
                                  <motion.div 
                                     layoutId="explore-active-pill"
-                                    className={cn(
-                                        "absolute -bottom-1 left-0 right-0 h-0.5 rounded-full",
-                                        tab === 'For You' ? "bg-pink-500" : (tab === 'Trending' ? "bg-cyan-500" : "bg-white/40")
-                                    )}
+                                    className="absolute -bottom-2 left-0 right-0 h-0.5 rounded-full bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.8)]"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                  />
@@ -177,25 +166,6 @@ const HomeView: React.FC<HomeViewProps> = ({
                  {/* Decorative spacer for mobile horizontal scroll */}
                  <div className="min-w-[20px] h-4" />
              </div>
-
-             <GalleryControls 
-                galleryName={galleryName}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                searchInputRef={searchInputRef}
-                sortOption={sortOption}
-                setSortOption={setSortOption}
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-                availableCategories={availableCategories}
-                selectedTags={selectedTags}
-                toggleTag={toggleTag}
-                availableTags={availableTags}
-                clearFilters={() => {
-                    clearFilters();
-                    setSearchQuery('');
-                }}
-            />
         </div>
 
         {activeTab === 'following' && !session ? (
@@ -217,43 +187,6 @@ const HomeView: React.FC<HomeViewProps> = ({
             <div className="relative flex-grow">
                 <AnimatePresence mode="wait">
                   {itemsToDisplay.length > 0 || isLoading ? (
-                    selectedCategory === 'Creators' ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8">
-                             {uniqueCreators.map(creator => (
-                                 <motion.button 
-                                     key={creator.id}
-                                     whileHover={{ y: -5 }}
-                                     onClick={() => onUserClick(creator)}
-                                     className="flex flex-col items-center gap-4 p-6 rounded-[2rem] bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all text-center"
-                                 >
-                                     <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-pink-500/20 p-1 bg-black">
-                                         <img src={creator.avatar} alt={creator.name} className="w-full h-full object-cover rounded-full" />
-                                     </div>
-                                     <div>
-                                         <h3 className="text-sm font-black text-white uppercase tracking-widest">{creator.name}</h3>
-                                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Artist</p>
-                                     </div>
-                                 </motion.button>
-                             ))}
-                        </div>
-                    ) : selectedCategory === 'Niches' ? (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-8">
-                             {availableTags.map(tag => (
-                                 <motion.button 
-                                     key={tag}
-                                     whileHover={{ scale: 1.02 }}
-                                     onClick={() => toggleTag(tag)}
-                                     className={cn(
-                                        "h-32 flex items-center justify-center p-6 rounded-[2rem] border transition-all text-center relative overflow-hidden group",
-                                        selectedTags.includes(tag) ? "bg-pink-500/20 border-pink-500/50" : "bg-white/5 border-white/5 hover:border-white/20"
-                                     )}
-                                 >
-                                     <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                     <span className="text-lg font-black text-white uppercase tracking-widest font-orbitron z-10">#{tag}</span>
-                                 </motion.button>
-                             ))}
-                        </div>
-                    ) : (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -278,7 +211,6 @@ const HomeView: React.FC<HomeViewProps> = ({
                               </motion.div>
                           )}
                       </motion.div>
-                    )
                   ) : (
                   <div className="flex flex-col items-center justify-center h-[50vh] text-center">
                       <LoadingSpinner className="w-12 h-12 text-pink-500/30 mb-4" />
