@@ -118,7 +118,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   // Determine sidebar width based on collapsed state and device
-  const sidebarWidth = isCollapsed && isDesktop ? 'w-[80px]' : 'w-[260px]';
+  const sidebarWidth = isCollapsed && isDesktop ? 'w-[70px]' : 'w-[220px]';
   const showLabels = !isCollapsed || !isDesktop;
 
   return (
@@ -136,13 +136,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Collapse Toggle Button - Desktop Only */}
+      {/* Collapse Toggle Button - Desktop Only, Positioned Above Home */}
       {isDesktop && (
         <button
           onClick={handleCollapseToggle}
           className={cn(
-            "fixed top-24 z-[90] p-2 rounded-lg bg-[#0A0A0A] border border-white/10 hover:border-pink-500/50 text-gray-400 hover:text-pink-500 transition-all duration-300 shadow-lg",
-            isCollapsed ? "left-[90px]" : "left-[270px]"
+            "fixed z-[90] p-2 rounded-lg bg-[#0A0A0A] border border-white/10 hover:border-pink-500/50 text-gray-400 hover:text-pink-500 transition-all duration-300 shadow-lg",
+            isCollapsed ? "top-20 left-[80px]" : "top-20 left-[230px]"
           )}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
