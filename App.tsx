@@ -133,6 +133,7 @@ const AppContent: React.FC = () => {
           onNavigate={handleNavigate}
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
+          onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
           onUploadClick={handleUploadClick}
           onLogout={handleLogout}
           session={session}
