@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { buttonVariants, spacing, colors } from '../lib/designTokens';
@@ -13,8 +13,10 @@ import {
   Plus,
   LogOut,
   ChevronRight,
+  ChevronLeft,
   Film,
-  Palette
+  Palette,
+  Menu
 } from 'lucide-react';
 import { useDevice } from '../hooks/useDevice';
 
@@ -27,6 +29,7 @@ interface SidebarProps {
   onNavigate: (view: 'home' | 'profile' | 'inbox') => void;
   isOpen: boolean;
   onClose: () => void;
+  onToggle: () => void;
   onUploadClick: () => void;
   onLogout: () => void;
   session: any;
@@ -47,13 +50,26 @@ const Sidebar: React.FC<SidebarProps> = ({
     onNavigate,
     isOpen,
     onClose,
+    onToggle,
     onUploadClick,
     onLogout,
     session
 }) => {
   
-  const { isDesktop, isTablet } = useDevice();
+  const { isDesktop, isTablet, isMobile } = useDevice();
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Auto-collapse sidebar on desktop when open
+  useEffect(() => {
+    if (isDesktop && isOpen) {
+      // Keep track of collapsed state on desktop
+    }
+  }, [isDesktop, isOpen]);
+
+  const handleCollapseToggle = () => {
+    setIsCollapsed(!isCollapsed);
+  };
 
   const toggleSection = (sectionId: string) => {
     setExpandedSection(expandedSection === sectionId ? null : sectionId);
@@ -91,6 +107,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         onUploadClick();
     } else if (id === 'home' || id === 'explore' || id === 'niches') {
         // Toggle expansion for sections with sub-items
+        if (isCollapsed && isDesktop) {
+          setIsCollapsed(false);
+        }
         toggleSection(id);
     } else if (id === 'profile') {
         onNavigate('profile');
@@ -98,27 +117,53 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
+  // Determine sidebar width based on collapsed state and device
+  const sidebarWidth = isCollapsed && isDesktop ? 'w-[80px]' : 'w-[260px]';
+  const showLabels = !isCollapsed || !isDesktop;
+
   return (
     <>
-      {/* Mobile Overlay - only on mobile */}
+      {/* Mobile/Tablet Overlay */}
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && !isDesktop && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] lg:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70]"
             onClick={onClose}
           />
         )}
       </AnimatePresence>
 
+      {/* Collapse Toggle Button - Desktop Only */}
+      {isDesktop && (
+        <button
+          onClick={handleCollapseToggle}
+          className={cn(
+            "fixed top-24 z-[90] p-2 rounded-lg bg-[#0A0A0A] border border-white/10 hover:border-pink-500/50 text-gray-400 hover:text-pink-500 transition-all duration-300 shadow-lg",
+            isCollapsed ? "left-[90px]" : "left-[270px]"
+          )}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? (
+            <ChevronRight className="w-4 h-4" />
+          ) : (
+            <ChevronLeft className="w-4 h-4" />
+          )}
+        </button>
+      )}
+
       <aside className={cn(
-        "fixed top-0 left-0 h-full w-[260px] bg-[#0A0A0A] border-r border-white/5 z-[80] transition-transform duration-300 ease-in-out pt-20 flex flex-col",
-        // Show on desktop always, on tablet/mobile when open
+        "fixed top-0 left-0 h-full bg-[#0A0A0A] border-r border-white/5 z-[80] transition-all duration-300 ease-in-out pt-20 flex flex-col",
+        sidebarWidth,
+        // Visibility logic
         isDesktop ? "translate-x-0" : isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex-grow overflow-y-auto px-4 custom-scrollbar">
+        <div className={cn(
+          "flex-grow overflow-y-auto custom-scrollbar",
+          isCollapsed && isDesktop ? "px-2" : "px-4"
+        )}>
           
           {/* Main Nav */}
           <nav className="space-y-1 mb-2" role="navigation" aria-label="Main navigation">
@@ -129,28 +174,30 @@ const Sidebar: React.FC<SidebarProps> = ({
                 className={cn(
                   "w-full flex items-center justify-between gap-4 px-4 py-4 rounded-2xl text-sm font-black transition-all group relative overflow-hidden uppercase tracking-widest",
                   "min-h-[48px] active:scale-[0.98] transition-transform",
+                  isCollapsed && isDesktop ? "justify-center px-2" : "",
                   expandedSection === 'home' || (currentView === 'home' && selectedCategory === 'For You' || selectedCategory === 'Trending')
                     ? "text-pink-500 bg-pink-500/5" 
                     : "text-gray-400 hover:text-white hover:bg-white/5"
                 )}
                 aria-expanded={expandedSection === 'home'}
                 aria-controls="home-submenu"
+                title={isCollapsed && isDesktop ? "Home" : undefined}
               >
                 <div className={cn("flex items-center gap-4", spacing.gap4)}>
                   <Home className={cn(
-                    "w-5 h-5 relative z-10",
+                    "w-5 h-5 relative z-10 flex-shrink-0",
                     expandedSection === 'home' || (currentView === 'home' && selectedCategory === 'For You' || selectedCategory === 'Trending') ? "text-pink-500" : "group-hover:text-white"
                   )} />
-                  <span className="relative z-10 text-[10px]">Home</span>
+                  {showLabels && <span className="relative z-10 text-[10px]">Home</span>}
                 </div>
-                <ChevronRight className={cn(
+                {showLabels && <ChevronRight className={cn(
                   "w-4 h-4 transition-transform duration-300",
                   expandedSection === 'home' ? "rotate-90 text-pink-500" : "text-gray-500"
-                )} />
+                )} />}
               </button>
               
               <AnimatePresence>
-                {expandedSection === 'home' && (
+                {expandedSection === 'home' && showLabels && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
@@ -182,26 +229,28 @@ const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => handleNavClick('explore', 'home')}
                 className={cn(
                   "w-full flex items-center justify-between gap-4 px-4 py-4 rounded-2xl text-sm font-black transition-all group relative overflow-hidden uppercase tracking-widest",
+                  isCollapsed && isDesktop ? "justify-center px-2" : "",
                   expandedSection === 'explore' || (currentView === 'home' && ['GIFs', 'Images', 'Creators', 'Niches'].includes(selectedCategory || ''))
                     ? "text-pink-500 bg-pink-500/5" 
                     : "text-gray-400 hover:text-white hover:bg-white/5"
                 )}
+                title={isCollapsed && isDesktop ? "Explore" : undefined}
               >
                 <div className="flex items-center gap-4">
                   <TrendingUp className={cn(
-                    "w-5 h-5 relative z-10",
+                    "w-5 h-5 relative z-10 flex-shrink-0",
                     expandedSection === 'explore' || (currentView === 'home' && ['GIFs', 'Images', 'Creators', 'Niches'].includes(selectedCategory || '')) ? "text-pink-500" : "group-hover:text-white"
                   )} />
-                  <span className="relative z-10 text-[10px]">Explore</span>
+                  {showLabels && <span className="relative z-10 text-[10px]">Explore</span>}
                 </div>
-                <ChevronRight className={cn(
+                {showLabels && <ChevronRight className={cn(
                   "w-4 h-4 transition-transform duration-300",
                   expandedSection === 'explore' ? "rotate-90 text-pink-500" : "text-gray-500"
-                )} />
+                )} />}
               </button>
               
               <AnimatePresence>
-                {expandedSection === 'explore' && (
+                {expandedSection === 'explore' && showLabels && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
@@ -236,13 +285,15 @@ const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => handleNavClick('upload', 'upload')}
               className={cn(
                 "w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-black transition-all group relative overflow-hidden uppercase tracking-widest",
+                isCollapsed && isDesktop ? "justify-center px-2" : "",
                 "text-gray-400 hover:text-white hover:bg-white/5"
               )}
+              title={isCollapsed && isDesktop ? "Upload" : undefined}
             >
               <Plus className={cn(
-                "w-5 h-5 relative z-10 group-hover:text-white"
+                "w-5 h-5 relative z-10 flex-shrink-0 group-hover:text-white"
               )} />
-              <span className="relative z-10 text-[10px]">Upload</span>
+              {showLabels && <span className="relative z-10 text-[10px]">Upload</span>}
             </button>
 
             {/* Niches Section */}
@@ -251,26 +302,28 @@ const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => handleNavClick('niches', 'home')}
                 className={cn(
                   "w-full flex items-center justify-between gap-4 px-4 py-4 rounded-2xl text-sm font-black transition-all group relative overflow-hidden uppercase tracking-widest",
+                  isCollapsed && isDesktop ? "justify-center px-2" : "",
                   expandedSection === 'niches' || selectedCategory === 'All Niches'
                     ? "text-pink-500 bg-pink-500/5" 
                     : "text-gray-400 hover:text-white hover:bg-white/5"
                 )}
+                title={isCollapsed && isDesktop ? "Niches" : undefined}
               >
                 <div className="flex items-center gap-4">
                   <Hash className={cn(
-                    "w-5 h-5 relative z-10",
+                    "w-5 h-5 relative z-10 flex-shrink-0",
                     expandedSection === 'niches' || selectedCategory === 'All Niches' ? "text-pink-500" : "group-hover:text-white"
                   )} />
-                  <span className="relative z-10 text-[10px]">Niches</span>
+                  {showLabels && <span className="relative z-10 text-[10px]">Niches</span>}
                 </div>
-                <ChevronRight className={cn(
+                {showLabels && <ChevronRight className={cn(
                   "w-4 h-4 transition-transform duration-300",
                   expandedSection === 'niches' ? "rotate-90 text-pink-500" : "text-gray-500"
-                )} />
+                )} />}
               </button>
               
               <AnimatePresence>
-                {expandedSection === 'niches' && (
+                {expandedSection === 'niches' && showLabels && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
@@ -302,27 +355,36 @@ const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => handleNavClick('profile', 'profile')}
               className={cn(
                 "w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-black transition-all group relative overflow-hidden uppercase tracking-widest",
+                isCollapsed && isDesktop ? "justify-center px-2" : "",
                 currentView === 'profile'
                   ? "text-pink-500 bg-pink-500/5" 
                   : "text-gray-400 hover:text-white hover:bg-white/5"
               )}
+              title={isCollapsed && isDesktop ? "Profile" : undefined}
             >
               <Users className={cn(
-                "w-5 h-5 relative z-10",
+                "w-5 h-5 relative z-10 flex-shrink-0",
                 currentView === 'profile' ? "text-pink-500" : "group-hover:text-white"
               )} />
-              <span className="relative z-10 text-[10px]">Profile</span>
+              {showLabels && <span className="relative z-10 text-[10px]">Profile</span>}
             </button>
           </nav>
 
         </div>
 
         {/* Footer info at bottom of sidebar */}
-        <div className="p-6 border-t border-white/5 mt-auto">
+        <div className={cn(
+          "border-t border-white/5 mt-auto",
+          isCollapsed && isDesktop ? "p-2" : "p-6"
+        )}>
             {session && (
                 <button 
                     onClick={onLogout}
-                    className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-500/5 transition-all mb-4 border border-rose-500/20"
+                    className={cn(
+                      "w-full flex items-center gap-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-500/5 transition-all mb-4 border border-rose-500/20",
+                      isCollapsed && isDesktop ? "justify-center p-3" : "px-4 py-4"
+                    )}
+                    title={isCollapsed && isDesktop ? "Log Out" : undefined}
                 >
                     <motion.div
                         animate={{ rotate: [0, 10, -10, 0] }}
@@ -330,15 +392,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                     >
                         <LogOut className="w-4 h-4" />
                     </motion.div>
-                    Log Out
+                    {showLabels && "Log Out"}
                 </button>
             )}
-            <div className="flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
-                <a href="#" className="hover:text-gray-400">Rules</a>
-                <a href="#" className="hover:text-gray-400">API</a>
-                <a href="#" className="hover:text-gray-400">Discord</a>
-            </div>
-            <p className="text-[9px] text-gray-700 mt-4 tracking-tighter">© 2026 WXIFU NEURAL NETWORK</p>
+            {showLabels && (
+              <>
+                <div className="flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+                    <a href="#" className="hover:text-gray-400">Rules</a>
+                    <a href="#" className="hover:text-gray-400">API</a>
+                    <a href="#" className="hover:text-gray-400">Discord</a>
+                </div>
+                <p className="text-[9px] text-gray-700 mt-4 tracking-tighter">© 2026 WXIFU NEURAL NETWORK</p>
+              </>
+            )}
         </div>
       </aside>
     </>
