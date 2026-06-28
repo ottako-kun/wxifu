@@ -81,6 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const exploreSubItems: SubItem[] = [
+    { id: 'videos', label: 'Videos', category: 'Videos' },
     { id: 'gifs', label: 'GIFs', category: 'GIFs' },
     { id: 'images', label: 'Images', category: 'Images' },
     { id: 'creators', label: 'Creators', category: 'Creators' },
@@ -268,6 +269,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
                         )}
                       >
+                        {subItem.id === 'videos' && <VideoIcon className="w-4 h-4" />}
                         {subItem.id === 'gifs' && <Film className="w-4 h-4" />}
                         {subItem.id === 'images' && <ImageIcon className="w-4 h-4" />}
                         {subItem.id === 'creators' && <Users className="w-4 h-4" />}
