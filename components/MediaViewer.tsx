@@ -31,7 +31,13 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
   const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [isSeeking, setIsSeeking] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [volume, setVolume] = useState(1);
+  const [isControlsLocked, setIsControlsLocked] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<number | null>(null);
 
   const isDirectVideo = (url?: string) => {
@@ -57,8 +63,73 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
   useEffect(() => {
     if (videoRef.current) {
         videoRef.current.muted = isGlobalMuted;
+        videoRef.current.volume = volume;
+        videoRef.current.playbackRate = playbackSpeed;
     }
-  }, [isGlobalMuted]);
+  }, [isGlobalMuted, volume, playbackSpeed]);
+
+  // Fullscreen change listener
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isPhoto || !videoRef.current) return;
+      
+      switch(e.key.toLowerCase()) {
+        case ' ':
+        case 'k':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'arrowleft':
+          e.preventDefault();
+          skip(-5);
+          break;
+        case 'arrowright':
+          e.preventDefault();
+          skip(5);
+          break;
+        case 'm':
+          e.preventDefault();
+          toggleGlobalMute();
+          break;
+        case 'f':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        case 'l':
+          e.preventDefault();
+          setIsControlsLocked(prev => !prev);
+          break;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+          e.preventDefault();
+          const speeds = [0.5, 1, 1.5, 2];
+          setPlaybackSpeed(speeds[parseInt(e.key)]);
+          break;
+        case 'arrowup':
+          e.preventDefault();
+          setVolume(prev => Math.min(1, prev + 0.1));
+          break;
+        case 'arrowdown':
+          e.preventDefault();
+          setVolume(prev => Math.max(0, prev - 0.1));
+          break;
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPhoto, togglePlay, toggleGlobalMute]);
 
   const togglePlay = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -72,6 +143,61 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
       }
     }
   }, []);
+
+  const skip = useCallback((seconds: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.max(0, Math.min(duration, videoRef.current.currentTime + seconds));
+    }
+  }, [duration]);
+
+  const toggleFullscreen = useCallback(async () => {
+    if (!containerRef.current) return;
+    
+    try {
+      if (!document.fullscreenElement) {
+        await containerRef.current.requestFullscreen();
+        setIsFullscreen(true);
+      } else {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    } catch (err) {
+      console.error('Fullscreen error:', err);
+    }
+  }, []);
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    if (videoRef.current) {
+      videoRef.current.volume = newVolume;
+    }
+    // Unmute global mute if user adjusts volume
+    if (newVolume > 0 && isGlobalMuted) {
+      toggleGlobalMute();
+    }
+  };
+
+  const handlePlaybackSpeedChange = () => {
+    const speeds = [0.5, 1, 1.5, 2];
+    const currentIndex = speeds.indexOf(playbackSpeed);
+    const nextIndex = (currentIndex + 1) % speeds.length;
+    setPlaybackSpeed(speeds[nextIndex]);
+  };
+
+  const togglePiP = async () => {
+    if (!videoRef.current) return;
+    
+    try {
+      if (videoRef.current !== document.pictureInPictureElement) {
+        await videoRef.current.requestPictureInPicture();
+      } else {
+        await document.exitPictureInPicture();
+      }
+    } catch (err) {
+      console.error('PiP error:', err);
+    }
+  };
 
   const handleTimeUpdate = () => {
     if (videoRef.current && !isSeeking) {
@@ -99,11 +225,17 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
   };
 
   const handleInteraction = () => {
+    if (isControlsLocked) return;
     setShowControls(true);
     if (controlsTimeoutRef.current) window.clearTimeout(controlsTimeoutRef.current);
     controlsTimeoutRef.current = window.setTimeout(() => {
-      if (isPlaying) setShowControls(false);
+      if (isPlaying && !isControlsLocked) setShowControls(false);
     }, 2500);
+  };
+
+  const toggleControlsLock = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsControlsLocked(prev => !prev);
   };
 
   const handleDownload = () => {
@@ -186,7 +318,11 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                     </div>
                 ) : (
                     isDirectVideo(item.videoSrc) ? (
-                        <div className="relative w-full h-full flex items-center justify-center group/player" onClick={togglePlay}>
+                        <div 
+                            ref={containerRef}
+                            className="relative w-full h-full flex items-center justify-center group/player" 
+                            onClick={togglePlay}
+                        >
                             <video 
                                 key={item.id} // Forces re-render on item change to reset state
                                 ref={videoRef}
@@ -202,9 +338,18 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                 }}
                                 onPlay={() => setIsPlaying(true)}
                                 onPause={() => setIsPlaying(false)}
+                                onWaiting={() => setIsBuffering(true)}
+                                onCanPlay={() => setIsBuffering(false)}
                                 className="max-w-full max-h-full w-auto h-auto outline-none shadow-2xl z-10 object-contain rounded-2xl"
                                 onError={() => setVideoError(true)}
                             />
+                            
+                            {/* Buffering Indicator */}
+                            {isBuffering && (
+                                <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                                    <LoadingSpinner className="w-12 h-12 text-pink-500" />
+                                </div>
+                            )}
                             
                             <div className={`absolute inset-0 flex items-center justify-center z-20 transition-opacity duration-300 pointer-events-none ${!isPlaying ? 'opacity-100' : 'opacity-0'}`}>
                                 <div className="bg-black/60 backdrop-blur-3xl p-10 rounded-full border border-white/10 shadow-2xl">
@@ -214,7 +359,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
 
                             {/* Futuristic Video HUD Controls */}
                             <div 
-                                className={`absolute bottom-0 inset-x-0 z-[110] p-6 pb-12 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 flex flex-col gap-4 pointer-events-auto ${showControls ? 'opacity-100' : 'opacity-0'}`}
+                                className={`absolute bottom-0 inset-x-0 z-[110] p-6 pb-12 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 flex flex-col gap-4 pointer-events-auto ${showControls || isControlsLocked ? 'opacity-100' : 'opacity-0'}`}
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 <div className="w-full flex flex-col gap-2">
@@ -237,38 +382,138 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                             onChange={handleSeek}
                                             onMouseDown={() => setIsSeeking(true)}
                                             onMouseUp={() => setIsSeeking(false)}
-                                            className="w-full h-2 bg-transparent appearance-none cursor-pointer accent-pink-500 relative z-20 opacity-0"
+                                            onTouchStart={() => setIsSeeking(true)}
+                                            onTouchEnd={() => setIsSeeking(false)}
+                                            aria-label="Video progress scrubber"
+                                            className="w-full h-2 bg-transparent appearance-none cursor-pointer accent-pink-500 relative z-20 opacity-100 hover:opacity-80"
+                                            style={{
+                                                background: `linear-gradient(to right, #ec4899 ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.1) ${(currentTime / (duration || 1)) * 100}%)`
+                                            }}
                                         />
-                                        <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 pointer-events-none z-10">
-                                            {renderProgressBar()}
-                                        </div>
                                     </div>
                                 </div>
 
                                 <div className="flex items-center justify-between px-2">
-                                    <div className="flex items-center gap-8">
-                                        <button onClick={togglePlay} className="text-white hover:text-pink-500 transition-all transform active:scale-75">
+                                    <div className="flex items-center gap-4">
+                                        <button 
+                                            onClick={togglePlay} 
+                                            className="text-white hover:text-pink-500 transition-all transform active:scale-75"
+                                            aria-label={isPlaying ? 'Pause video' : 'Play video'}
+                                        >
                                             {isPlaying ? (
                                                 <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                                             ) : (
                                                 <PlayIcon className="w-7 h-7" />
                                             )}
                                         </button>
-                                        <button onClick={toggleMute} className="text-white hover:text-pink-500 transition-all transform active:scale-75">
-                                            {isGlobalMuted ? (
-                                                <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path strokeLinecap="round" d="M15.54 8.46l5.66 5.66m0-5.66l-5.66 5.66"/></svg>
+                                        
+                                        <button 
+                                            onClick={() => skip(-5)} 
+                                            className="text-white hover:text-pink-500 transition-all transform active:scale-75"
+                                            aria-label="Rewind 5 seconds"
+                                        >
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
+                                            </svg>
+                                        </button>
+                                        
+                                        <button 
+                                            onClick={() => skip(5)} 
+                                            className="text-white hover:text-pink-500 transition-all transform active:scale-75"
+                                            aria-label="Forward 5 seconds"
+                                        >
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.934 12.8a1 1 0 000-1.6L8.6 7.2A1 1 0 007 8v8a1 1 0 001.6.8l5.334-4zM19.934 12.8a1 1 0 000-1.6l-5.334-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.334-4z" />
+                                            </svg>
+                                        </button>
+                                        
+                                        <div className="flex items-center gap-2 group/volume">
+                                            <button 
+                                                onClick={toggleMute} 
+                                                className="text-white hover:text-pink-500 transition-all transform active:scale-75"
+                                                aria-label={isGlobalMuted ? 'Unmute video' : 'Mute video'}
+                                            >
+                                                {isGlobalMuted || volume === 0 ? (
+                                                    <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path strokeLinecap="round" d="M15.54 8.46l5.66 5.66m0-5.66l-5.66 5.66"/></svg>
+                                                ) : (
+                                                    <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
+                                                )}
+                                            </button>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="1"
+                                                step="0.01"
+                                                value={isGlobalMuted ? 0 : volume}
+                                                onChange={handleVolumeChange}
+                                                aria-label="Volume control"
+                                                className="w-20 h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-pink-500 opacity-0 group-hover/volume:opacity-100 transition-opacity"
+                                                style={{
+                                                    background: `linear-gradient(to right, #ec4899 ${(isGlobalMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.2) ${(isGlobalMuted ? 0 : volume) * 100}%)`
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={handlePlaybackSpeedChange}
+                                            className="text-[10px] font-bold text-white/80 hover:text-pink-500 transition-all font-orbitron uppercase tracking-wider px-2 py-1 rounded border border-white/20 hover:border-pink-500/50"
+                                            aria-label={`Playback speed: ${playbackSpeed}x`}
+                                        >
+                                            {playbackSpeed}x
+                                        </button>
+                                        
+                                        <button
+                                            onClick={togglePiP}
+                                            className="text-white hover:text-pink-500 transition-all transform active:scale-75"
+                                            aria-label="Picture in Picture mode"
+                                        >
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                        </button>
+                                        
+                                        <button
+                                            onClick={toggleFullscreen}
+                                            className="text-white hover:text-pink-500 transition-all transform active:scale-75"
+                                            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                                        >
+                                            {isFullscreen ? (
+                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+                                                </svg>
                                             ) : (
-                                                <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
+                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                                                </svg>
+                                            )}
+                                        </button>
+                                        
+                                        <button
+                                            onClick={toggleControlsLock}
+                                            className={`text-white transition-all transform active:scale-75 ${isControlsLocked ? 'text-pink-500' : 'hover:text-pink-500'}`}
+                                            aria-label={isControlsLocked ? 'Unlock controls' : 'Lock controls'}
+                                            title="Lock controls (L)"
+                                        >
+                                            {isControlsLocked ? (
+                                                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 17a2 2 0 100-4 2 2 0 000 4zm6-9a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V10a2 2 0 012-2h1V6a5 5 0 0110 0v2h1zM8 6a4 4 0 118 0v2H8V6z"/>
+                                                </svg>
+                                            ) : (
+                                                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 17a2 2 0 100-4 2 2 0 000 4zm6-9a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V10a2 2 0 012-2h1V6a5 5 0 0110 0v2h1zM8 6a4 4 0 118 0v2H8V6z"/>
+                                                </svg>
                                             )}
                                         </button>
                                     </div>
-                                    
-                                    <div className="flex items-center gap-4">
-                                        <div className="text-[9px] font-bold text-gray-500 font-orbitron uppercase tracking-widest hidden sm:block">
-                                            Neural // {((currentTime/(duration||1))*100).toFixed(0)}%
-                                        </div>
-                                    </div>
                                 </div>
+                                
+                                {isControlsLocked && (
+                                    <div className="absolute top-4 right-4 text-[8px] font-bold text-pink-500 font-orbitron uppercase tracking-widest animate-pulse">
+                                        CONTROLS LOCKED
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : isHypnotubeUrl(item.videoSrc) ? (
