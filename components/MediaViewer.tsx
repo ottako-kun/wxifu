@@ -8,6 +8,14 @@ import { useUI } from '../context/UIContext';
 import { isGoogleDriveLink } from '../lib/googleDrive';
 import { isHypnotubeUrl, isDirectVideoUrl } from '../lib/utils';
 
+// Utility function - moved to top to avoid hoisting issues
+function formatTime(seconds: number): string {
+  if (isNaN(seconds)) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 interface MediaViewerProps {
   item: MediaItem;
   onMediaEnded?: () => void;
@@ -562,12 +570,5 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
     </div>
   );
 };
-
-function formatTime(seconds: number): string {
-  if (isNaN(seconds)) return "0:00";
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
 
 export default MediaViewer;
