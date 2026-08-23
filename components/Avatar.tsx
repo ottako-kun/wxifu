@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 
 // Frame Definitions
 export const FRAMES: Record<string, { css: string; label: string }> = {
@@ -33,9 +32,12 @@ interface AvatarProps {
   isVerified?: boolean;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   className?: string;
+  onError?: () => void;
 }
 
-const Avatar: React.FC<AvatarProps> = ({ src, alt, frame, isVerified, size = 'md', className = '' }) => {
+const Avatar: React.FC<AvatarProps> = ({ src, alt, frame, isVerified, size = 'md', className = '', onError }) => {
+  const [hasError, setHasError] = useState(false);
+  
   const sizeClasses = {
     sm: 'w-8 h-8 text-[10px]',
     md: 'w-10 h-10 text-xs',
@@ -53,6 +55,11 @@ const Avatar: React.FC<AvatarProps> = ({ src, alt, frame, isVerified, size = 'md
   };
 
   const frameStyle = frame && FRAMES[frame] ? FRAMES[frame].css : '';
+  
+  const handleImageError = () => {
+    setHasError(true);
+    onError?.();
+  };
 
   return (
     <div className={`relative inline-block ${className}`}>
@@ -63,8 +70,13 @@ const Avatar: React.FC<AvatarProps> = ({ src, alt, frame, isVerified, size = 'md
             ${frameStyle}
             transition-all duration-300
         `}>
-            {src ? (
-                <img src={src} alt={alt || 'Avatar'} className="w-full h-full object-cover" />
+            {src && !hasError ? (
+                <img 
+                    src={src} 
+                    alt={alt || 'Avatar'} 
+                    className="w-full h-full object-cover" 
+                    onError={handleImageError}
+                />
             ) : (
                 <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center font-bold text-gray-400">
                     {alt?.charAt(0).toUpperCase() || '?'}
