@@ -6,7 +6,7 @@ import LoadingSpinner from './icons/LoadingSpinner';
 import PlayIcon from './icons/PlayIcon';
 import { useUI } from '../context/UIContext';
 import { isGoogleDriveLink } from '../lib/googleDrive';
-import { isHypnotubeUrl, isDirectVideoUrl } from '../lib/utils';
+import { isHypnotubeUrl, isDirectVideoUrl, isRedgifsUrl } from '../lib/utils';
 
 // Utility function - moved to top to avoid hoisting issues
 function formatTime(seconds: number): string {
@@ -53,6 +53,26 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
   };
 
   const isUnlocked = true; // Simplified for now: everything is unlocked
+
+  // Move togglePlay and skip before useEffects that depend on them
+  const togglePlay = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play().catch(() => {});
+        setIsPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  }, []);
+
+  const skip = useCallback((seconds: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.max(0, Math.min(duration, videoRef.current.currentTime + seconds));
+    }
+  }, [duration]);
 
   useEffect(() => {
     setVideoError(false);
@@ -137,26 +157,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPhoto, togglePlay, toggleGlobalMute]);
-
-  const togglePlay = useCallback((e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    if (videoRef.current) {
-      if (videoRef.current.paused) {
-        videoRef.current.play().catch(() => {});
-        setIsPlaying(true);
-      } else {
-        videoRef.current.pause();
-        setIsPlaying(false);
-      }
-    }
-  }, []);
-
-  const skip = useCallback((seconds: number) => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = Math.max(0, Math.min(duration, videoRef.current.currentTime + seconds));
-    }
-  }, [duration]);
+  }, [isPhoto, toggleGlobalMute]);
 
   const toggleFullscreen = useCallback(async () => {
     if (!containerRef.current) return;
@@ -524,7 +525,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                                 )}
                             </div>
                         </div>
-                    ) : isHypnotubeUrl(item.videoSrc) ? (
+                    ) : isHypnotubeUrl(item.videoSrc) || isRedgifsUrl(item.videoSrc) ? (
                         <div className="flex flex-col items-center text-center p-12 bg-gray-950 rounded-[3rem] border border-gray-800 border-dashed backdrop-blur-md max-w-xl mx-auto z-30">
                             <div className="w-16 h-16 rounded-full bg-pink-500/10 flex items-center justify-center mb-6 border border-pink-500/30">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-pink-500">
@@ -533,7 +534,10 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
                             </div>
                             <h3 className="text-white text-lg font-bold font-orbitron uppercase tracking-widest mb-2">Embed Restrained</h3>
                             <p className="text-gray-400 text-xs mb-8 max-w-sm leading-relaxed">
-                                HypnoTube prohibits inline frame embedding on external networks. To play this neural video, view the direct host link in a secure browser container.
+                                {isHypnotubeUrl(item.videoSrc) 
+                                    ? "HypnoTube prohibits inline frame embedding on external networks. To play this neural video, view the direct host link in a secure browser container."
+                                    : "RedGIFs requires direct embedding. To play this neural video, view the direct host link in a secure browser container."
+                                }
                             </p>
                             <a 
                                 href={item.src || item.videoSrc} 
