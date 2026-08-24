@@ -37,7 +37,7 @@ const EditMediaForm: React.FC<EditMediaFormProps> = ({ item, onCancel, onSuccess
                 tags: tagsArray
             });
         }
-    } catch (e: any) {
+    } catch (e) {
         toast.error('Error updating post');
     } finally {
         setIsSaving(false);
