@@ -3,7 +3,7 @@ import React from 'react';
 import { Session } from '../types';
 import { APP_CONFIG } from '../gallery-data';
 import UploadButton from './UploadButton';
-import UploadModal from './UploadModal';
+import UploadModal, { type UploadFormData } from './UploadModal';
 import ChatWindow from './ChatWindow';
 import LegalModal from './LegalModal';
 import { useUI } from '../context/UIContext';
@@ -15,7 +15,7 @@ interface GlobalModalLayerProps {
   isUploadModalOpen: boolean;
   onUploadClick: () => void;
   onUploadClose: () => void;
-  onUploadSubmit: (data: any) => Promise<void>;
+  onUploadSubmit: (data: UploadFormData) => Promise<void>;
 }
 
 const GlobalModalLayer: React.FC<GlobalModalLayerProps> = ({

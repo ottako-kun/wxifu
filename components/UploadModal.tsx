@@ -35,7 +35,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
   const [directLink, setDirectLink] = useState('');
   const [hypnotubeLink, setHypnotubeLink] = useState('');
 
-  const handleChange = (field: keyof UploadFormData, value: any) => {
+  const handleChange = (field: keyof UploadFormData, value: string | MediaType | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 

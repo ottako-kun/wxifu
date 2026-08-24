@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { useDevice } from '../hooks/useDevice';
 
+import { Session } from '../types';
+
 interface SidebarProps {
   activeTab: 'photos' | 'videos' | 'following';
   setActiveTab: (tab: 'photos' | 'videos' | 'following') => void;
@@ -32,7 +34,7 @@ interface SidebarProps {
   onToggle: () => void;
   onUploadClick: () => void;
   onLogout: () => void;
-  session: any;
+  session: Session | null;
 }
 
 type SubItem = {
@@ -103,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (!isDesktop) onClose();
   };
 
-  const handleNavClick = (id: string, view: any) => {
+  const handleNavClick = (id: string, view: 'home' | 'profile' | 'inbox') => {
     if (id === 'upload') {
         onUploadClick();
     } else if (id === 'home' || id === 'explore' || id === 'niches') {
