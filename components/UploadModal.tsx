@@ -234,12 +234,12 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onSubmit, isSubmitti
                         handleChange('src', '');
                       }
                     }}
-                    placeholder="https://hypnotube.com/video/shemale-dildo-trainer-103.html"
+                    placeholder="https://hypnotube.com/video/... or https://media.hypnotube.com/videos/..."
                     className="w-full bg-gray-800/60 border border-pink-500/30 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
                     />
                 </div>
                 <p className="text-[10px] text-pink-500/60 mt-1">
-                    Paste a HypnoTube video URL to embed and play it directly in the app.
+                    Paste a HypnoTube video URL or direct media link to embed and play it directly in the app.
                 </p>
               </div>
             </div>
