@@ -14,11 +14,18 @@ export const HYPNOTUBE_DEFAULT_THUMB = 'https://lh3.googleusercontent.com/d/1Nze
 
 export function isHypnotubeUrl(url?: string): boolean {
   if (!url) return false;
-  return /hypnotube\.com\/(video|embed)\//i.test(url);
+  // Support both hypnotube.com video pages and media.hypnotube.com direct links
+  return /hypnotube\.com\/(video|embed)\//i.test(url) || /media\.hypnotube\.com\//i.test(url);
 }
 
 export function getHypnotubeEmbedUrl(url?: string): string {
   if (!url) return '';
+  
+  // If it's already a media.hypnotube.com direct link, return it as-is
+  if (/media\.hypnotube\.com\//i.test(url)) {
+    return url;
+  }
+  
   if (url.includes('/embed/')) {
     return url;
   }
